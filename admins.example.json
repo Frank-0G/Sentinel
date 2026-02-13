@@ -1,0 +1,54 @@
+{
+    "groups": {
+        "half-admin": [
+            "kick",
+            "move",
+            "pause",
+            "unpause",
+            "empty",
+            "emptycompany",
+            "lockcompany",
+            "unlockcompany",
+            "reset",
+            "resetcompany",
+            "resetcompanytimer",
+            "cancelresetcompany",
+            "admin"
+        ],
+        "full-admin": [
+            "restart",
+            "ban",
+            "plugins"
+        ],
+        "operator": [
+            "rcon",
+            "shutdown",
+            "addvip",
+            "extendvip",
+            "name",
+            "alogin",
+            "alogout",
+            "reloadplugins"
+        ]
+    },
+    "inheritance": {
+        "full-admin": [
+            "half-admin"
+        ],
+        "operator": [
+            "full-admin"
+        ]
+    },
+    "users": {
+        "admin_user": "operator",
+        "moderator_user": "half-admin"
+    },
+    "irc_auth": {
+        "admin_user": "IRC_Account_Name",
+        "moderator_user": "IRC_Account_Name_2"
+    },
+    "passwords": {
+        "admin_user": "secure_password_here",
+        "moderator_user": "another_secure_password"
+    }
+}

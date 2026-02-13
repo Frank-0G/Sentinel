@@ -1,0 +1,318 @@
+[
+    {
+        "name": "goal",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows the current scoreboard and goal progress.",
+        "aliases": [
+            "g",
+            "cv"
+        ],
+        "response": null
+    },
+    {
+        "name": "progress",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Displays a visual progress bar of the leading company.",
+        "aliases": [
+            "prog"
+        ],
+        "response": null
+    },
+    {
+        "name": "townstats",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Displays CityBuilder town requirements for a specific company.",
+        "aliases": [
+            "ts",
+            "town"
+        ],
+        "response": null
+    },
+    {
+        "name": "claimed",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Lists all currently claimed towns and their owners.",
+        "aliases": [
+            "claims"
+        ],
+        "response": null
+    },
+    {
+        "name": "goalreached",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Forces the current game to end and declares the leader as winner.",
+        "response": null
+    },
+    {
+        "name": "awarning",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Issues a warning message to a specific company.",
+        "response": null
+    },
+    {
+        "name": "help",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows help information.",
+        "aliases": [
+            "commands"
+        ],
+        "response": null
+    },
+    {
+        "name": "rules",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows server rules.",
+        "response": "Rules: 1. Be nice. 2. No blocking. 3. Have fun!"
+    },
+    {
+        "name": "status",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows server status (players, companies, year).",
+        "response": null
+    },
+    {
+        "name": "server",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows server name.",
+        "response": null
+    },
+    {
+        "name": "players",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Lists connected players.",
+        "response": null
+    },
+    {
+        "name": "companies",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Lists active companies.",
+        "response": null
+    },
+    {
+        "name": "vote",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Cast a YES vote.",
+        "aliases": [
+            "yes"
+        ],
+        "response": null
+    },
+    {
+        "name": "votekick",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Start a vote to kick a player.",
+        "response": null
+    },
+    {
+        "name": "voteban",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Start a vote to ban a player.",
+        "response": null
+    },
+    {
+        "name": "voterestart",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Start a vote to restart the map.",
+        "response": null
+    },
+    {
+        "name": "votereset",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Start a vote to reset a company.",
+        "response": null
+    },
+    {
+        "name": "resetme",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Flag your own company for reset.",
+        "response": null
+    },
+    {
+        "name": "limits",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Show server limits.",
+        "response": null
+    },
+    {
+        "name": "seed",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Show map seed.",
+        "response": null
+    },
+    {
+        "name": "screenshot",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Take a screenshot of a location.",
+        "response": null
+    },
+    {
+        "name": "alogin",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Login as admin.",
+        "response": null
+    },
+    {
+        "name": "say",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Speak as server.",
+        "response": null
+    },
+    {
+        "name": "rcon",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Execute console command.",
+        "response": null
+    },
+    {
+        "name": "kick",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Kick a player.",
+        "response": null
+    },
+    {
+        "name": "ban",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Ban a player.",
+        "response": null
+    },
+    {
+        "name": "move",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Move a player to a company.",
+        "response": null
+    },
+    {
+        "name": "reset",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Reset a company immediately.",
+        "response": null
+    },
+    {
+        "name": "empty",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Empty a company (move players to spec).",
+        "response": null
+    },
+    {
+        "name": "lockcompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Lock a company with password.",
+        "response": null
+    },
+    {
+        "name": "unlockcompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Remove password from a company.",
+        "response": null
+    },
+    {
+        "name": "pause",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Pause the game.",
+        "response": null
+    },
+    {
+        "name": "unpause",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Unpause the game.",
+        "response": null
+    },
+    {
+        "name": "shutdown",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Shutdown the server.",
+        "response": null
+    },
+    {
+        "name": "restart",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Restart the server/Sentinel.",
+        "response": null
+    },
+    {
+        "name": "news",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Post a news item.",
+        "response": null
+    },
+    {
+        "name": "cancelvote",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Cancel any active vote.",
+        "response": null
+    }
+]
