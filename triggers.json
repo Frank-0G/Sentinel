@@ -351,5 +351,205 @@
         "description": "Cancel any active vote.",
         "response": null,
         "discord": true
+    },
+    {
+        "name": "admin",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "plugins",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "reloadplugins",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "version",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "votestatus",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "auth",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "login",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "logout",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "alogout",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "me",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "vipstatus",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "sponsor",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "addvip",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "extendvip",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "vipmembership",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "whois",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "rank",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "name",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "saveme",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "savedcompanies",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
     }
 ]

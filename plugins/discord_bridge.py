@@ -146,7 +146,10 @@ class DiscordBridge(IPlugin):
                     author_name = message.author.display_name
                     # Sanitize
                     safe_content = message.content.replace('"', "'")
-                    self.client.send_chat(1, 0, 0, f"[{author_name}] {safe_content}")
+                    # Use Action=2 (NETWORK_ACTION_SERVER_MESSAGE) instead of 1 (INVALID)
+                    # Or use 0 (NETWORK_ACTION_CHAT) if 2 is restricted. 
+                    # Trying 2 as per openttd_types.py for "Server Message".
+                    self.client.send_chat(2, 0, 0, f"[{author_name}] {safe_content}")
                 
                 # 2. Process Commands (this might raise CommandNotFound, which we now squash)
                 await self.bot.process_commands(message)
@@ -169,7 +172,16 @@ class DiscordBridge(IPlugin):
             # --- DEBUG COMMAND ---
             @self.bot.command(name="discord")
             async def cmd_debug(ctx):
-                await ctx.send("Sentinel Discord Bridge v1.1-FIX is Online.")
+                channel = self.bot.get_channel(self.main_channel_id)
+                status = "VISIBLE" if channel else "NOT FOUND in Cache"
+                if not channel:
+                    try:
+                        channel = await self.bot.fetch_channel(self.main_channel_id)
+                        status = "FETCHED via API (Cache miss)"
+                    except Exception as e:
+                        status = f"ERROR: {e}"
+                
+                await ctx.send(f"Sentinel Discord Bridge v1.2-DEBUG is Online.\nConfigured Channel ID: {self.main_channel_id}\nChannel Status: {status}")
 
             self.bot.run(self.token)
         except Exception as e:
@@ -203,14 +215,20 @@ class DiscordBridge(IPlugin):
     async def _send_msg(self, msg):
         try:
             channel = self.bot.get_channel(self.main_channel_id)
+            if not channel:
+                channel = await self.bot.fetch_channel(self.main_channel_id)
             if channel: await channel.send(msg)
-        except: pass
+        except Exception as e:
+            print(f"[{self.name}] Send Msg Error: {e}")
 
     async def _send_embed(self, embed):
         try:
             channel = self.bot.get_channel(self.main_channel_id)
+            if not channel:
+                channel = await self.bot.fetch_channel(self.main_channel_id)
             if channel: await channel.send(embed=embed)
-        except: pass
+        except Exception as e:
+            print(f"[{self.name}] Send Embed Error: {e}")
 
     # --- EVENTS (Called by Sentinel Main Thread) ---
     # We wrap these in try-except to prevent crashing the main Sentinel loop.

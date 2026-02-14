@@ -320,6 +320,9 @@ class CommandManager(IPlugin):
             context['effective_user'] = community_user if community_user else admin_user
             context['nick'] = admin_name 
 
+            context['nick'] = admin_name 
+
+            conf = self.triggers.get(cmd)
             if conf:
                 if source == "irc" and not conf.get("irc", True): return False, None
                 if source == "game" and not conf.get("in_game", True): return False, None
@@ -362,6 +365,11 @@ class CommandManager(IPlugin):
         if irc: 
             irc_text = f"/me {text}" if is_action else text
             irc.send_to_channel(irc_text, "announcements")
+            
+        discord = self._get_service_safe("DiscordBridge")
+        if discord:
+            discord_text = f"**{text}**" if is_action else text
+            discord._dispatch_discord(discord._send_msg(discord_text))
 
     def _get_company_name(self, co_id):
         data = self.get_data()

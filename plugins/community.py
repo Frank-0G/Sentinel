@@ -247,6 +247,10 @@ class Community(IPlugin):
                     for line in msg.split("\n"): 
                         irc.send_to_channel(line, "announcements")
                         time.sleep(0.1) # Small delay to prevent flood kick/ordering issues
+            elif source == "discord":
+                discord = self.client.get_service("DiscordBridge")
+                if discord:
+                    discord._dispatch_discord(discord._send_msg(msg))
 
         if cmd == "login":
             if source == "irc": return "Login is only supported in-game."
