@@ -251,6 +251,8 @@ class Community(IPlugin):
                 discord = self.client.get_service("DiscordBridge")
                 if discord:
                     discord._dispatch_discord(discord._send_msg(msg))
+                else:
+                    self.client.log("[Community] ERROR: DiscordBridge service not found!")
 
         if cmd == "login":
             if source == "irc": return "Login is only supported in-game."

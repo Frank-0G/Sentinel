@@ -207,10 +207,21 @@ class DiscordBridge(IPlugin):
     # --- BRIDGE METHODS (Async Dispatch) ---
 
     def _dispatch_discord(self, coro):
-        if self.running and self.loop and self.loop.is_running():
-            asyncio.run_coroutine_threadsafe(coro, self.loop)
-        else:
-            coro.close()
+        target_loop = self.bot.loop if self.bot else self.loop
+        if self.running and target_loop:
+            try:
+                if target_loop.is_running():
+                    fut = asyncio.run_coroutine_threadsafe(coro, target_loop)
+                    fut.add_done_callback(lambda f: f.exception() and print(f"[{self.name}] Async Error: {f.exception()}"))
+                    return
+                else: 
+                     print(f"[{self.name}] Loop Check Fail: Loop not running.")
+            except Exception as e:
+                print(f"[{self.name}] Loop Check Error: {e}")
+        
+        # If we got here, we failed
+        print(f"[{self.name}] Dispatch Failed! Running={self.running}, Loop={target_loop}")
+        coro.close()
 
     async def _send_msg(self, msg):
         try:
@@ -242,15 +253,20 @@ class DiscordBridge(IPlugin):
     def on_connected(self):
         self._dispatch_discord(self.update_status())
 
-    def on_chat(self, action, dest_type, cid, msg):
+    def on_chat(self, cid, msg, action, dest_type):
         try:
+            # Action 2 (Server Message) and 0 (Chat) are what we usually see.
+            # But Sentinel often relays raw server events too.
+            # Filter: Only allow normal chat (0) + Company Chat (1) ?
+            # Server MSG (2) is often duplicate of Embeds.
+            if action == 2: return 
             if cid == 1: return
             
             # Use DataController for name resolution
             name = "Unknown"
             data = self._get_data()
             if data and cid in data.clients:
-                name = data.clients[cid].get('name', 'Unknown')
+                name = data.clients[cid].get('name') or "Unknown"
             
             formatted = f"**{name}**: {msg}"
             self._dispatch_discord(self._send_msg(formatted))
