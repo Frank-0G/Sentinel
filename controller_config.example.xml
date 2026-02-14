@@ -37,6 +37,14 @@
   <irc_channel>#openttd</irc_channel>
   <irc_nickname>TTD_Bot</irc_nickname>
 
+  <!-- SECTION: DISCORD BOT SETTINGS -->
+  <!-- Set to true to enable the Discord Bridge. Requires 'discord.py' (pip install discord.py). -->
+  <discord_enabled>false</discord_enabled>
+  <!-- Your Discord Bot Token. -->
+  <discord_token>YOUR_TOKEN_HERE</discord_token>
+  <!-- The Channel ID where the bot will operate. Enable Developer Mode in Discord to right-click -> Copy ID. -->
+  <discord_channel_id>123456789012345678</discord_channel_id>
+
   <!-- SECTION: COMMAND SETTINGS -->
   <!-- The character used to trigger commands in game (e.g., !help). -->
   <trigger_prefix>!</trigger_prefix>
