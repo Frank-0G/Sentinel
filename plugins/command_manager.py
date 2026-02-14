@@ -320,10 +320,10 @@ class CommandManager(IPlugin):
             context['effective_user'] = community_user if community_user else admin_user
             context['nick'] = admin_name 
 
-            conf = self.triggers.get(cmd)
             if conf:
                 if source == "irc" and not conf.get("irc", True): return False, None
                 if source == "game" and not conf.get("in_game", True): return False, None
+                if source == "discord" and not conf.get("discord", True): return False, None
 
             if cmd in self.local_handlers:
                 reply = []
@@ -721,6 +721,7 @@ class CommandManager(IPlugin):
             if conf:
                 if source == "irc" and not conf.get("irc", True): is_allowed = False
                 if source == "game" and not conf.get("in_game", True): is_allowed = False
+                if source == "discord" and not conf.get("discord", True): is_allowed = False
             if is_allowed:
                 if is_admin_cmd:
                     if not is_admin_auth: is_allowed = False

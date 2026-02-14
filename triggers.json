@@ -9,7 +9,8 @@
             "g",
             "cv"
         ],
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "progress",
@@ -20,7 +21,8 @@
         "aliases": [
             "prog"
         ],
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "townstats",
@@ -32,7 +34,8 @@
             "ts",
             "town"
         ],
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "claimed",
@@ -43,7 +46,8 @@
         "aliases": [
             "claims"
         ],
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "goalreached",
@@ -51,7 +55,8 @@
         "irc": true,
         "in_game": true,
         "description": "Forces the current game to end and declares the leader as winner.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "awarning",
@@ -59,7 +64,8 @@
         "irc": true,
         "in_game": true,
         "description": "Issues a warning message to a specific company.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "help",
@@ -70,7 +76,8 @@
         "aliases": [
             "commands"
         ],
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "rules",
@@ -78,7 +85,8 @@
         "irc": true,
         "in_game": true,
         "description": "Shows server rules.",
-        "response": "Rules: 1. Be nice. 2. No blocking. 3. Have fun!"
+        "response": "Rules: 1. Be nice. 2. No blocking. 3. Have fun!",
+        "discord": true
     },
     {
         "name": "status",
@@ -86,7 +94,8 @@
         "irc": true,
         "in_game": true,
         "description": "Shows server status (players, companies, year).",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "server",
@@ -94,7 +103,8 @@
         "irc": true,
         "in_game": true,
         "description": "Shows server name.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "players",
@@ -102,7 +112,8 @@
         "irc": true,
         "in_game": true,
         "description": "Lists connected players.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "companies",
@@ -110,7 +121,8 @@
         "irc": true,
         "in_game": true,
         "description": "Lists active companies.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "vote",
@@ -121,7 +133,8 @@
         "aliases": [
             "yes"
         ],
-        "response": null
+        "response": null,
+        "discord": false
     },
     {
         "name": "votekick",
@@ -129,7 +142,8 @@
         "irc": false,
         "in_game": true,
         "description": "Start a vote to kick a player.",
-        "response": null
+        "response": null,
+        "discord": false
     },
     {
         "name": "voteban",
@@ -137,7 +151,8 @@
         "irc": false,
         "in_game": true,
         "description": "Start a vote to ban a player.",
-        "response": null
+        "response": null,
+        "discord": false
     },
     {
         "name": "voterestart",
@@ -145,7 +160,8 @@
         "irc": false,
         "in_game": true,
         "description": "Start a vote to restart the map.",
-        "response": null
+        "response": null,
+        "discord": false
     },
     {
         "name": "votereset",
@@ -153,7 +169,8 @@
         "irc": false,
         "in_game": true,
         "description": "Start a vote to reset a company.",
-        "response": null
+        "response": null,
+        "discord": false
     },
     {
         "name": "resetme",
@@ -161,7 +178,8 @@
         "irc": false,
         "in_game": true,
         "description": "Flag your own company for reset.",
-        "response": null
+        "response": null,
+        "discord": false
     },
     {
         "name": "limits",
@@ -169,7 +187,8 @@
         "irc": true,
         "in_game": true,
         "description": "Show server limits.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "seed",
@@ -177,7 +196,8 @@
         "irc": true,
         "in_game": true,
         "description": "Show map seed.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "screenshot",
@@ -185,7 +205,8 @@
         "irc": false,
         "in_game": true,
         "description": "Take a screenshot of a location.",
-        "response": null
+        "response": null,
+        "discord": false
     },
     {
         "name": "alogin",
@@ -193,7 +214,8 @@
         "irc": false,
         "in_game": true,
         "description": "Login as admin.",
-        "response": null
+        "response": null,
+        "discord": false
     },
     {
         "name": "say",
@@ -201,7 +223,8 @@
         "irc": true,
         "in_game": true,
         "description": "Speak as server.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "rcon",
@@ -209,7 +232,8 @@
         "irc": true,
         "in_game": true,
         "description": "Execute console command.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "kick",
@@ -217,7 +241,8 @@
         "irc": true,
         "in_game": true,
         "description": "Kick a player.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "ban",
@@ -225,7 +250,8 @@
         "irc": true,
         "in_game": true,
         "description": "Ban a player.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "move",
@@ -233,7 +259,8 @@
         "irc": true,
         "in_game": true,
         "description": "Move a player to a company.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "reset",
@@ -241,7 +268,8 @@
         "irc": true,
         "in_game": true,
         "description": "Reset a company immediately.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "empty",
@@ -249,7 +277,8 @@
         "irc": true,
         "in_game": true,
         "description": "Empty a company (move players to spec).",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "lockcompany",
@@ -257,7 +286,8 @@
         "irc": true,
         "in_game": true,
         "description": "Lock a company with password.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "unlockcompany",
@@ -265,7 +295,8 @@
         "irc": true,
         "in_game": true,
         "description": "Remove password from a company.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "pause",
@@ -273,7 +304,8 @@
         "irc": true,
         "in_game": true,
         "description": "Pause the game.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "unpause",
@@ -281,7 +313,8 @@
         "irc": true,
         "in_game": true,
         "description": "Unpause the game.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "shutdown",
@@ -289,7 +322,8 @@
         "irc": true,
         "in_game": true,
         "description": "Shutdown the server.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "restart",
@@ -297,7 +331,8 @@
         "irc": true,
         "in_game": true,
         "description": "Restart the server/Sentinel.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "news",
@@ -305,7 +340,8 @@
         "irc": true,
         "in_game": true,
         "description": "Post a news item.",
-        "response": null
+        "response": null,
+        "discord": true
     },
     {
         "name": "cancelvote",
@@ -313,6 +349,7 @@
         "irc": true,
         "in_game": true,
         "description": "Cancel any active vote.",
-        "response": null
+        "response": null,
+        "discord": true
     }
 ]
