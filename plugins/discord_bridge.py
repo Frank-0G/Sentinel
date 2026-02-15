@@ -37,7 +37,10 @@ class DiscordBridge(IPlugin):
         self.enabled = self.config.get("discord_enabled", False)
         self.token = self.config.get("discord_token", "")
         self.prefix_char = self.config.get("trigger_prefix", "!")
-        self.main_channel_id = int(self.config.get("discord_channel_id", 0))
+        
+        # Multi-channel support: {channel_id: {"name": str, "chat_link": bool}}
+        self.channels = {}
+        self.load_channels()
         
         # Local cache
         self.client_cache = {}
@@ -118,39 +121,43 @@ class DiscordBridge(IPlugin):
             return text
 
     def load_config(self):
-        """Loads controller_config.xml and admins.json."""
-        self.config = {}
-        try:
-            if os.path.exists("controller_config.xml"):
-                tree = ET.parse("controller_config.xml")
-                root = tree.getroot()
-                
-                # Load flat config
-                for child in root:
-                    # Simple key-value if no children
-                    if len(list(child)) == 0:
-                        val = child.text
-                        if val and val.lower() == "true": val = True
-                        elif val and val.lower() == "false": val = False
-                        self.config[child.tag] = val
-                    else:
-                        # Complex structures (dict/list)
-                        self.config[child.tag] = self._xml_to_dict(child)
-            else:
-                print(f"[{self.name}] Config file not found: controller_config.xml")
-
-        except Exception as e:
-            print(f"[{self.name}] Error loading XML config: {e}")
-
-        self.admin_discord_ids = {}
-        try:
-            if os.path.exists("admins.json"):
-                with open("admins.json", "r") as f:
-                    data = json.load(f)
-                    self.admin_discord_ids = data.get("discord_ids", {})
-                    self.client.log(f"[{self.name}] Loaded {len(self.admin_discord_ids)} Discord Admin IDs.")
-        except Exception as e:
-            self.client.log(f"[{self.name}] Error loading admins.json: {e}")
+        discord_conf = self.client.config.get("discord", {})
+        if isinstance(discord_conf, dict):
+            self.config = discord_conf
+        else:
+            self.config = {}
+    
+    def load_channels(self):
+        """Load channel configuration from config."""
+        # Try new multi-channel format first
+        channels_config = self.config.get("discord_channels", [])
+        
+        if isinstance(channels_config, list) and channels_config:
+            for ch_conf in channels_config:
+                if isinstance(ch_conf, dict):
+                    ch_id = ch_conf.get("id")
+                    if ch_id:
+                        try:
+                            ch_id = int(ch_id)
+                            self.channels[ch_id] = {
+                                "name": ch_conf.get("name", f"Channel {ch_id}"),
+                                "chat_link": ch_conf.get("chat_link", False)
+                            }
+                        except (ValueError, TypeError):
+                            pass
+        
+        # Fallback: support old single-channel config for backward compatibility
+        if not self.channels:
+            old_ch_id = self.config.get("discord_channel_id")
+            if old_ch_id:
+                try:
+                    old_ch_id = int(old_ch_id)
+                    self.channels[old_ch_id] = {
+                        "name": "Main Channel",
+                        "chat_link": True  # Old behavior: always auto-relay
+                    }
+                except (ValueError, TypeError):
+                    pass
 
     async def _cmd_debug_company(self, message):
         try:
@@ -210,16 +217,18 @@ class DiscordBridge(IPlugin):
                 await self.update_status()
                 # Run the admin scan
                 await self._scan_admins_on_ready()
-                # Send startup message to channel
-                try:
-                    channel = self.bot.get_channel(self.main_channel_id)
-                    if not channel:
-                        channel = await self.bot.fetch_channel(self.main_channel_id)
-                    if channel:
-                        startup_msg = self.formats.get("gamerestarted", "🔄 **The game has been (re)started**")
-                        await channel.send(startup_msg)
-                except Exception as e:
-                    print(f"[{self.name}] Error sending startup message: {e}")
+                # Send startup message to all chat-link enabled channels
+                startup_msg = self.formats.get("gamerestarted", "🔄 **The game has been (re)started**")
+                for ch_id, config in self.channels.items():
+                    if config.get("chat_link", False):
+                        try:
+                            channel = self.bot.get_channel(ch_id)
+                            if not channel:
+                                channel = await self.bot.fetch_channel(ch_id)
+                            if channel:
+                                await channel.send(startup_msg)
+                        except Exception as e:
+                            print(f"[{self.name}] Error sending startup message to {ch_id}: {e}")
 
             @self.bot.event
             async def on_command_error(ctx, error):
@@ -236,9 +245,13 @@ class DiscordBridge(IPlugin):
                 if message.author.bot: return
                 
                 is_dm = isinstance(message.channel, discord.DMChannel)
-                is_main = (message.channel.id == self.main_channel_id)
+                
+                # Check if this channel is known/configured
+                ch_id = message.channel.id
+                ch_config = self.channels.get(ch_id)
+                is_known_channel = (ch_config is not None)
 
-                if not (is_dm or is_main): return
+                if not (is_dm or is_known_channel): return
                 
                 # Get server ID for server-specific commands
                 server_id = str(self.client.config.get("server_id", "99"))
@@ -258,15 +271,17 @@ class DiscordBridge(IPlugin):
                     cmd_payload = message.content[len(server_id):].strip()
                     prefix_used = server_id
                 
-                # 1. Relay Chat to Game (ONLY from Main Channel, ONLY if not a command)
-                if is_main and not (is_global_cmd or is_server_cmd):
-                    author_name = message.author.display_name
-                    # Sanitize
-                    safe_content = message.content.replace('"', "'")
-                    # Use Action=2 (NETWORK_ACTION_SERVER_MESSAGE) instead of 1 (INVALID)
-                    # Or use 0 (NETWORK_ACTION_CHAT) if 2 is restricted. 
-                    # Trying 2 as per openttd_types.py for "Server Message".
-                    self.client.send_chat(2, 0, 0, f"[{author_name}] {safe_content}")
+                # 1. Relay Chat to Game (ONLY if chat link enabled for this channel)
+                if is_known_channel and not (is_global_cmd or is_server_cmd):
+                    # Check if this channel has chat link enabled
+                    if ch_config and ch_config.get("chat_link", False):
+                        author_name = message.author.display_name
+                        # Sanitize
+                        safe_content = message.content.replace('"', "'")
+                        # Use Action=2 (NETWORK_ACTION_SERVER_MESSAGE) instead of 1 (INVALID)
+                        # Or use 0 (NETWORK_ACTION_CHAT) if 2 is restricted. 
+                        # Trying 2 as per openttd_types.py for "Server Message".
+                        self.client.send_chat(2, 0, 0, f"[{author_name}] {safe_content}")
                 
                 # 2. Process Commands (this might raise CommandNotFound, which we now squash)
                 await self.bot.process_commands(message)
@@ -288,16 +303,22 @@ class DiscordBridge(IPlugin):
             # --- DEBUG COMMAND ---
             @self.bot.command(name="discord")
             async def cmd_debug(ctx):
-                channel = self.bot.get_channel(self.main_channel_id)
-                status = "VISIBLE" if channel else "NOT FOUND in Cache"
-                if not channel:
-                    try:
-                        channel = await self.bot.fetch_channel(self.main_channel_id)
-                        status = "FETCHED via API (Cache miss)"
-                    except Exception as e:
-                        status = f"ERROR: {e}"
+                ch_info = []
+                for ch_id, config in self.channels.items():
+                    channel = self.bot.get_channel(ch_id)
+                    status = "✅ Visible" if channel else "❌ Not Found"
+                    if not channel:
+                        try:
+                            channel = await self.bot.fetch_channel(ch_id)
+                            status = "⚠️ Fetched (cache miss)"
+                        except Exception as e:
+                            status = f"❌ ERROR: {e}"
+                    
+                    chat_link = "🔗 Chat Link" if config.get("chat_link", False) else "💬 Command Only"
+                    ch_info.append(f"Channel {ch_id}: {status} | {chat_link}")
                 
-                await ctx.send(f"Sentinel Discord Bridge v1.2-DEBUG is Online.\nConfigured Channel ID: {self.main_channel_id}\nChannel Status: {status}")
+                msg = f"**Sentinel Discord Bridge v1.3-MULTI**\n{len(self.channels)} configured channels:\n" + "\n".join(ch_info)
+                await ctx.send(msg)
 
             @self.bot.event
             async def on_member_join(member):
@@ -473,22 +494,32 @@ class DiscordBridge(IPlugin):
         coro.close()
 
     async def _send_msg(self, msg):
-        try:
-            channel = self.bot.get_channel(self.main_channel_id)
-            if not channel:
-                channel = await self.bot.fetch_channel(self.main_channel_id)
-            if channel: await channel.send(msg)
-        except Exception as e:
-            print(f"[{self.name}] Send Msg Error: {e}")
+        """Send message to all configured channels with chat_link enabled."""
+        for ch_id, config in self.channels.items():
+            # Only send to channels with chat_link enabled
+            if config.get("chat_link", False):
+                try:
+                    channel = self.bot.get_channel(ch_id)
+                    if not channel:
+                        channel = await self.bot.fetch_channel(ch_id)
+                    if channel:
+                        await channel.send(msg)
+                except Exception as e:
+                    print(f"[{self.name}] Send Msg Error to {ch_id}: {e}")
 
     async def _send_embed(self, embed):
-        try:
-            channel = self.bot.get_channel(self.main_channel_id)
-            if not channel:
-                channel = await self.bot.fetch_channel(self.main_channel_id)
-            if channel: await channel.send(embed=embed)
-        except Exception as e:
-            print(f"[{self.name}] Send Embed Error: {e}")
+        """Send embed to all configured channels with chat_link enabled."""
+        for ch_id, config in self.channels.items():
+            # Only send to channels with chat_link enabled
+            if config.get("chat_link", False):
+                try:
+                    channel = self.bot.get_channel(ch_id)
+                    if not channel:
+                        channel = await self.bot.fetch_channel(ch_id)
+                    if channel:
+                        await channel.send(embed=embed)
+                except Exception as e:
+                    print(f"[{self.name}] Send Embed Error to {ch_id}: {e}")
 
     # --- EVENTS (Called by Sentinel Main Thread) ---
     def on_tick(self): pass
