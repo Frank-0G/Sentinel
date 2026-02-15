@@ -240,8 +240,26 @@ class DiscordBridge(IPlugin):
 
                 if not (is_dm or is_main): return
                 
-                # 1. Relay Chat to Game (ONLY from Main Channel)
-                if is_main and not message.content.startswith(self.prefix_char):
+                # Get server ID for server-specific commands
+                server_id = str(self.client.config.get("server_id", "99"))
+                
+                # Check for command prefixes
+                # Support both global (!) and server-specific (e.g., 99) prefixes
+                is_global_cmd = message.content.startswith(self.prefix_char)
+                is_server_cmd = message.content.startswith(server_id) if server_id else False
+                
+                # Extract command payload and track which prefix was used
+                cmd_payload = None
+                prefix_used = None
+                if is_global_cmd:
+                    cmd_payload = message.content[len(self.prefix_char):].strip()
+                    prefix_used = self.prefix_char
+                elif is_server_cmd:
+                    cmd_payload = message.content[len(server_id):].strip()
+                    prefix_used = server_id
+                
+                # 1. Relay Chat to Game (ONLY from Main Channel, ONLY if not a command)
+                if is_main and not (is_global_cmd or is_server_cmd):
                     author_name = message.author.display_name
                     # Sanitize
                     safe_content = message.content.replace('"', "'")
@@ -253,18 +271,17 @@ class DiscordBridge(IPlugin):
                 # 2. Process Commands (this might raise CommandNotFound, which we now squash)
                 await self.bot.process_commands(message)
                 
-                # 3. Handle Custom Commands (!command)
-                if message.content.startswith(self.prefix_char):
+                # 3. Handle Custom Commands (!command or <server_id>command)
+                if cmd_payload:
                     # We can't access CommandManager directly from this thread safely? 
                     # Yes we can, Sentinel is not strictly thread-safe but reading is usually fine.
                     # Ideally we should queue this request to main thread, but CommandManager seems robust enough.
-                    cmd_payload = message.content[len(self.prefix_char):].strip()
                     mgr = None
                     if hasattr(self.client, 'get_service'):
                         mgr = self.client.get_service("CommandManager")
                     
-                    if mgr and cmd_payload:
-                        success, reply = mgr.handle_command(cmd_payload, source="discord", is_admin=False, admin_name=message.author.name, context={'discord_id': str(message.author.id)})
+                    if mgr:
+                        success, reply = mgr.handle_command(cmd_payload, source="discord", is_admin=False, admin_name=message.author.name, context={'discord_id': str(message.author.id), 'prefix_used': prefix_used})
                         if reply:
                             await message.channel.send(reply)
             

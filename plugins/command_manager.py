@@ -193,7 +193,8 @@ class CommandManager(IPlugin):
             ]
             if cmd in public_cmds: return False
             
-            if cmd == "say": return False if source == "irc" else True
+            # say is public from IRC and Discord, but admin from in-game
+            if cmd == "say": return True if source == "game" else False
             
             conf = self.triggers.get(cmd)
             if conf: return conf.get("admin", False)
@@ -717,7 +718,17 @@ class CommandManager(IPlugin):
             reply.append("GoalSystem plugin not loaded.")
 
     def cmd_help(self, cmd, args, reply, source, admin_name, context):
-        prefix = self.client.config.get("trigger_prefix", "!")
+        # Use the prefix that was actually used to invoke the command
+        # If no prefix_used in context, default to server_id for Discord, otherwise use trigger_prefix
+        if context and 'prefix_used' in context:
+            prefix = context['prefix_used']
+        elif source == "discord":
+            # For Discord, prefer server ID as default
+            server_id = str(self.client.config.get("server_id", "99"))
+            prefix = server_id if server_id else self.client.config.get("trigger_prefix", "!")
+        else:
+            prefix = self.client.config.get("trigger_prefix", "!")
+            
         if args:
             topic = args[0].lower()
             if topic in self.help_text: reply.extend(self.help_text[topic]); return
@@ -728,7 +739,7 @@ class CommandManager(IPlugin):
         for c in all_cmds:
             if c in ["alogin", "alogout"]: continue
             is_allowed = True; is_admin_cmd = False
-            if c == "say" and source != "irc": is_admin_cmd = True
+            if c == "say" and source == "game": is_admin_cmd = True
             elif c in self.admin_native_commands: is_admin_cmd = True
             else:
                 conf = self.triggers.get(c)
