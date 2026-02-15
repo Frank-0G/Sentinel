@@ -409,10 +409,201 @@ class Community(IPlugin):
         self.is_name_registered_async(target, name_check_cb)
 
     def cmd_addvip(self, args, source, admin_name, reply_func):
-        reply_func("AddVIP not fully ported to async yet.") # Simplified for brevity unless requested
+        if len(args) < 2:
+            reply_func("USAGE: addvip <UserName> <Duration in Days>")
+            reply_func("<UserName>: the UserName for the person you want to add as BTPro VIP Member.")
+            reply_func("<Duration>: The timespan this BTPro Vip Membership should last in DAYS.")
+            return
+        
+        username = args[0]
+        try:
+            days = int(args[1])
+        except ValueError:
+            reply_func(f"Your input: \"{args[1]}\" doesn't seem to be a number. Please correct and try again!")
+            return
+        
+        # First check if the username is registered
+        def on_name_check(is_registered):
+            if not is_registered:
+                reply_func(f"{username} is NOT a registered BTPro Member! User needs to register first!")
+                return
+            
+            # If registered, check if already a VIP
+            if self.is_vip(username):
+                vip = self.get_vip_details(username)
+                userid = vip['userid']
+                vip_username = vip['username']
+                timestamp_activated = int(vip['timestamp_activated'])
+                timestamp_expire = int(vip['timestamp_expire'])
+                lifetime = int(vip['lifetime'])
+                
+                timestamp_activated_converted = self.unix_to_dt(timestamp_activated)
+                
+                if lifetime != 1:
+                    # Calculate countdown
+                    days_left = datetime.fromtimestamp(timestamp_expire)
+                    start_date = datetime.now()
+                    t = days_left - start_date
+                    countdown = f"{t.days} Days, {t.seconds//3600} Hours and {(t.seconds//60)%60} Minutes."
+                    
+                    reply_func(f"{vip_username} (UserID: {userid}) is a already a BTPro VIP Member!")
+                    reply_func(f"{vip_username} is a VIP Member Since: {timestamp_activated_converted}")
+                    reply_func(f"VIP Membership will expire in: {countdown}")
+                    reply_func("NOTE: If you want to extend the membership for this VIP Member, use the !extendvip trigger instead.")
+                else:
+                    reply_func(f"{vip_username} (UserID: {userid}) is already a ***LIFETIME*** BTPro VIP Member!")
+                    reply_func(f"{vip_username} is a VIP Member Since: {timestamp_activated_converted}")
+                return
+            
+            # User is not a VIP, proceed with adding
+            timestamp_activated = int(time.time())
+            timestamp_expire = timestamp_activated + (days * 24 * 3600)
+            lifetime = 0
+            sponsored = 0
+            
+            # Get exact DB username (case-sensitive)
+            def on_db_username(db_username):
+                if not db_username:
+                    reply_func(f"Could not retrieve username from database.")
+                    return
+                
+                # Insert into vip_memberships
+                query = """INSERT INTO openttd_vip_memberships 
+                           (userid, username, timestamp_activated, timestamp_expire, datetime_activated, datetime_expire, lifetime, sponsored, last_sponsored) 
+                           VALUES ((SELECT id FROM openttd_users WHERE username=%s), %s, %s, %s, %s, %s, %s, %s, %s)"""
+                params = (db_username, db_username, timestamp_activated, timestamp_expire, 
+                         self.unix_to_dt(timestamp_activated), self.unix_to_dt(timestamp_expire), 
+                         lifetime, sponsored, timestamp_activated)
+                
+                def on_insert_complete(res):
+                    reply_func(f"- {db_username} was added to the \"BTPro VIP Members\" table!")
+                    
+                    # Check if user is already member of Joomla Group "BTPro VIP Members"
+                    def on_group_check(res):
+                        if res and len(res) > 0:
+                            reply_func(f"- {db_username} was NOT added to the Joomla Group \"BTPro VIP Members\" because {db_username} is already a member of this group!")
+                        else:
+                            # Add to group
+                            insert_group = "INSERT INTO openttd_user_usergroup_map (user_id, group_id) VALUES ((SELECT id FROM openttd_users WHERE username=%s), '14')"
+                            def on_group_insert(res):
+                                reply_func(f"- {db_username} was added to the Joomla Group \"BTPro VIP Members\"!")
+                            self.execute_db(insert_group, (db_username,), on_group_insert)
+                    
+                    self.execute_db("SELECT user_id FROM openttd_user_usergroup_map WHERE user_id = (SELECT id FROM openttd_users WHERE username=%s) AND group_id='14'", 
+                                   (db_username,), on_group_check, fetch=True)
+                    
+                    # Update forum rank if standard user (rank = 0)
+                    def on_rank_check(res):
+                        if res and len(res) > 0:
+                            rank = res[0]['rank']
+                            if rank == 0:
+                                update_rank = "UPDATE openttd_kunena_users SET rank='15' WHERE userid = (SELECT id FROM openttd_users WHERE username=%s)"
+                                def on_rank_update(res):
+                                    reply_func(f"- Forum Rank ID for {db_username} was changed from {rank} to \"15\" (BTPro VIP Member)!")
+                                self.execute_db(update_rank, (db_username,), on_rank_update)
+                            else:
+                                reply_func(f"- Forum Rank ID for {db_username} was NOT changed, because user already has a special rank (Administrator, Moderator or Donator?)!")
+                    
+                    self.execute_db("SELECT rank FROM openttd_kunena_users WHERE userid = (SELECT id FROM openttd_users WHERE username=%s)", 
+                                   (db_username,), on_rank_check, fetch=True)
+                    
+                    # Show completion message
+                    days_left = datetime.fromtimestamp(timestamp_expire)
+                    start_date = datetime.now()
+                    t = days_left - start_date
+                    countdown = f"{t.days} Days, {t.seconds//3600} Hours and {(t.seconds//60)%60} Minutes."
+                    
+                    reply_func(" ")
+                    reply_func(f"Done! {db_username} is now a BTPro VIP Member! \\o/")
+                    reply_func(f"VIP Membership will expire on: {self.unix_to_dt(timestamp_expire)}")
+                    reply_func(f"Which is in: {countdown}")
+                    reply_func("Note: Please allow all servers 5 minutes to catch up with their VIP databases!")
+                    reply_func("Do NOT execute this command again for this user in the next 5 minutes on ANY server!")
+                    
+                    # Refresh VIP cache
+                    self.refresh_vip_cache()
+                
+                self.execute_db(query, params, on_insert_complete)
+            
+            self.get_db_username(username, on_db_username)
+        
+        self.is_name_registered_async(username, on_name_check)
 
     def cmd_extendvip(self, args, source, admin_name, reply_func):
-         reply_func("ExtendVIP not fully ported to async yet.") # Simplified 
+        if len(args) < 2:
+            reply_func("USAGE: extendvip <UserName> <Extension in Days>")
+            reply_func("<UserName>: the UserName for the person you want to extend the BTPro VIP Membership for.")
+            reply_func("<Extension>: The timespan this BTPro Vip Membership should be extended in DAYS.")
+            return
+        
+        username = args[0]
+        try:
+            days = int(args[1])
+        except ValueError:
+            reply_func(f"Your input: \"{args[1]}\" doesn't seem to be a number. Please correct and try again!")
+            return
+        
+        # First check if the username is registered
+        def on_name_check(is_registered):
+            if not is_registered:
+                reply_func(f"{username} is NOT a registered BTPro Member! User needs to register first!")
+                return
+            
+            # If registered, check if IS a VIP (required for extending)
+            if not self.is_vip(username):
+                reply_func(f"{username} doesn't seem to be a BTPro VIP Member!")
+                reply_func(f"If you would like to add {username} as a BTPro VIP Member, please use the !addvip trigger!")
+                return
+            
+            # User is a VIP, get details
+            vip = self.get_vip_details(username)
+            userid = vip['userid']
+            vip_username = vip['username']
+            timestamp_activated = int(vip['timestamp_activated'])
+            timestamp_expire = int(vip['timestamp_expire'])
+            lifetime = int(vip['lifetime'])
+            
+            # Check if lifetime VIP
+            if lifetime == 1:
+                timestamp_activated_converted = self.unix_to_dt(timestamp_activated)
+                reply_func(f"{vip_username} (UserID: {userid}) is already a ***LIFETIME*** BTPro VIP Member!")
+                reply_func(f"{vip_username} is a VIP Member Since: {timestamp_activated_converted}")
+                reply_func(f"- No action on User: {vip_username} taken!")
+                return
+            
+            # Calculate new expiration
+            new_timestamp_expire = timestamp_expire + (days * 24 * 3600)
+            
+            timestamp_activated_converted = self.unix_to_dt(timestamp_activated)
+            timestamp_expire_converted = self.unix_to_dt(timestamp_expire)
+            new_timestamp_expire_converted = self.unix_to_dt(new_timestamp_expire)
+            
+            # Calculate countdown
+            days_left = datetime.fromtimestamp(new_timestamp_expire)
+            start_date = datetime.now()
+            t = days_left - start_date
+            countdown = f"{t.days} Days, {t.seconds//3600} Hours and {(t.seconds//60)%60} Minutes."
+            
+            # Show VIP info
+            reply_func(f"{vip_username} (UserID: {userid}) is a BTPro VIP Member!")
+            reply_func(" ")
+            
+            # Update database
+            update_query = "UPDATE openttd_vip_memberships SET timestamp_expire = %s, datetime_expire = %s WHERE username = %s"
+            params = (new_timestamp_expire, new_timestamp_expire_converted, vip_username)
+            
+            def on_update_complete(res):
+                reply_func(f"- Extended the VIP Membership for {vip_username} with {days} days!")
+                reply_func(f"- Old Expiry time for {vip_username}: {timestamp_expire_converted}")
+                reply_func(f"- New Expiry time for {vip_username}: {new_timestamp_expire_converted}")
+                reply_func(f"- New Expiry in: {countdown}")
+                
+                # Refresh VIP cache
+                self.refresh_vip_cache()
+            
+            self.execute_db(update_query, params, on_update_complete)
+        
+        self.is_name_registered_async(username, on_name_check)
 
     def cmd_whois(self, args, cid, reply_func):
         if not args: reply_func("Usage: !whois <#ID/Name>"); return
