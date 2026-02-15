@@ -228,18 +228,17 @@ class DiscordBridge(IPlugin):
                 await self.update_status()
                 # Run the admin scan
                 await self._scan_admins_on_ready()
-                # Send startup message to all chat-link enabled channels
+                # Send startup message to all channels (for admin monitoring)
                 startup_msg = self.formats.get("gamerestarted", "🔄 **The game has been (re)started**")
-                for ch_id, config in self.channels.items():
-                    if config.get("chat_link", False):
-                        try:
-                            channel = self.bot.get_channel(ch_id)
-                            if not channel:
-                                channel = await self.bot.fetch_channel(ch_id)
-                            if channel:
-                                await channel.send(startup_msg)
-                        except Exception as e:
-                            print(f"[{self.name}] Error sending startup message to {ch_id}: {e}")
+                for ch_id in self.channels.keys():
+                    try:
+                        channel = self.bot.get_channel(ch_id)
+                        if not channel:
+                            channel = await self.bot.fetch_channel(ch_id)
+                        if channel:
+                            await channel.send(startup_msg)
+                    except Exception as e:
+                        print(f"[{self.name}] Error sending startup message to {ch_id}: {e}")
 
             @self.bot.event
             async def on_command_error(ctx, error):
@@ -508,32 +507,28 @@ class DiscordBridge(IPlugin):
         coro.close()
 
     async def _send_msg(self, msg):
-        """Send message to all configured channels with chat_link enabled."""
-        for ch_id, config in self.channels.items():
-            # Only send to channels with chat_link enabled
-            if config.get("chat_link", False):
-                try:
-                    channel = self.bot.get_channel(ch_id)
-                    if not channel:
-                        channel = await self.bot.fetch_channel(ch_id)
-                    if channel:
-                        await channel.send(msg)
-                except Exception as e:
-                    print(f"[{self.name}] Send Msg Error to {ch_id}: {e}")
+        """Send message to all configured channels (for admin monitoring)."""
+        for ch_id in self.channels.keys():
+            try:
+                channel = self.bot.get_channel(ch_id)
+                if not channel:
+                    channel = await self.bot.fetch_channel(ch_id)
+                if channel:
+                    await channel.send(msg)
+            except Exception as e:
+                print(f"[{self.name}] Send Msg Error to {ch_id}: {e}")
 
     async def _send_embed(self, embed):
-        """Send embed to all configured channels with chat_link enabled."""
-        for ch_id, config in self.channels.items():
-            # Only send to channels with chat_link enabled
-            if config.get("chat_link", False):
-                try:
-                    channel = self.bot.get_channel(ch_id)
-                    if not channel:
-                        channel = await self.bot.fetch_channel(ch_id)
-                    if channel:
-                        await channel.send(embed=embed)
-                except Exception as e:
-                    print(f"[{self.name}] Send Embed Error to {ch_id}: {e}")
+        """Send embed to all configured channels (for admin monitoring)."""
+        for ch_id in self.channels.keys():
+            try:
+                channel = self.bot.get_channel(ch_id)
+                if not channel:
+                    channel = await self.bot.fetch_channel(ch_id)
+                if channel:
+                    await channel.send(embed=embed)
+            except Exception as e:
+                print(f"[{self.name}] Send Embed Error to {ch_id}: {e}")
 
     # --- EVENTS (Called by Sentinel Main Thread) ---
     def on_tick(self): pass

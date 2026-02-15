@@ -131,7 +131,8 @@
         "in_game": true,
         "description": "Cast a YES vote.",
         "aliases": [
-            "yes"
+            "yes",
+            "no"
         ],
         "response": null,
         "discord": false
