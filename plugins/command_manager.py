@@ -732,9 +732,13 @@ class CommandManager(IPlugin):
             elif c in self.admin_native_commands: is_admin_cmd = True
             else:
                 conf = self.triggers.get(c)
-                if conf and conf.get("admin"): is_admin_cmd = True
+                if conf and isinstance(conf, dict) and conf.get("admin"): is_admin_cmd = True
             conf = self.triggers.get(c)
-            if conf:
+            # If this is an alias, look up the parent command's config
+            if not conf and c in self.alias_map:
+                parent_cmd = self.alias_map[c]
+                conf = self.triggers.get(parent_cmd)
+            if conf and isinstance(conf, dict):
                 if source == "irc" and not conf.get("irc", True): is_allowed = False
                 if source == "game" and not conf.get("in_game", True): is_allowed = False
                 if source == "discord" and not conf.get("discord", True): is_allowed = False
