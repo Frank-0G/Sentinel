@@ -210,6 +210,16 @@ class DiscordBridge(IPlugin):
                 await self.update_status()
                 # Run the admin scan
                 await self._scan_admins_on_ready()
+                # Send startup message to channel
+                try:
+                    channel = self.bot.get_channel(self.main_channel_id)
+                    if not channel:
+                        channel = await self.bot.fetch_channel(self.main_channel_id)
+                    if channel:
+                        startup_msg = self.formats.get("gamerestarted", "🔄 **The game has been (re)started**")
+                        await channel.send(startup_msg)
+                except Exception as e:
+                    print(f"[{self.name}] Error sending startup message: {e}")
 
             @self.bot.event
             async def on_command_error(ctx, error):
