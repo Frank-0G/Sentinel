@@ -88,6 +88,7 @@ class IRCBridge(IPlugin):
             "startedcompany": "* \x0311\x02#\x02\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has started company $companyid ($companycolor)",
             "leftgame": "* \x0311<---\x03 \x02$playername\x02 (#$playerid/$playerip/$companyid ($companycolor)/$playercountryshort) has left the game ($message)",
             "namechange": "* \x0311<x>\x03 \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has changed his/her name to $tplayername",
+            "companyrename": "* \x0311<x>\x03 Company $old_name (#$companyid) is now known as $companyname",
             "gamerestarted": "----- The game has been (re)started -----",
             "companyclosed": "* \x034\x02X\x02\x03 $companyname ($companyid/$companycolor) has been closed ($message)",
             "companyunprotected": "* \x0311--\x03 Password of $companyname ($companyid/$companycolor) has been removed ($message)",
@@ -341,8 +342,17 @@ class IRCBridge(IPlugin):
         self.topic_update_pending = True
 
     def on_company_info(self, cid, name, man, col, prot, pw, founded, is_ai):
+        old_name = None
+        if cid in self.company_cache:
+             old_name = self.company_cache[cid].get('name')
+
         was_pw = self.company_cache[cid].get('passworded', False) if cid in self.company_cache else False
         self.company_cache[cid] = {'name': name, 'color': col, 'passworded': pw}
+        
+        if old_name and old_name != name:
+             msg = self.format_msg("companyrename", old_name=old_name, companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid))
+             self.send_to_channel("/me " + msg, "gameactions")
+
         if was_pw and not pw:
             msg = self.format_msg("companyunprotected", companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
             self.send_to_channel("/me " + msg, "announcements")

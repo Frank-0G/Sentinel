@@ -54,6 +54,7 @@ class DiscordBridge(IPlugin):
             "startedcompany": "🆕 **$playername** (#$playerid/$playercountryshort) has started company #$companyid ($companycolor)",
             "leftgame": "⬅️ **$playername** (#$playerid/$playercountryshort/$companycolor) left the game ($message)",
             "namechange": "📝 **$playername** is now known as **$tplayername**",
+            "companyrename": "📝 **$old_name** (#$companyid) is now known as **$companyname**",
             "gamerestarted": "🔄 **The game has been (re)started**",
             "companyclosed": "🏚️ **$companyname** (#$companyid/$companycolor) has been closed ($message)",
             "companyunprotected": "🔓 Password of **$companyname** (#$companyid/$companycolor) has been removed ($message)",
@@ -465,8 +466,17 @@ class DiscordBridge(IPlugin):
         self._dispatch_discord(self.update_status())
 
     def on_company_info(self, cid, name, man, col, prot, pw, founded, is_ai):
+        old_name = None
+        if cid in self.company_cache:
+            old_name = self.company_cache[cid].get('name')
+
         was_pw = self.company_cache[cid].get('passworded', False) if cid in self.company_cache else False
         self.company_cache[cid] = {'name': name, 'color': col, 'passworded': pw}
+        
+        if old_name and old_name != name:
+             msg = self.format_msg("companyrename", old_name=old_name, companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid))
+             self._dispatch_discord(self._send_msg(msg))
+
         if was_pw and not pw:
             msg = self.format_msg("companyunprotected", companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
             self._dispatch_discord(self._send_msg(msg))
