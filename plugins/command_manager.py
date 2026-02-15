@@ -30,7 +30,7 @@ class CommandManager(IPlugin):
         }
         
         self.admin_native_commands = [
-            "shutdown", "kick", "ban", "move", "rcon", "say", "reloadplugins", 
+            "shutdown", "kick", "ban", "move", "rcon", "reloadplugins", 
             "cancelvote", "pause", "unpause", "reset", "empty", "lockcompany", 
             "unlockcompany", "news", "goalreached", "awarning"
         ]

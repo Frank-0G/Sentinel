@@ -121,11 +121,22 @@ class DiscordBridge(IPlugin):
             return text
 
     def load_config(self):
-        discord_conf = self.client.config.get("discord", {})
-        if isinstance(discord_conf, dict):
-            self.config = discord_conf
-        else:
-            self.config = {}
+        """Load Discord configuration from controller_config.xml"""
+        try:
+            base_path = os.getcwd()
+            config_path = os.path.join(base_path, "controller_config.xml")
+            if os.path.exists(config_path):
+                tree = ET.parse(config_path)
+                self.config = self._xml_to_dict(tree.getroot())
+            
+            admins_path = os.path.join(base_path, "admins.json")
+            if os.path.exists(admins_path):
+                with open(admins_path, "r") as f: 
+                    admin_data = json.load(f)
+                    self.admin_discord_ids = admin_data.get("discord_ids", {})
+                    self.client.log(f"[{self.name}] Loaded {len(self.admin_discord_ids)} Discord Admin IDs.")
+        except Exception as e:
+            print(f"[{self.name}] Config Load Error: {e}")
     
     def load_channels(self):
         """Load channel configuration from config."""
@@ -355,19 +366,22 @@ class DiscordBridge(IPlugin):
             print(f"[{self.name}] Auth Check Error: {e}")
 
     async def _scan_admins_on_ready(self):
-        """Scans all members in the main channel to see if they are admins."""
+        """Scans all members in configured channels to see if they are admins."""
         try:
-           channel = self.bot.get_channel(self.main_channel_id)
-           if not channel:
-               channel = await self.bot.fetch_channel(self.main_channel_id)
-           
-           if channel:
-               # Iterate over members if available (requires intents)
-               # If members are not cached, we might need to fetch them.
-               # Assuming 'guild' context.
-               if hasattr(channel, 'guild'):
-                   for member in channel.guild.members:
-                       await self._check_admin_auth(member)
+            # Scan members from all configured channels
+            guilds_scanned = set()
+            for ch_id in self.channels.keys():
+                channel = self.bot.get_channel(ch_id)
+                if not channel:
+                    channel = await self.bot.fetch_channel(ch_id)
+                
+                if channel and hasattr(channel, 'guild'):
+                    guild = channel.guild
+                    # Avoid scanning the same guild multiple times if we have multiple channels in it
+                    if guild.id not in guilds_scanned:
+                        guilds_scanned.add(guild.id)
+                        for member in guild.members:
+                            await self._check_admin_auth(member)
         except Exception as e:
             print(f"[{self.name}] Admin Scan Error: {e}")
 
@@ -525,7 +539,8 @@ class DiscordBridge(IPlugin):
     def on_tick(self): pass
 
     def on_connected(self):
-        self._dispatch_discord(self.update_status())
+        if self.enabled and self.running:
+            self._dispatch_discord(self.update_status())
 
     def on_wrapper_log(self, text):
         if "Map generation percentage complete: 90" in text: self.on_new_game()
