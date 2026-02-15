@@ -19,6 +19,7 @@ Sentinel comes with a suite of built-in plugins covering a wide range of functio
 ### Integration & Connectivity
 *   **MySQL Service**: Centralized, threaded MySQL connection pooling for all plugins.
 *   **IRC Bridge**: Two-way chat sync between the game server and IRC channels (with color support).
+*   **Discord Bridge**: Full two-way chat sync, server status presence, command handling, and rich embed notifications for game events.
 *   **GameScript Connector**: seamlessly communicates with the running GameScript for advanced game logic (JSON/SQL).
 *   **Community**: Syncs player statistics, VIP statuses, and server info to a community website/database.
 *   **GeoIP Service**: Resolves player IP addresses to countries for welcome messages.
@@ -70,6 +71,9 @@ The main configuration file. Key sections:
 *   `<admin_password>`: Must match `network.admin_password` in your `openttd.cfg`.
 *   `<mysql_config>`: Central database credentials.
 *   `<irc_enabled>`: Set to `true` to enable the bot.
+*   `<discord_enabled>`: Set to `true` to enable the Discord bot.
+*   `<discord_token>`: Your Discord Bot Token.
+*   `<discord_channel_id>`: The Channel ID where the bot should operate.
 *   `<launch_wait>`: Time to wait for the server to boot before connecting.
 
 ### admins.json

@@ -2,6 +2,7 @@ import threading
 import asyncio
 import time
 import os
+import re
 import json
 import xml.etree.ElementTree as ET
 import inspect
@@ -217,21 +218,32 @@ class DiscordBridge(IPlugin):
 
     async def update_status(self):
         try:
-            # Access DataController safely across threads
-            count_str = "?"
-            # This access is technically racy but reading a dict len is atomic enough in GIL
-            data = self._get_data()
-            if data and hasattr(data, 'clients'):
-                # subtract 1 for server
-                c_count = len(data.clients) - 1
-                co_count = len(data.companies) if hasattr(data, 'companies') else 0
-                count_str = f"{c_count} Pl | {co_count} Co"
+            # Prefer local cache for consistent counts
+            c_count = len(self.client_cache)
+            # Subtract 1 if bot (CID 1) is in cache - usually bot is 1
+            if 1 in self.client_cache: c_count -= 1
+            if c_count < 0: c_count = 0
             
+            # Use local company cache
+            co_count = len(self.company_cache)
+
+            # Fallback to DataController if local cache seems empty (e.g. fresh reload)
+            if co_count == 0:
+                data = self._get_data()
+                if data and hasattr(data, 'companies'):
+                    co_count = len(data.companies)
+
+            count_str = f"{c_count} Pl | {co_count} Co"
             activity = discord.Activity(type=discord.ActivityType.watching, name=f"OpenTTD: {count_str}")
             await self.bot.change_presence(activity=activity)
         except: pass
 
     # --- HELPERS ---
+    def get_cid_by_name(self, name):
+        for cid, data in self.client_cache.items():
+            if data['name'] == name: return cid
+        return None
+
     def get_data(self): return self.client.get_service("DataController")
     def get_manager(self): return self.client.get_service("CommandManager")
     def get_admin_manager(self): return self.client.get_service("AdminManager")
@@ -351,6 +363,37 @@ class DiscordBridge(IPlugin):
 
     def on_wrapper_log(self, text):
         if "Map generation percentage complete: 90" in text: self.on_new_game()
+        
+        # Started Company Logic
+        # Format: *** Frank has started a new company (#1)
+        if "has started a new company" in text:
+            try:
+                # Regex to extract name and company ID
+                match = re.search(r"\*\*\* (.*) has started a new company \(#(\d+)\)", text.strip())
+                if match:
+                    name = match.group(1).strip()
+                    human_id = int(match.group(2))
+                    company_id = human_id - 1
+                    
+                    cid = self.get_cid_by_name(name)
+                    
+                    if cid is not None:
+                         # Queue this event until we get company info (color), or send if we already have it
+                         # We use a negative set to track pending info
+                         if company_id not in self.company_cache:
+                             # Wait for on_company_info
+                             # Store tuple: (cid, company_id) in a temporary waiting list
+                             # But we need to key it by company_id efficiently
+                             if not hasattr(self, 'pending_start_events'): self.pending_start_events = {}
+                             self.pending_start_events[company_id] = cid
+                             
+                             # Also add to pending_started_companies to suppress "Joined" even if we haven't sent "Started" yet
+                             self.pending_started_companies.add(company_id)
+                         else:
+                             self.send_company_started(cid, company_id)
+                             self.pending_started_companies.add(company_id) 
+            except: pass
+
         if "CmdSaveGame: Saved game to" in text:
             try:
                 filename = text.split("Saved game to ", 1)[1].strip()
@@ -401,7 +444,6 @@ class DiscordBridge(IPlugin):
         self._dispatch_discord(self.update_status())
 
     def on_company_created(self, company_id):
-        self.pending_started_companies.add(company_id)
         self._dispatch_discord(self.update_status())
 
     def on_company_remove(self, cid, reason):
@@ -409,6 +451,8 @@ class DiscordBridge(IPlugin):
         self._dispatch_discord(self._send_msg(msg))
         if cid in self.company_cache: del self.company_cache[cid]
         if cid in self.pending_started_companies: self.pending_started_companies.remove(cid)
+        if hasattr(self, 'pending_start_events') and cid in self.pending_start_events:
+             del self.pending_start_events[cid]
         self._dispatch_discord(self.update_status())
 
     def on_new_game(self):
@@ -416,6 +460,7 @@ class DiscordBridge(IPlugin):
         self.company_cache.clear()
         self.placed_signs.clear()
         self.pending_started_companies.clear()
+        if hasattr(self, 'pending_start_events'): self.pending_start_events.clear()
         self._dispatch_discord(self._send_msg(self.format_msg("gamerestarted")))
         self._dispatch_discord(self.update_status())
 
@@ -425,6 +470,12 @@ class DiscordBridge(IPlugin):
         if was_pw and not pw:
             msg = self.format_msg("companyunprotected", companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
             self._dispatch_discord(self._send_msg(msg))
+        
+        # Check if we were waiting to send a "Started Company" message for this ID
+        if hasattr(self, 'pending_start_events') and cid in self.pending_start_events:
+            player_cid = self.pending_start_events.pop(cid)
+            self.send_company_started(player_cid, cid)
+            self._dispatch_discord(self.update_status()) # Update status count too
 
     def on_player_update(self, cid, name, company_id):
         if cid not in self.client_cache:
@@ -445,11 +496,14 @@ class DiscordBridge(IPlugin):
                  msg = self.format_msg("joinedspectators", playername=name, playerid=cid, playercountryshort=iso)
                  self._dispatch_discord(self._send_msg(msg))
             else:
-                 msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor)
-                 self._dispatch_discord(self._send_msg(msg))
+                 # Check if this company was just "started" by this user via wrapper log
                  if company_id in self.pending_started_companies:
-                     self.send_company_started(cid, company_id)
+                     # Suppress "Joined" message because we already sent "Started"
                      self.pending_started_companies.remove(company_id)
+                 else:
+                     msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor)
+                     self._dispatch_discord(self._send_msg(msg))
+
             self.client_cache[cid]['company'] = company_id
         
         self._dispatch_discord(self.update_status())
@@ -466,6 +520,12 @@ class DiscordBridge(IPlugin):
             if action == 2: return 
             if cid == 1: return
             
+            # Filter empty messages or whitespace-only messages
+            if not msg or not msg.strip(): return
+            
+            # Hide commands starting with prefix from Discord chat
+            if msg.startswith(self.prefix_char): return
+
             name = "Unknown"; iso = "??"
             if cid in self.client_cache:
                 name = self.client_cache[cid]['name']
