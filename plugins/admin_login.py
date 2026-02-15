@@ -22,6 +22,13 @@ class AdminLogin(IPlugin):
         """API: Returns the username if the client is logged in as admin."""
         return self.authenticated_sessions.get(client_id)
 
+    def login_discord_user(self, discord_id, username):
+        """API: Logs in a user via Discord ID (bypassing password)."""
+        auth_key = f"discord:{discord_id}"
+        self.authenticated_sessions[auth_key] = username.lower()
+        self.client.log(f"[{self.name}] Discord User {discord_id} authenticated as '{username}'.")
+        return True
+
     def on_event(self, pt, pl):
         # Clean up sessions when a client disconnects
         if pt == ServerPacketType.SERVER_CLIENT_QUIT:
@@ -35,8 +42,8 @@ class AdminLogin(IPlugin):
 
     def process_command(self, cmd, args, source, admin_name, cid):
         """Called by CommandManager to handle !alogin / !alogout"""
-        if source != "game":
-            return "Admin Login is only available in-game."
+        if source not in ["game", "discord"]:
+            return "Admin Login is only available in-game or via Discord DMs."
 
         if cmd == "alogin":
             if len(args) < 2:
@@ -51,10 +58,10 @@ class AdminLogin(IPlugin):
 
             if am.verify_credentials(username, password):
                 self.authenticated_sessions[cid] = username.lower()
-                self.client.log(f"[{self.name}] Client #{cid} logged in as admin '{username}'.")
+                self.client.log(f"[{self.name}] Client {cid} logged in as admin '{username}'.")
                 return f"Authenticated as '{username}'. Welcome back, Administrator."
             else:
-                self.client.log(f"[{self.name}] Failed login attempt from #{cid} for user '{username}'.")
+                self.client.log(f"[{self.name}] Failed login attempt from {cid} for user '{username}'.")
                 return "Invalid username or password."
 
         elif cmd == "alogout":

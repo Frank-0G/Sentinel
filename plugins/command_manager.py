@@ -305,6 +305,11 @@ class CommandManager(IPlugin):
             elif source == "irc":
                 am = self.get_admin_manager()
                 if am: admin_user = am.get_admin_user_from_irc(admin_name); community_user = admin_user
+            elif source == "discord":
+                alogin = self._get_service_safe("AdminLogin")
+                if alogin and context and 'discord_id' in context:
+                    auth_key = f"discord:{context['discord_id']}"
+                    admin_user = alogin.get_authenticated_user(auth_key)
 
             effective_name = admin_user if admin_user else (community_user if community_user else admin_name)
             
@@ -323,7 +328,7 @@ class CommandManager(IPlugin):
             context['nick'] = admin_name 
 
             conf = self.triggers.get(cmd)
-            if conf:
+            if conf and isinstance(conf, dict):
                 if source == "irc" and not conf.get("irc", True): return False, None
                 if source == "game" and not conf.get("in_game", True): return False, None
                 if source == "discord" and not conf.get("discord", True): return False, None
@@ -694,7 +699,10 @@ class CommandManager(IPlugin):
 
     def cmd_auth(self, cmd, args, reply, source, admin_name, context):
         al = self._get_service_safe("AdminLogin")
-        if al: reply.append(al.process_command(cmd, args, source, admin_name, context.get('cid')) or "")
+        if al: 
+            auth_id = context.get('cid')
+            if source == "discord": auth_id = f"discord:{context.get('discord_id')}"
+            reply.append(al.process_command(cmd, args, source, admin_name, auth_id) or "")
 
     def proxy_goal_cmd(self, cmd, args, reply, source, admin_name, context):
         gs = self.client.get_service("GoalSystem")

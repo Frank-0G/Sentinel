@@ -37,14 +37,21 @@ class ServerPacketType(IntEnum):
     SERVER_RCON = 120
     SERVER_CONSOLE = 121
     SERVER_CMD_LOG = 122
-    SERVER_CLIENT_INFO = 123
+    SERVER_CLIENT_INFO_EXT = 123
     SERVER_GAMESCRIPT = 124      # GameScript Event
-    SERVER_CLIENT_UPDATE = 125
-    SERVER_CLIENT_QUIT = 126
+    SERVER_CLIENT_UPDATE_EXT = 125
+    SERVER_CLIENT_QUIT_EXT = 126
     SERVER_CMD_LOGGING = 127     # Main Build Event
-    SERVER_NEWGAME = 128
-    SERVER_RCON_END = 125 # This is a duplicate, keeping original value for now
-    SERVER_PONG = 126 # This is a duplicate, keeping original value for now
+    SERVER_NEWGAME_EXT = 128
+    SERVER_RCON_END = 125 # Duplicate value allowed, but different name required? No, value alias is fine.
+    # SERVER_RCON_END = 125 
+    # SERVER_PONG = 126 
+    # Commenting out explicit duplicates if they share name/value with above. 
+    # But wait, SERVER_RCON_END is 125, same as SERVER_CLIENT_UPDATE_EXT? 
+    # Protocol extension likely repurposes these IDs. 
+    # I will just rename them all to be safe.
+    SERVER_RCON_END_EXT = 125 
+    SERVER_PONG_EXT = 126
 
 class AdminUpdateType(IntEnum):
     # EXTRACTED FROM SOURCE CODE

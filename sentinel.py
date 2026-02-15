@@ -276,10 +276,11 @@ class AdminClient:
                     for p in self.plugins:
                         if hasattr(p, 'on_company_created'): p.on_company_created(cid)
 
-            elif ptype == ServerPacketType.SERVER_COMPANY_INFO or ptype == 115:
+            elif ptype == ServerPacketType.SERVER_COMPANY_INFO or ptype == ServerPacketType.SERVER_COMPANY_UPDATE:
                 if len(payload) >= 2:
                     cid = payload[0]
                     cname, off = self.unpack_string(payload, 1)
+                    print(f"[DEBUG] Company Info/Update. ID: {cid}, Name: '{cname}', PType: {ptype}")
                     man_name, off = self.unpack_string(payload, off)
                     tail = payload[off:]
                     if len(tail) >= 2:
@@ -292,7 +293,8 @@ class AdminClient:
                             except: pass
                         for p in self.plugins:
                             if hasattr(p, 'on_company_info'):
-                                p.on_company_info(cid, cname, man_name, color, False, passworded, founded, is_ai)
+                                try: p.on_company_info(cid, cname, man_name, color, False, passworded, founded, is_ai)
+                                except Exception as e: self.log(f"Error in {p.name}.on_company_info: {e}")
 
             elif ptype == ServerPacketType.SERVER_COMPANY_ECONOMY:
                 if len(payload) >= 37: 

@@ -117,6 +117,59 @@ class DiscordBridge(IPlugin):
             if text.isdigit(): return int(text)
             return text
 
+    def load_config(self):
+        """Loads controller_config.xml and admins.json."""
+        self.config = {}
+        try:
+            if os.path.exists("controller_config.xml"):
+                tree = ET.parse("controller_config.xml")
+                root = tree.getroot()
+                
+                # Load flat config
+                for child in root:
+                    # Simple key-value if no children
+                    if len(list(child)) == 0:
+                        val = child.text
+                        if val and val.lower() == "true": val = True
+                        elif val and val.lower() == "false": val = False
+                        self.config[child.tag] = val
+                    else:
+                        # Complex structures (dict/list)
+                        self.config[child.tag] = self._xml_to_dict(child)
+            else:
+                print(f"[{self.name}] Config file not found: controller_config.xml")
+
+        except Exception as e:
+            print(f"[{self.name}] Error loading XML config: {e}")
+
+        self.admin_discord_ids = {}
+        try:
+            if os.path.exists("admins.json"):
+                with open("admins.json", "r") as f:
+                    data = json.load(f)
+                    self.admin_discord_ids = data.get("discord_ids", {})
+                    self.client.log(f"[{self.name}] Loaded {len(self.admin_discord_ids)} Discord Admin IDs.")
+        except Exception as e:
+            self.client.log(f"[{self.name}] Error loading admins.json: {e}")
+
+    async def _cmd_debug_company(self, message):
+        try:
+            args = message.content.split()
+            if len(args) < 2: return await self._reply(message, "Usage: !debug_company <id>")
+            cid = int(args[1])
+            data = self.company_cache.get(cid)
+            if data:
+                await self._reply(message, f"```json\n{json.dumps(data, default=str, indent=2)}\n```")
+            else:
+                await self._reply(message, f"No cache data for Company #{cid}")
+        except Exception as e: await self._reply(message, f"Error: {e}")
+
+    async def _cmd_force_update(self, message):
+        try:
+            self.client.send_poll(2, 0) # ADMIN_UPDATE_COMPANY_INFO = 2
+            await self._reply(message, "Sent COMPANY_INFO poll request. Check !companies in a moment.")
+        except Exception as e: await self._reply(message, f"Error: {e}")
+
     def on_load(self):
         if not DISCORD_AVAILABLE:
             self.client.log(f"[{self.name}] Plugin DISABLED: 'discord' module not found.")
@@ -147,6 +200,7 @@ class DiscordBridge(IPlugin):
             
             intents = discord.Intents.default()
             intents.message_content = True
+            intents.members = True # REQUIRED for scanning members on startup
             
             self.bot = commands.Bot(command_prefix=self.prefix_char, intents=intents)
 
@@ -154,6 +208,8 @@ class DiscordBridge(IPlugin):
             async def on_ready():
                 print(f"[{self.name}] Discord Connected as {self.bot.user} (ID: {self.bot.user.id})")
                 await self.update_status()
+                # Run the admin scan
+                await self._scan_admins_on_ready()
 
             @self.bot.event
             async def on_command_error(ctx, error):
@@ -168,10 +224,14 @@ class DiscordBridge(IPlugin):
             @self.bot.event
             async def on_message(message):
                 if message.author.bot: return
-                if message.channel.id != self.main_channel_id: return
                 
-                # 1. Relay Chat to Game
-                if not message.content.startswith(self.prefix_char):
+                is_dm = isinstance(message.channel, discord.DMChannel)
+                is_main = (message.channel.id == self.main_channel_id)
+
+                if not (is_dm or is_main): return
+                
+                # 1. Relay Chat to Game (ONLY from Main Channel)
+                if is_main and not message.content.startswith(self.prefix_char):
                     author_name = message.author.display_name
                     # Sanitize
                     safe_content = message.content.replace('"', "'")
@@ -194,7 +254,7 @@ class DiscordBridge(IPlugin):
                         mgr = self.client.get_service("CommandManager")
                     
                     if mgr and cmd_payload:
-                        success, reply = mgr.handle_command(cmd_payload, source="discord", is_admin=False, admin_name=message.author.name)
+                        success, reply = mgr.handle_command(cmd_payload, source="discord", is_admin=False, admin_name=message.author.name, context={'discord_id': str(message.author.id)})
                         if reply:
                             await message.channel.send(reply)
             
@@ -212,10 +272,57 @@ class DiscordBridge(IPlugin):
                 
                 await ctx.send(f"Sentinel Discord Bridge v1.2-DEBUG is Online.\nConfigured Channel ID: {self.main_channel_id}\nChannel Status: {status}")
 
+            @self.bot.event
+            async def on_member_join(member):
+                await self._check_admin_auth(member)
+
             self.bot.run(self.token)
         except Exception as e:
             print(f"[{self.name}] Discord Thread Crash: {e}")
             self.running = False
+
+    async def _check_admin_auth(self, member):
+        """Checks if a Discord member is a configured admin and logs them in."""
+        try:
+            discord_id = str(member.id)
+            if discord_id in self.admin_discord_ids:
+                admin_username = self.admin_discord_ids[discord_id]
+                
+                # Access AdminLogin service
+                alogin = None
+                if hasattr(self.client, 'get_service'):
+                    alogin = self.client.get_service("AdminLogin")
+                
+                if alogin:
+                    # Log them in
+                    alogin.login_discord_user(discord_id, admin_username)
+                    print(f"[{self.name}] Auto-authenticated Discord User {member.name} as '{admin_username}'")
+                    
+                    # Send DM
+                    try:
+                        await member.send(f"✅ **Identity Verified**: You have been automatically logged in as admin `{admin_username}` for OpenTTD Sentinel.")
+                    except discord.Forbidden:
+                        print(f"[{self.name}] Could not DM user {member.name}")
+        except Exception as e:
+            print(f"[{self.name}] Auth Check Error: {e}")
+
+    async def _scan_admins_on_ready(self):
+        """Scans all members in the main channel to see if they are admins."""
+        try:
+           channel = self.bot.get_channel(self.main_channel_id)
+           if not channel:
+               channel = await self.bot.fetch_channel(self.main_channel_id)
+           
+           if channel:
+               # Iterate over members if available (requires intents)
+               # If members are not cached, we might need to fetch them.
+               # Assuming 'guild' context.
+               if hasattr(channel, 'guild'):
+                   for member in channel.guild.members:
+                       await self._check_admin_auth(member)
+        except Exception as e:
+            print(f"[{self.name}] Admin Scan Error: {e}")
+
 
     async def update_status(self):
         try:

@@ -80,7 +80,14 @@ The main configuration file. Key sections:
 Defines user roles and permissions.
 *   **Groups**: different permission sets (e.g., `scanner`, `operator`, `full-admin`).
 *   **Users**: Maps usernames to groups.
+*   **Users**: Maps usernames to groups.
 *   **Inheritance**: Groups can inherit permissions from others.
+*   **Discord IDs**: Map Discord User IDs to admin usernames for auto-login.
+    ```json
+    "discord_ids": {
+        "123456789012345678": "admin_username"
+    }
+    ```
 
 ## ▶️ How to Run
 
@@ -110,4 +117,16 @@ class MyPlugin(IPlugin):
 
     def on_load(self):
         self.client.log("MyPlugin Loaded!")
+
+## 🎮 Discord Commands
+
+The Discord bot supports several commands. You can use these in the configured channel or via **Direct Message (DM)** to the bot (recommended for admin login).
+
+*   `!help`: List available commands.
+*   `!alogin <username> <password>`: Authenticate as an admin.
+*   `!alogout`: Log out.
+*   `!kick <id> [reason]`: Kick a player (requires admin).
+*   `!ban <id> [reason]`: Ban a player (requires admin).
+*   `!force_update`: (Admin) Force company data refresh.
+*   `!debug_company <id>`: (Admin) Inspect company data.
 ```
