@@ -100,9 +100,6 @@ class AutoRestart(IPlugin):
 
     def process_command(self, cmd, args, source, admin_name, cid):
         if cmd == "restart":
-            if source != "irc":
-                return "This command is only available from IRC."
-            
             msg = f"Manual server restart triggered by {admin_name}."
             self.perform_restart_sequence(msg)
             return "Restart sequence initiated."
