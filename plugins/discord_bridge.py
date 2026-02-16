@@ -701,8 +701,8 @@ class DiscordBridge(IPlugin):
 
     def on_chat(self, cid, msg, action, dest_type):
         try:
-            # Action 2 (Server Message)
-            if action == 2: return 
+            # Only relay public chat messages (action == 3)
+            if action != NetworkAction.NETWORK_ACTION_CHAT: return 
             if cid == 1: return
             
             # Filter empty messages or whitespace-only messages
