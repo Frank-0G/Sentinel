@@ -1,3 +1,4 @@
+import time
 from plugin_interface import IPlugin
 from openttd_types import AdminUpdateType, AdminUpdateFrequency
 
@@ -5,11 +6,21 @@ class DataController(IPlugin):
     def __init__(self, client):
         super().__init__(client)
         self.name = "DataController"
-        self.version = "3.14-CMD-MAP-FIX"
+        self.version = "4.0-COMPLETE-POLLING"
 
         self.clients = {}
         self.companies = {}
-        self.server_info = {"name": "Unknown", "year": 0, "map": "Unknown"}
+        self.server_info = {
+            "name": "Unknown",
+            "year": 0,
+            "map": "Unknown",
+            "width": 0,
+            "height": 0,
+            "seed": 0,
+            "landscape": 0,
+            "start_date": 0
+        }
+        self.last_poll = 0
 
     def _subscribe(self):
         self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC)
@@ -32,6 +43,19 @@ class DataController(IPlugin):
             self.client.send_poll(7, 0) 
         except Exception: pass
 
+    def on_tick(self):
+        """Periodically poll for fresh data to ensure single source of truth."""
+        now = time.time()
+        if now - self.last_poll >= 30:  # Poll every 30 seconds
+            self.last_poll = now
+            try:
+                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, 0)
+                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, 0)
+                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, 0)
+                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, 0)
+            except:
+                pass
+
     def on_load(self):
         try: self._subscribe()
         except: pass
@@ -40,14 +64,27 @@ class DataController(IPlugin):
         try:
             self._subscribe()
             self._initial_poll()
+            self.last_poll = time.time()  # Initialize polling timer
         except: pass
+
+    def on_map_info(self, server_name, width, height, map_name, seed, landscape, start_date, flags):
+        """Called when SERVER_WELCOME packet is received with map details."""
+        self.server_info.update({
+            "name": server_name,
+            "map": map_name,
+            "width": width,
+            "height": height,
+            "seed": seed,
+            "landscape": landscape,
+            "start_date": start_date
+        })
 
     def on_player_join(self, client_id, name, ip, company_id):
         self.clients[client_id] = {
             "name": name,
             "ip": ip,
             "company": company_id,
-            "joined": self.clients.get(client_id, {}).get("joined", 0),
+            "joined": time.time(),  # Actual timestamp instead of 0
         }
 
     def on_player_update(self, client_id, name, company_id):
@@ -55,7 +92,8 @@ class DataController(IPlugin):
             self.clients[client_id]["name"] = name
             self.clients[client_id]["company"] = company_id
         else:
-            self.clients[client_id] = {"name": name, "ip": "Unknown", "company": company_id, "joined": 0}
+            # Player updated before join event - create entry with current time
+            self.clients[client_id] = {"name": name, "ip": "Unknown", "company": company_id, "joined": time.time()}
 
     def on_player_quit(self, client_id):
         if client_id in self.clients:
@@ -68,14 +106,24 @@ class DataController(IPlugin):
     def on_company_info(self, company_id, name, manager, color, protected, passworded, founded, is_ai):
         if company_id not in self.companies:
             self.companies[company_id] = {}
+        
         self.companies[company_id].update({
             "name": name,
             "manager": manager,
             "color": color,
-            "passworded": bool(passworded)
+            "protected": bool(protected),
+            "passworded": bool(passworded),
+            "is_ai": bool(is_ai) if is_ai is not None else False
         })
-        if founded is not None: self.companies[company_id]["founded"] = founded
-        if is_ai is not None: self.companies[company_id]["is_ai"] = is_ai
+        
+        # Store founded year and calculate start_year for display
+        if founded is not None:
+            self.companies[company_id]["founded"] = founded
+            # Calculate actual year from days (founded is in days since epoch)
+            if founded > 36500:  # After year 2020 in new date system
+                self.companies[company_id]["start_year"] = founded // 365
+            else:  # Old date system (days since 1920)
+                self.companies[company_id]["start_year"] = 1920 + (founded // 365)
 
     def on_company_economy(self, company_id, money, loan, income, delivered, performance, value):
         if company_id not in self.companies:
@@ -113,6 +161,7 @@ class DataController(IPlugin):
     def on_new_game(self):
         self.clients.clear()
         self.companies.clear()
+        self.last_poll = time.time()  # Reset polling timer
         self._initial_poll()
 
     def get_client(self, cid):

@@ -888,7 +888,13 @@ class CommandManager(IPlugin):
         reply.append(result)
 
     def cmd_server(self, cmd, args, reply, source, admin_name, context): 
-        name = self.client.game_cfg.get("server_name", "Sentinel")
+        # Get server info from Data Controller (single source of truth)
+        d = self.get_data()
+        if d and d.server_info:
+            name = d.server_info.get("name", "Unknown Server")
+        else:
+            # Fallback to config if data controller not available
+            name = self.client.game_cfg.get("server_name", "Unknown Server")
         reply.append(f"This server's name is: {name}")
 
     def cmd_status(self, cmd, args, reply, source, admin_name, context): 

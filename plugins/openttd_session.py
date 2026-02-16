@@ -15,7 +15,7 @@ class OpenttdSession(IPlugin):
         # Poll map info on connect just in case
         self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_DATE, 0)
 
-    def on_map_info(self, width, height, name, seed, landscape, start_date, map_counter):
+    def on_map_info(self, server_name, width, height, name, seed, landscape, start_date, map_counter):
         self.map_width = width
         self.map_height = height
         self.client.log(f"[{self.name}] Map Info: {width}x{height}, '{name}'")

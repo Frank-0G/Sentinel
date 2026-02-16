@@ -35,7 +35,7 @@ class IPlugin:
     def on_map_load(self, filename: str): pass
     
     # NEW: Map Info
-    def on_map_info(self, width: int, height: int, name: str, seed: int, landscape: int, start_date: int, map_counter: int): pass
+    def on_map_info(self, server_name: str, width: int, height: int, name: str, seed: int, landscape: int, start_date: int, map_counter: int): pass
 
     def on_chat(self, action: int, dest: int, client_id: int, msg: str): pass
     def on_newgame(self): pass

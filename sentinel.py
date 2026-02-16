@@ -280,7 +280,6 @@ class AdminClient:
                 if len(payload) >= 2:
                     cid = payload[0]
                     cname, off = self.unpack_string(payload, 1)
-                    print(f"[DEBUG] Company Info/Update. ID: {cid}, Name: '{cname}', PType: {ptype}")
                     man_name, off = self.unpack_string(payload, off)
                     tail = payload[off:]
                     if len(tail) >= 2:
@@ -365,7 +364,7 @@ class AdminClient:
                 except Exception as e: 
                     self.log(f"[Gamescript] Error parsing Packet 124: {e}")
 
-            elif ptype == 101: # SERVER_WELCOME
+            elif ptype == ServerPacketType.SERVER_WELCOME:  # Packet 104
                 try:
                     server_name, off = self.unpack_string(payload, 0)
                     version, off = self.unpack_string(payload, off)
@@ -382,7 +381,7 @@ class AdminClient:
                             self.log(f"[Network] Connected to '{server_name}'. Map: {width}x{height}, '{map_name}'")
                             for p in self.plugins:
                                 if hasattr(p, 'on_map_info'):
-                                    p.on_map_info(width, height, map_name, seed, landscape, start_date, 0)
+                                    p.on_map_info(server_name, width, height, map_name, seed, landscape, start_date, 0)
                 except Exception as e: 
                     self.log(f"Error parsing Welcome (Map Info): {e}")
 
