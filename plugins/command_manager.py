@@ -35,14 +35,14 @@ class CommandManager(IPlugin):
             "cancelvote", "pause", "unpause", "reset", "emptycompany", "lockcompany", 
             "unlockcompany", "news", "goalreached", "awarning",
             "resetcompany", "resetcompanyspec", "resetcompanykick", "resetcompanyban",
-            "resetcompanytimer", "cancelresetcompany"
+            "resetcompanytimer", "cancelresetcompany", "restart", "restartserver"
         ]
         
         self.native_commands = [
             "login", "logout", "me", "vipstatus", "sponsor", "addvip", "extendvip", 
             "vipmembership", "whois", "rank", "help", "status", "server", "version", 
             "players", "companies", "cv", "shutdown", "name", "kick", "saveme", 
-            "savedcompanies", "restart", "rules", "admin", "rcon", "say", "ban", 
+            "savedcompanies", "restart", "restartserver", "rules", "admin", "rcon", "say", "ban", 
             "pause", "unpause", "reset", "move", "emptycompany", "lockcompany", "unlockcompany",
             "plugins", "reloadplugins", "vote", "yes", "no", "votekick", "voteban", 
             "voterestart", "votereset", "cancelvote", "votestatus", "alogin", "alogout",
@@ -73,7 +73,8 @@ class CommandManager(IPlugin):
             "pause": ["Usage: !pause", "Pauses the game."],
             "unpause": ["Usage: !unpause", "Unpauses the game."],
             "shutdown": ["Usage: !shutdown [now]", "Shuts down the server."],
-            "restart": ["Usage: !restart [now]", "Restarts the Server."],
+            "restart": ["Usage: !restart", "Restarts the game (map reset)."],
+            "restartserver": ["Usage: !restartserver", "Restarts the Sentinel controller."],
             "cv": ["Usage: !cv", "Shows the goal of the current game script."],
             "rules": ["Usage: !rules", "Shows the server rules."],
             "admin": ["Usage: !admin", "Lists available admin commands."],
@@ -124,6 +125,8 @@ class CommandManager(IPlugin):
             "lockcompany": self.cmd_lockcompany,
             "unlockcompany": self.cmd_unlockcompany,
             "shutdown": self.cmd_shutdown,
+            "restart": self.cmd_restart,
+            "restartserver": self.cmd_restartserver,
             "reloadplugins": self.cmd_reloadplugins,
             "status": self.cmd_status,
             "server": self.cmd_server,
@@ -828,9 +831,21 @@ class CommandManager(IPlugin):
         self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has requested to shutdown the server.", is_action=True)
 
     def cmd_restart(self, cmd, args, reply, source, admin_name, context):
+        """Restart the game (map reset)."""
+        s = self.get_session()
+        if s:
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has requested to restart the game.", is_action=True)
+            s.restart_game()
+            reply.append("Restarting game (map reset)...")
+        else:
+            reply.append("Error: No active game session.")
+    
+    def cmd_restartserver(self, cmd, args, reply, source, admin_name, context):
+        """Restart the Sentinel controller."""
         self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has requested to restart the server.", is_action=True)
         self.perform_shutdown("Restart")
-        reply.append("Restarting...")
+        reply.append("Restarting Sentinel controller...")
+
 
     def cmd_screenshot(self, cmd, args, reply, source, admin_name, context):
         if not args:

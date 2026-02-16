@@ -385,7 +385,16 @@
         "admin": true,
         "irc": true,
         "in_game": true,
-        "description": "Restart the server/Sentinel.",
+        "description": "Restart the game (map reset).",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "restartserver",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Restart the Sentinel controller.",
         "response": null,
         "discord": true
     },
