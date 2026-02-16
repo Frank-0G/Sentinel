@@ -843,8 +843,30 @@ class CommandManager(IPlugin):
     def cmd_restartserver(self, cmd, args, reply, source, admin_name, context):
         """Restart the Sentinel controller."""
         self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has requested to restart the server.", is_action=True)
-        self.perform_shutdown("Restart")
         reply.append("Restarting Sentinel controller...")
+        
+        # Schedule restart in a separate thread
+        def restart_sequence():
+            time.sleep(2.0)
+            self.client.log(f"[{self.name}] RESTARTING SENTINEL PROCESS...")
+            
+            # Close socket cleanly
+            try:
+                if self.client.socket:
+                    self.client.socket.close()
+            except:
+                pass
+            
+            try:
+                # Self-restart using os.execv
+                import sys
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+            except Exception as e:
+                self.client.log(f"[{self.name}] Restart Failed: {e}")
+                os._exit(1)
+        
+        threading.Thread(target=restart_sequence, daemon=True).start()
+
 
 
     def cmd_screenshot(self, cmd, args, reply, source, admin_name, context):

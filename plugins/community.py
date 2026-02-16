@@ -176,7 +176,10 @@ class Community(IPlugin):
         for cid in to_remove: del self.name_checks[cid]
 
     def announce_sponsor(self):
-        if self.sponsor_name: self.client.send_rcon(f"say \"*** This current game is sponsored by our VIP member: * {self.sponsor_name} * :-)\"")
+        if self.sponsor_name:
+            self.client.send_rcon(f"say \"*** This current game is sponsored by our VIP member: * {self.sponsor_name} * :-)\"")
+            self.client.send_rcon(f"say \"Want to sponsor a game to? Please use trigger !vipmembership for more information.\"")
+
 
     def on_restarted(self):
         self.sponsor_name = ""
