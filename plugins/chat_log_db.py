@@ -161,6 +161,14 @@ class ChatLogDB(IPlugin):
                         is_irc_say = True
                         msg_source = "ADMIN"
                     
+                    # Detect Discord Style: "[Discord: Frank] Hello"
+                    elif msg.startswith("[Discord: ") and "] " in msg:
+                        end = msg.find("] ")
+                        irc_nick = msg[10:end]  # 10 = len("[Discord: ")
+                        msg = msg[end+2:]
+                        is_irc_say = True
+                        msg_source = "DISCORD"
+                    
                     # Ignore other server messages
                     if not is_irc_say:
                         return

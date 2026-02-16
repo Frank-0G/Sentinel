@@ -292,6 +292,9 @@ class DiscordBridge(IPlugin):
                         # Or use 0 (NETWORK_ACTION_CHAT) if 2 is restricted. 
                         # Trying 2 as per openttd_types.py for "Server Message".
                         self.client.send_chat(2, 0, 0, f"[{author_name}] {safe_content}")
+                        
+                        # Log to database (chat messages only, not commands)
+                        self._log_discord_chat(author_name, str(message.author.id), safe_content)
                 
                 # 2. Process Commands (this might raise CommandNotFound, which we now squash)
                 await self.bot.process_commands(message)
@@ -408,6 +411,32 @@ class DiscordBridge(IPlugin):
         except: pass
 
     # --- HELPERS ---
+    def _log_discord_chat(self, username, discord_id, message):
+        """Log Discord chat message to database via on_event hook."""
+        try:
+            # Simulate a chat packet with Discord source
+            # We'll send this as a server message (action=2) from client_id=1 
+            # with special formatting that chat_log_db can detect
+            formatted_msg = f"[Discord: {username}] {message}"
+            
+            # Create a fake packet payload that chat_log_db expects
+            import struct
+            action = 2  # SERVER_MESSAGE
+            client_id = 1  # Server/Bot
+            dest_type = 0
+            
+            # Pack it similar to SERVER_CHAT packet
+            payload = struct.pack('BBxI', action, dest_type, client_id)
+            msg_bytes = formatted_msg.encode('utf-8') + b'\x00'
+            payload += msg_bytes
+            
+            # Call on_event for ChatLogDB plugin to pick up
+            for p in self.client.plugins:
+                if p.name == "ChatLogDB" and hasattr(p, 'on_event'):
+                    p.on_event(ServerPacketType.SERVER_CHAT, payload)
+                    break
+        except Exception as e:
+            print(f"[{self.name}] Discord chat log error: {e}")
     def get_cid_by_name(self, name):
         for cid, data in self.client_cache.items():
             if data['name'] == name: return cid
