@@ -458,21 +458,11 @@
         "response": null
     },
     {
-        "name": "auth",
-        "admin": false,
-        "irc": true,
-        "in_game": true,
-        "discord": true,
-        "description": "Native command (auto-generated)",
-        "aliases": [],
-        "response": null
-    },
-    {
         "name": "login",
         "admin": false,
-        "irc": true,
+        "irc": false,
         "in_game": true,
-        "discord": true,
+        "discord": false,
         "description": "Native command (auto-generated)",
         "aliases": [],
         "response": null
@@ -480,9 +470,9 @@
     {
         "name": "logout",
         "admin": false,
-        "irc": true,
+        "irc": false,
         "in_game": true,
-        "discord": true,
+        "discord": false,
         "description": "Native command (auto-generated)",
         "aliases": [],
         "response": null
@@ -500,9 +490,9 @@
     {
         "name": "me",
         "admin": false,
-        "irc": true,
+        "irc": false,
         "in_game": true,
-        "discord": true,
+        "discord": false,
         "description": "Native command (auto-generated)",
         "aliases": [],
         "response": null
@@ -529,7 +519,7 @@
     },
     {
         "name": "addvip",
-        "admin": false,
+        "admin": true,
         "irc": true,
         "in_game": true,
         "discord": true,
@@ -539,7 +529,7 @@
     },
     {
         "name": "extendvip",
-        "admin": false,
+        "admin": true,
         "irc": true,
         "in_game": true,
         "discord": true,
@@ -580,9 +570,9 @@
     {
         "name": "name",
         "admin": false,
-        "irc": true,
+        "irc": false,
         "in_game": true,
-        "discord": true,
+        "discord": false,
         "description": "Native command (auto-generated)",
         "aliases": [],
         "response": null
@@ -590,9 +580,9 @@
     {
         "name": "saveme",
         "admin": false,
-        "irc": true,
+        "irc": false,
         "in_game": true,
-        "discord": true,
+        "discord": false,
         "description": "Native command (auto-generated)",
         "aliases": [],
         "response": null
