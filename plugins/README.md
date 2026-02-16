@@ -8,7 +8,10 @@ These plugins provide essential services used by other plugins and the controlle
 
 *   **`mysql.py`**: The central database service. It manages a threaded connection pool to the MySQL server, allowing other plugins to execute queries asynchronously without blocking the main server loop.
 *   **`data_controller.py`**: Maintains a real-time state of the server. It tracks connected clients, active companies, and server statistics by listening to Admin Port update packets.
-*   **`command_manager.py`**: The "brain" for chat commands. It parses messages starting with the trigger prefix (e.g., `!`), checks user permissions against `admins.json`, and routes the command to the appropriate plugin handler.
+*   **`command_manager.py`**: The "brain" for chat commands. It parses messages starting with the trigger prefix (e.g., `!`), checks user permissions against `admins.json`, and routes the command to the appropriate plugin handler. Recent enhancements include:
+    *   Advanced company reset commands with multiple player handling options (`!resetcompany`, `!resetcompanykick`, `!resetcompanyban`)
+    *   Company reset timer system for delayed resets (`!resetcompanytimer`, `!cancelresetcompany`)
+    *   Separated restart commands: `!restart` (game/map only) and `!restartserver` (full Sentinel restart)
 *   **`admin_manager.py`**: Manages the connection lifecycle, protocol negotiation, and packet handling with the OpenTTD Admin Port.
 *   **`geoip_service.py`**: Uses the MaxMind GeoIP database to resolve player IP addresses to country codes and names. Used for welcome messages and logging.
 
@@ -27,6 +30,12 @@ Plugins focused on server management and protecting the game environment.
 Plugins that handle chat, logging, and external communication.
 
 *   **`irc_bridge.py`**: Connects the server to an IRC channel. It relays in-game chat to IRC and IRC messages to the game (colored chat support). Also reports server events like joins, quits, and company updates.
+*   **`discord_bridge.py`**: Full two-way Discord integration. Relays all in-game chat (including public player commands) to Discord and vice versa. Features include:
+    *   Server status presence updates
+    *   Rich embed notifications for game events
+    *   Admin authentication via DM
+    *   Multi-channel support
+    *   Automatic admin role detection
 *   **`chat_log_db.py`**: Logs **every** chat message (public, team, private, and admin) to the MySQL database for auditing and history purposes.
 *   **`chat_logger.py`**: A simpler logger that outputs chat to the console or a flat file.
 *   **`welcome_msg.py`**: Sends a customizable welcome message to players when they join. Supports public broadcasts and private messages with instructions/rules.

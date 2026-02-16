@@ -10,7 +10,10 @@ Sentinel comes with a suite of built-in plugins covering a wide range of functio
 
 ### Core Administration
 *   **Sentinel Core**: The micro-kernel that manages the Admin Port connection and plugin lifecycle.
-*   **Command Manager**: Handles in-game commands (e.g., `!help`, `!reset`) with a permission system.
+*   **Command Manager**: Handles in-game commands with a comprehensive permission system, including:
+    *   Company management: `!reset`, `!emptycompany`, `!lockcompany`, `!unlockcompany`
+    *   Advanced company reset with player handling: `!resetcompany`, `!resetcompanykick`, `!resetcompanyban`, `!resetcompanytimer`
+    *   Server control: `!restart` (game/map only), `!restartserver` (Sentinel controller), `!shutdown`
 *   **Admin Login**: Secure login system for administrators using tokens or passwords.
 *   **Data Controller**: Real-time tracking of clients, companies, and server stats.
 *   **Auto Restart**: Automates server restarts on a schedule.
@@ -19,7 +22,7 @@ Sentinel comes with a suite of built-in plugins covering a wide range of functio
 ### Integration & Connectivity
 *   **MySQL Service**: Centralized, threaded MySQL connection pooling for all plugins.
 *   **IRC Bridge**: Two-way chat sync between the game server and IRC channels (with color support).
-*   **Discord Bridge**: Full two-way chat sync, server status presence, command handling, and rich embed notifications for game events.
+*   **Discord Bridge**: Full two-way chat sync (including public player commands), server status presence, command handling, and rich embed notifications for game events.
 *   **GameScript Connector**: seamlessly communicates with the running GameScript for advanced game logic (JSON/SQL).
 *   **Community**: Syncs player statistics, VIP statuses, and server info to a community website/database.
 *   **GeoIP Service**: Resolves player IP addresses to countries for welcome messages.
@@ -47,8 +50,8 @@ Sentinel comes with a suite of built-in plugins covering a wide range of functio
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/OpenTTD-Sentinel.git
-    cd OpenTTD-Sentinel
+    git clone https://github.com/Frank-0G/OpenTTD_Controller.git
+    cd OpenTTD_Controller/Sentinel
     ```
 
 2.  **Install dependencies:**
@@ -117,6 +120,33 @@ class MyPlugin(IPlugin):
 
     def on_load(self):
         self.client.log("MyPlugin Loaded!")
+
+## 🎮 In-Game Commands
+
+### Server Control (Admin Only)
+*   `!restart`: Restart the game/map (players stay connected)
+*   `!restartserver`: Restart the Sentinel controller (full restart)
+*   `!shutdown [now]`: Shut down the server
+
+### Company Management (Admin)
+*   `!reset <id>`: Reset a company (move players to spectators, then reset)
+*   `!emptycompany <id>`: Move all players in a company to spectators
+*   `!resetcompany <id>`: Standard reset with move to spectators
+*   `!resetcompanykick <id>`: Reset company and kick all players
+*   `!resetcompanyban <id> [minutes]`: Reset company and ban all players
+*   `!resetcompanytimer <id> <minutes>`: Schedule a company reset
+*   `!cancelresetcompany <id>`: Cancel a scheduled reset
+*   `!lockcompany <id>`: Lock a company
+*   `!unlockcompany <id>`: Unlock a company
+
+### Player Commands
+*   `!login <token>` or `!login <user> <pass>`: Login to your account (in-game only)
+*   `!logout`: Logout from your account (in-game only)
+*   `!me`: Show your login status (in-game only)
+*   `!help`: List available commands
+*   `!status`: Show server information
+*   `!vipstatus [username]`: Check VIP membership status
+*   `!sponsor`: Show current game sponsor
 
 ## 🎮 Discord Commands
 
