@@ -708,8 +708,8 @@ class DiscordBridge(IPlugin):
             # Filter empty messages or whitespace-only messages
             if not msg or not msg.strip(): return
             
-            # Hide commands starting with prefix from Discord chat
-            if msg.startswith(self.prefix_char): return
+            # NOTE: Commands are now relayed to Discord to show player activity
+            # Previously filtered with: if msg.startswith(self.prefix_char): return
 
             name = "Unknown"; iso = "??"
             if cid in self.client_cache:
