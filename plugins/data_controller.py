@@ -23,6 +23,7 @@ class DataController(IPlugin):
         self.last_poll = 0
 
     def _subscribe(self):
+        # print(f"[DEBUG][DataController] Subscribing to updates...")
         self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC)
         self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC)
         self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
@@ -30,37 +31,41 @@ class DataController(IPlugin):
         self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_DATE, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
         
         # Subscribe to CMD_LOGGING (8)
-        self.client.send_update_frequency(8, AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC)
+        # self.client.send_update_frequency(8, AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC)
 
     def _initial_poll(self):
+        # print(f"[DEBUG][DataController] Sends initial poll... (PARTIAL)")
         try:
-            self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, 0)
-            self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, 0)
-            self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, 0)
-            self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, 0)
+            self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, 0xFFFFFFFF)
+            self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, 0xFFFFFFFF)
+            # self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, 0xFFFFFFFF)
+            # self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, 0xFFFFFFFF)
             
             # Poll CMD_NAMES (7) once on connect
-            self.client.send_poll(7, 0) 
+            # self.client.send_poll(7, 0) 
         except Exception: pass
 
     def on_tick(self):
         """Periodically poll for fresh data to ensure single source of truth."""
         now = time.time()
-        if now - self.last_poll >= 30:  # Poll every 30 seconds
+        if now - self.last_poll >= 10:  # Poll every 10 seconds (Increased freq for debug)
             self.last_poll = now
+            # print(f"[DEBUG][DataController] Periodic Poll") # Commented out to reduce spam
             try:
-                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, 0)
-                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, 0)
-                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, 0)
-                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, 0)
+                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, 0xFFFFFFFF)
+                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, 0xFFFFFFFF)
+                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, 0xFFFFFFFF)
+                self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, 0xFFFFFFFF)
             except:
                 pass
 
     def on_load(self):
+        # print(f"[DEBUG][DataController] Plugin Loaded")
         try: self._subscribe()
         except: pass
 
     def on_connected(self):
+        # print(f"[DEBUG][DataController] Connected event received")
         try:
             self._subscribe()
             self._initial_poll()
@@ -78,7 +83,7 @@ class DataController(IPlugin):
             "landscape": landscape,
             "start_date": start_date
         })
-
+    
     def on_player_join(self, client_id, name, ip, company_id):
         self.clients[client_id] = {
             "name": name,
@@ -105,7 +110,11 @@ class DataController(IPlugin):
 
     def on_company_info(self, company_id, name, manager, color, protected, passworded, founded, is_ai):
         if company_id not in self.companies:
-            self.companies[company_id] = {}
+            self.companies[company_id] = {
+                "money": 0, "loan": 0, "income": 0, "delivered": 0, 
+                "performance": 0, "value": 0,
+                "vehicles": 0, "stations": 0, "airports": 0, "harbors": 0
+            }
         
         self.companies[company_id].update({
             "name": name,
@@ -115,6 +124,7 @@ class DataController(IPlugin):
             "passworded": bool(passworded),
             "is_ai": bool(is_ai) if is_ai is not None else False
         })
+        # print(f"[DEBUG][DataController] Updated Company {company_id}: Name='{name}', Color={color}, AI={is_ai}")
         
         # Store founded year and calculate start_year for display
         if founded is not None:
@@ -127,7 +137,11 @@ class DataController(IPlugin):
 
     def on_company_economy(self, company_id, money, loan, income, delivered, performance, value):
         if company_id not in self.companies:
-            self.companies[company_id] = {}
+            self.companies[company_id] = {
+                "name": "Unknown", "manager": "Unknown", "color": 0, 
+                "protected": False, "passworded": False, "is_ai": False,
+                "vehicles": 0, "stations": 0, "airports": 0, "harbors": 0
+            }
         self.companies[company_id].update({
             "money": money,
             "loan": loan,

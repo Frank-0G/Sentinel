@@ -213,6 +213,7 @@ class AdminClient:
                     spec = importlib.util.spec_from_file_location(filename[:-3], os.path.join(plugins_dir, filename))
                     module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(module)
+                    print(f"[System] Loaded module: {filename}")
                     for name, obj in inspect.getmembers(module):
                         if inspect.isclass(obj) and issubclass(obj, IPlugin) and obj is not IPlugin:
                             inst = obj(self)
@@ -224,6 +225,10 @@ class AdminClient:
 
     # --- CENTRAL PACKET DISPATCHER ---
     def _dispatch_packet(self, ptype, payload):
+        # DEBUG: unexpected/all packets
+        # if ptype not in [119, 107]: # Filter out chat/date to reduce noise
+        # print(f"[DEBUG] Received Packet: {ptype} (len={len(payload)})")
+            
         for p in self.plugins:
             try: p.on_event(ptype, payload)
             except: pass
@@ -259,6 +264,7 @@ class AdminClient:
                 if len(payload) >= 5:
                     cid = struct.unpack('<I', payload[0:4])[0]
                     err = payload[4]
+                    # print(f"[DEBUG] SERVER_CLIENT_ERROR: ClientID={cid}, ErrorCode={err}")
                     for p in self.plugins: 
                         if hasattr(p, 'on_player_error'): p.on_player_error(cid, err)
 
@@ -290,6 +296,10 @@ class AdminClient:
                                 founded = struct.unpack_from('<I', tail, 2)[0]
                                 is_ai = bool(tail[6])
                             except: pass
+                        
+                        # DEBUG: Trace company info
+                        # self.log(f"[DEBUG] Company Info: CID={cid}, Name='{cname}', Manager='{man_name}', Color={color}, PW={passworded}, Founded={founded}, AI={is_ai}")
+
                         for p in self.plugins:
                             if hasattr(p, 'on_company_info'):
                                 try: p.on_company_info(cid, cname, man_name, color, False, passworded, founded, is_ai)

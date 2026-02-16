@@ -177,19 +177,34 @@ class IRCBridge(IPlugin):
 
     def send_to_channel(self, msg, type_flag):
         if not self.sock: return
-        for chan, flags in self.channels.items():
-            if flags.get(type_flag, False):
-                if msg.startswith("/me "):
-                    self.send_raw(f"PRIVMSG {chan} :\x01ACTION {msg[4:]}\x01")
-                else:
-                    self.send_raw(f"PRIVMSG {chan} :{msg}")
+        # Handle multiline messages
+        lines = msg.split("\n")
+        for line in lines:
+            if not line.strip(): continue
+            for chan, flags in self.channels.items():
+                if flags.get(type_flag, False):
+                    if line.startswith("/me "):
+                        self.send_raw(f"PRIVMSG {chan} :\x01ACTION {line[4:]}\x01")
+                    else:
+                        self.send_raw(f"PRIVMSG {chan} :{line}")
+                    time.sleep(0.5) # Prevent flooding
 
     def send_msg(self, msg):
         first_chan = list(self.channels.keys())[0] if self.channels else "#openttd"
-        self.send_raw(f"PRIVMSG {first_chan} :{msg}")
+        # Handle multiline messages
+        lines = msg.split("\n")
+        for line in lines:
+            if line.strip():
+                self.send_raw(f"PRIVMSG {first_chan} :{line}")
+                time.sleep(0.5)
     
     def send_notice(self, target, msg):
-        if self.sock: self.send_raw(f"NOTICE {target} :{msg}")
+        if self.sock:
+            lines = msg.split("\n")
+            for line in lines:
+                if line.strip():
+                    self.send_raw(f"NOTICE {target} :{line}")
+                    time.sleep(0.5)
 
     def format_msg(self, key, **kwargs):
         if key not in self.formats: return ""
@@ -284,6 +299,13 @@ class IRCBridge(IPlugin):
 
     # --- EVENT TRIGGERS ---
     def on_player_join(self, cid, name, ip, company_id):
+        if cid == 1: return
+        
+        # If client is already in cache, this is just a polled update, not a new join
+        if cid in self.client_cache:
+            self.client_cache[cid].update({'name': name, 'ip': ip, 'company': company_id})
+            return
+
         self.topic_update_pending = True
         iso = self.get_iso(ip)
         self.client_cache[cid] = {'name': name, 'ip': ip, 'company': company_id, 'iso': iso}
@@ -301,6 +323,7 @@ class IRCBridge(IPlugin):
                 self.pending_started_companies.remove(company_id)
 
     def on_player_quit(self, cid):
+        if cid == 1: return
         self.topic_update_pending = True
         if cid in self.client_cache:
             old = self.client_cache[cid]
@@ -310,6 +333,7 @@ class IRCBridge(IPlugin):
             del self.client_cache[cid]
 
     def on_player_error(self, cid, err):
+        if cid == 1: return
         self.topic_update_pending = True
         err_str = self.NETWORK_ERROR_MAP.get(err, f"Error {err}")
         if cid in self.client_cache:
@@ -358,6 +382,7 @@ class IRCBridge(IPlugin):
             self.send_to_channel("/me " + msg, "announcements")
 
     def on_player_update(self, cid, name, company_id):
+        if cid == 1: return
         self.topic_update_pending = True
         if cid not in self.client_cache:
             self.client_cache[cid] = {'name': name, 'ip': '?', 'company': company_id, 'iso': '?'}

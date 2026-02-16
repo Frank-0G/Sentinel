@@ -611,6 +611,14 @@ class DiscordBridge(IPlugin):
              self._dispatch_discord(self._send_msg(msg))
 
     def on_player_join(self, cid, name, ip, company_id):
+        if cid == 1: return
+        
+        # If client is already in cache, this is just a polled update, not a new join
+        if cid in self.client_cache:
+            iso = self.get_iso(ip) # Update ISO just in case
+            self.client_cache[cid].update({'name': name, 'ip': ip, 'company': company_id, 'iso': iso})
+            return
+
         iso = self.get_iso(ip)
         self.client_cache[cid] = {'name': name, 'ip': ip, 'company': company_id, 'iso': iso}
         
@@ -631,6 +639,7 @@ class DiscordBridge(IPlugin):
                 self.pending_started_companies.remove(company_id)
 
     def on_player_quit(self, cid):
+        if cid == 1: return
         if cid in self.client_cache:
             old = self.client_cache[cid]
             ccolor = self.get_company_color_name(old['company'])
@@ -640,6 +649,7 @@ class DiscordBridge(IPlugin):
         self._dispatch_discord(self.update_status())
 
     def on_player_error(self, cid, err):
+        if cid == 1: return
         err_str = f"Error {err}" 
         if cid in self.client_cache:
             old = self.client_cache[cid]
@@ -693,6 +703,7 @@ class DiscordBridge(IPlugin):
             self._dispatch_discord(self.update_status()) # Update status count too
 
     def on_player_update(self, cid, name, company_id):
+        if cid == 1: return
         if cid not in self.client_cache:
             self.client_cache[cid] = {'name': name, 'ip': '?', 'company': company_id, 'iso': '?'}
             return
