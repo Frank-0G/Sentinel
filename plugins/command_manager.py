@@ -23,6 +23,7 @@ class CommandManager(IPlugin):
         self.last_pending_announce = 0
         self.locked_companies = set()
         self.pending_resets = set()
+        self.reset_timers = {}  # company_id -> {"end_time": float, "interval": int, "thread": threading.Thread, "cancelled": bool}
         
         self.IRC_COLORS = {
             0: "02", 1: "10", 2: "13", 3: "08", 4: "04", 5: "12", 6: "03", 7: "03",
@@ -31,8 +32,10 @@ class CommandManager(IPlugin):
         
         self.admin_native_commands = [
             "shutdown", "kick", "ban", "move", "rcon", "reloadplugins", 
-            "cancelvote", "pause", "unpause", "reset", "empty", "lockcompany", 
-            "unlockcompany", "news", "goalreached", "awarning"
+            "cancelvote", "pause", "unpause", "reset", "emptycompany", "lockcompany", 
+            "unlockcompany", "news", "goalreached", "awarning",
+            "resetcompany", "resetcompanyspec", "resetcompanykick", "resetcompanyban",
+            "resetcompanytimer", "cancelresetcompany"
         ]
         
         self.native_commands = [
@@ -40,10 +43,12 @@ class CommandManager(IPlugin):
             "vipmembership", "whois", "rank", "help", "status", "server", "version", 
             "players", "companies", "cv", "shutdown", "name", "kick", "saveme", 
             "savedcompanies", "restart", "rules", "admin", "rcon", "say", "ban", 
-            "pause", "unpause", "reset", "move", "empty", "lockcompany", "unlockcompany",
+            "pause", "unpause", "reset", "move", "emptycompany", "lockcompany", "unlockcompany",
             "plugins", "reloadplugins", "vote", "yes", "no", "votekick", "voteban", 
             "voterestart", "votereset", "cancelvote", "votestatus", "alogin", "alogout",
             "resetme", "limits", "seed", "news", "screenshot",
+            "resetcompany", "resetcompanyspec", "resetcompanykick", "resetcompanyban",
+            "resetcompanytimer", "cancelresetcompany",
             # Goal System
             "goal", "progress", "townstats", "claimed", "goalreached", "awarning"
         ]
@@ -60,9 +65,9 @@ class CommandManager(IPlugin):
             "kick": ["Usage: !kick <#ID/Name> [reason]", "Kicks a player."],
             "ban": ["Usage: !ban <#ID/Name> [reason]", "Bans a player."],
             "move": ["Usage: !move <#ID/Name> <Company ID>", "Moves a player to a specific company (255 for Spectator)."],
-            "reset": ["Usage: !reset <Company ID>", "Resets (closes) a company."],
+            "reset": ["Usage: !reset <company_id>", "Resets (closes) a company."],
             "resetme": ["Usage: !resetme", "Flags your company to be reset as soon as you leave it."],
-            "empty": ["Usage: !empty <Company ID>", "Empties a company by moving all players to spectators."],
+            "emptycompany": ["Usage: !emptycompany <Company ID>", "Empties a company by moving all players to spectators."],
             "lockcompany": ["Usage: !lockcompany <Company ID>", "Empties and locks a company."],
             "unlockcompany": ["Usage: !unlockcompany <Company ID>", "Unlocks a previously locked company."],
             "pause": ["Usage: !pause", "Pauses the game."],
@@ -84,6 +89,14 @@ class CommandManager(IPlugin):
             "seed": ["Usage: !seed", "Shows the random seed of the current map."],
             "news": ["Usage: !news <text>", "Broadcasts a news message."],
             "screenshot": ["Usage: !screenshot <tile_id>", "Takes a screenshot at the specified location."],
+            
+            # Company Reset System
+            "resetcompany": ["Usage: !resetcompany <Company ID>", "- <Company ID>: the ID of the company.", "Resets (closes) a company. Fails if the company still has players."],
+            "resetcompanyspec": ["Usage: !resetcompanyspec <Company ID>", "- <Company ID>: the ID of the company.", "Resets (closes) a company. Any players on the company are moved to spectators to make sure the reset does not fail."],
+            "resetcompanykick": ["Usage: !resetcompanykick <Company ID>", "- <Company ID>: the ID of the company.", "Resets (closes) a company. Any players on the company are kicked to make sure the reset does not fail."],
+            "resetcompanyban": ["Usage: !resetcompanyban <Company ID>", "- <Company ID>: the ID of the company.", "Resets (closes) a company. Any players on the company are banned to make sure the reset does not fail."],
+            "resetcompanytimer": ["Usage: !resetcompanytimer <Company ID> [<Time>] [<Interval>]", "- <Company ID>: the ID of the company.", "- [<Time>]: the time in seconds until the reset will be done. Set to 300 (5 minutes) if not specified.", "- [<Interval>]: the interval in seconds the company is receiving warnings about the timed reset. Set to 20 if not specified.", "Resets (closes) a company after a given time is over. Any players on the company are moved to spectators to make sure the reset does not fail."],
+            "cancelresetcompany": ["Usage: !cancelresetcompany [<Company ID>]", "- [<Company ID>]: the ID of the company.", "Stops the timer for a company reset. If no company ID is specified all active reset timers for all companies will be stopped."],
             
             # Goal System
             "goal": ["Usage: !goal", "Shows the current scoreboard and goal progress."],
@@ -107,7 +120,7 @@ class CommandManager(IPlugin):
             "pause": self.cmd_pause,
             "unpause": self.cmd_unpause,
             "reset": self.cmd_reset,
-            "empty": self.cmd_empty,
+            "emptycompany": self.cmd_emptycompany,
             "lockcompany": self.cmd_lockcompany,
             "unlockcompany": self.cmd_unlockcompany,
             "shutdown": self.cmd_shutdown,
@@ -133,6 +146,14 @@ class CommandManager(IPlugin):
             "seed": self.cmd_seed,
             "news": self.cmd_news,
             "screenshot": self.cmd_screenshot,
+            
+            # Company Reset Handlers
+            "resetcompany": self.cmd_resetcompany,
+            "resetcompanyspec": self.cmd_resetcompanyspec,
+            "resetcompanykick": self.cmd_resetcompanykick,
+            "resetcompanyban": self.cmd_resetcompanyban,
+            "resetcompanytimer": self.cmd_resetcompanytimer,
+            "cancelresetcompany": self.cmd_cancelresetcompany,
             
             # Goal System Proxy Handlers
             "goal": self.proxy_goal_cmd,
@@ -465,8 +486,8 @@ class CommandManager(IPlugin):
             self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has unlocked {co_name}", is_action=True)
         except: pass
 
-    def cmd_empty(self, cmd, args, reply, source, admin_name, context):
-        if not args: reply.append("Usage: !empty <id>"); return
+    def cmd_emptycompany(self, cmd, args, reply, source, admin_name, context):
+        if not args: reply.append("Usage: !emptycompany <id>"); return
         try: 
             user_input = int(args[0])
             co = user_input - 1
@@ -478,6 +499,277 @@ class CommandManager(IPlugin):
         reply.append(f"Emptied company. ({count} moved)")
         co_name = self._get_company_name(co)
         self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has cleared {co_name}", is_action=True)
+
+    def cmd_resetcompany(self, cmd, args, reply, source, admin_name, context):
+        """Reset company only if it's empty (fail if players exist)."""
+        if not args: 
+            reply.append("Usage: !resetcompany <company_id>")
+            return
+        
+        try: 
+            user_input = int(args[0])
+            cid = user_input - 1
+        except: 
+            reply.append("Invalid company ID.")
+            return
+        
+        if cid < 0: 
+            reply.append("Invalid company ID.")
+            return
+
+        # Check if company has players
+        data = self.get_data()
+        player_count = 0
+        if data:
+            for client_id, client_info in data.clients.items():
+                if client_info.get('company') == cid:
+                    player_count += 1
+        
+        if player_count > 0:
+            reply.append(f"Cannot reset company #{user_input}: Company still has {player_count} player(s). Use !resetcompanyspec, !resetcompanykick, or !resetcompanyban instead.")
+            return
+        
+        # Company is empty, proceed with reset
+        s = self.get_session()
+        if s: 
+            s.reset_company(cid)
+            reply.append(f"OK, resetting company #{user_input}.")
+            co_name = self._get_company_name(cid)
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has reset {co_name}", is_action=True)
+
+    def cmd_resetcompanyspec(self, cmd, args, reply, source, admin_name, context):
+        """Reset company after moving all players to spectators."""
+        if not args: 
+            reply.append("Usage: !resetcompanyspec <company_id>")
+            return
+        
+        s = self.get_session()
+        data = self.get_data()
+        try: 
+            user_input = int(args[0])
+            cid = user_input - 1
+        except: 
+            reply.append("Invalid company ID.")
+            return
+        
+        if cid < 0: 
+            reply.append("Invalid company ID.")
+            return
+
+        moved_count = 0
+        if data and s:
+            for client_id, client_info in data.clients.items():
+                if client_info.get('company') == cid:
+                    s.move_player(client_id, 255)
+                    moved_count += 1
+            
+        if s: 
+            s.reset_company(cid)
+            reply.append(f"OK, emptying ({moved_count} moved to spectators) and resetting company #{user_input}.")
+            co_name = self._get_company_name(cid)
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has reset {co_name} (method: movespec)", is_action=True)
+
+    def cmd_resetcompanykick(self, cmd, args, reply, source, admin_name, context):
+        """Reset company after kicking all players."""
+        if not args: 
+            reply.append("Usage: !resetcompanykick <company_id>")
+            return
+        
+        s = self.get_session()
+        data = self.get_data()
+        try: 
+            user_input = int(args[0])
+            cid = user_input - 1
+        except: 
+            reply.append("Invalid company ID.")
+            return
+        
+        if cid < 0: 
+            reply.append("Invalid company ID.")
+            return
+
+        kicked_count = 0
+        if data and s:
+            for client_id, client_info in data.clients.items():
+                if client_info.get('company') == cid:
+                    s.kick_player(client_id, "Company being reset by admin")
+                    kicked_count += 1
+            
+        if s: 
+            s.reset_company(cid)
+            reply.append(f"OK, kicking ({kicked_count} kicked) and resetting company #{user_input}.")
+            co_name = self._get_company_name(cid)
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has reset {co_name} (method: kick)", is_action=True)
+
+    def cmd_resetcompanyban(self, cmd, args, reply, source, admin_name, context):
+        """Reset company after banning all players."""
+        if not args: 
+            reply.append("Usage: !resetcompanyban <company_id>")
+            return
+        
+        s = self.get_session()
+        data = self.get_data()
+        try: 
+            user_input = int(args[0])
+            cid = user_input - 1
+        except: 
+            reply.append("Invalid company ID.")
+            return
+        
+        if cid < 0: 
+            reply.append("Invalid company ID.")
+            return
+
+        banned_count = 0
+        if data and s:
+            for client_id, client_info in data.clients.items():
+                if client_info.get('company') == cid:
+                    s.ban_player(client_id, "Company being reset by admin")
+                    banned_count += 1
+            
+        if s: 
+            s.reset_company(cid)
+            reply.append(f"OK, banning ({banned_count} banned) and resetting company #{user_input}.")
+            co_name = self._get_company_name(cid)
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has reset {co_name} (method: ban)", is_action=True)
+
+    def cmd_resetcompanytimer(self, cmd, args, reply, source, admin_name, context):
+        """Schedule a timed reset with warnings."""
+        if not args: 
+            reply.append("Usage: !resetcompanytimer <company_id> [<time>] [<interval>]")
+            return
+        
+        try: 
+            user_input = int(args[0])
+            cid = user_input - 1
+        except: 
+            reply.append("Invalid company ID.")
+            return
+        
+        if cid < 0: 
+            reply.append("Invalid company ID.")
+            return
+        
+        # Parse optional time and interval
+        reset_time = 300  # default 5 minutes
+        warning_interval = 20  # default 20 seconds
+        
+        if len(args) > 1:
+            try:
+                reset_time = int(args[1])
+            except:
+                reply.append("Invalid time value. Using default: 300 seconds.")
+        
+        if len(args) > 2:
+            try:
+                warning_interval = int(args[2])
+            except:
+                reply.append("Invalid interval value. Using default: 20 seconds.")
+        
+        # Cancel existing timer if any
+        if cid in self.reset_timers:
+            old_timer = self.reset_timers[cid]
+            old_timer["cancelled"] = True
+        
+        # Create new timer
+        end_time = time.time() + reset_time
+        self.reset_timers[cid] = {
+            "end_time": end_time,
+            "interval": warning_interval,
+            "cancelled": False,
+            "thread": None
+        }
+        
+        # Start warning thread
+        def warning_loop():
+            while True:
+                if cid not in self.reset_timers or self.reset_timers[cid]["cancelled"]:
+                    return
+                
+                remaining = self.reset_timers[cid]["end_time"] - time.time()
+                
+                if remaining <= 0:
+                    # Time's up - execute reset
+                    s = self.get_session()
+                    data = self.get_data()
+                    
+                    # Move players to spectators
+                    moved_count = 0
+                    if data and s:
+                        for client_id, client_info in data.clients.items():
+                            if client_info.get('company') == cid:
+                                s.move_player(client_id, 255)
+                                moved_count += 1
+                    
+                    # Reset company
+                    if s:
+                        s.reset_company(cid)
+                        co_name = self._get_company_name(cid)
+                        s.send_server_message(f"Company #{user_input} ({co_name}) has been reset (timed reset expired).")
+                        self._announce(f"Timed reset completed for {co_name} ({moved_count} moved to spectators)", is_action=True)
+                    
+                    # Clean up timer
+                    if cid in self.reset_timers:
+                        del self.reset_timers[cid]
+                    return
+                else:
+                    # Send warning
+                    s = self.get_session()
+                    if s:
+                        co_name = self._get_company_name(cid)
+                        s.send_server_message(f"WARNING: Company #{user_input} ({co_name}) will be reset in {int(remaining)} seconds!")
+                    
+                    # Wait for next interval or remaining time, whichever is shorter
+                    sleep_time = min(warning_interval, remaining)
+                    time.sleep(sleep_time)
+        
+        warning_thread = threading.Thread(target=warning_loop, daemon=True)
+        self.reset_timers[cid]["thread"] = warning_thread
+        warning_thread.start()
+        
+        co_name = self._get_company_name(cid)
+        reply.append(f"OK, company #{user_input} ({co_name}) will be reset in {reset_time} seconds. Warnings every {warning_interval} seconds.")
+        self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has scheduled a timed reset for {co_name} in {reset_time} seconds", is_action=True)
+
+    def cmd_cancelresetcompany(self, cmd, args, reply, source, admin_name, context):
+        """Cancel scheduled reset timer(s)."""
+        if not args:
+            # Cancel all timers
+            if not self.reset_timers:
+                reply.append("No active reset timers to cancel.")
+                return
+            
+            count = 0
+            for cid in list(self.reset_timers.keys()):
+                self.reset_timers[cid]["cancelled"] = True
+                del self.reset_timers[cid]
+                count += 1
+            
+            reply.append(f"OK, cancelled {count} active reset timer(s).")
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has cancelled all reset timers", is_action=True)
+        else:
+            # Cancel specific timer
+            try: 
+                user_input = int(args[0])
+                cid = user_input - 1
+            except: 
+                reply.append("Invalid company ID.")
+                return
+            
+            if cid < 0: 
+                reply.append("Invalid company ID.")
+                return
+            
+            if cid not in self.reset_timers:
+                reply.append(f"No active reset timer for company #{user_input}.")
+                return
+            
+            self.reset_timers[cid]["cancelled"] = True
+            del self.reset_timers[cid]
+            
+            co_name = self._get_company_name(cid)
+            reply.append(f"OK, cancelled reset timer for company #{user_input} ({co_name}).")
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has cancelled the reset timer for {co_name}", is_action=True)
 
     def cmd_kick(self, cmd, args, reply, source, admin_name, context):
         if not args: reply.append("Usage: !kick <id> [reason]"); return

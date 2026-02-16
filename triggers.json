@@ -273,7 +273,61 @@
         "discord": true
     },
     {
-        "name": "empty",
+        "name": "resetcompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company. Fails if the company still has players.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompanyspec",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company. Any players on the company are moved to spectators to make sure the reset does not fail.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompanykick",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company. Any players on the company are kicked to make sure the reset does not fail.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompanyban",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company. Any players on the company are banned to make sure the reset does not fail.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompanytimer",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company after a given time is over. Any players on the company are moved to spectators to make sure the reset does not fail.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "cancelresetcompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Stops the timer for a company reset. If no company ID is specified all active reset timers for all companies will be stopped.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "emptycompany",
         "admin": true,
         "irc": true,
         "in_game": true,
