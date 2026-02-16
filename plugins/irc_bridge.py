@@ -516,4 +516,16 @@ class IRCBridge(IPlugin):
                 if not irc_account: self.whois_queue.append(sender)
                 success, reply = mgr.handle_command(cmd_payload.strip(), source="irc", is_admin=is_admin, admin_name=admin_user if admin_user else sender)
                 if success and reply: self.send_msg(reply)
+            else:
+                # Chat Link Logic
+                meta_parts = parts[0].split()
+                if len(meta_parts) >= 3:
+                    target = meta_parts[2]
+                    # Check if target is a configured channel with chatlink enabled
+                    if target in self.channels and self.channels[target].get("chatlink", False):
+                        # Relay to game
+                        session = self.client.get_service("OpenttdSession")
+                        if session:
+                            sanitized = msg.replace('"', "'")
+                            session.send_chat_message(f"<{sender}> {sanitized}")
         except: pass

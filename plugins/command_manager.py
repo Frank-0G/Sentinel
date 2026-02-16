@@ -977,7 +977,7 @@ class CommandManager(IPlugin):
             reply.append(f"{company_id + 1} ({display_color}) '{name}' - Founded: {founded_str} - T/R/P/S: {t}/{r}/{p}/{s} - Password: {'yes' if passworded else 'no'}")
 
     def cmd_say(self, cmd, args, reply, source, admin_name, context): 
-        if args: self.get_session().send_chat_message(f"[{admin_name}] {' '.join(args)}")
+        if args: self.get_session().send_chat_message(f"[Admin: {admin_name}] {' '.join(args)}")
 
     def cmd_rcon(self, cmd, args, reply, source, admin_name, context):
         self.get_session().execute_raw(" ".join(args))

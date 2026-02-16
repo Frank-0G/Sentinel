@@ -426,7 +426,8 @@ class DiscordBridge(IPlugin):
             dest_type = 0
             
             # Pack it similar to SERVER_CHAT packet
-            payload = struct.pack('BBxI', action, dest_type, client_id)
+            # Use <BBI (Little-endian, Byte, Byte, Int) to match standard packet format
+            payload = struct.pack('<BBI', action, dest_type, client_id)
             msg_bytes = formatted_msg.encode('utf-8') + b'\x00'
             payload += msg_bytes
             
