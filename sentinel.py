@@ -139,6 +139,26 @@ class AdminClient:
 
     def load_openttd_config(self):
         cfg_path = self.config.get("config_file", "")
+        # Load DoCommands.xml
+        self.do_command_schema = {}
+        try:
+            do_cmd_path = os.path.join(CURRENT_DIR, "DoCommands.xml")
+            if os.path.exists(do_cmd_path):
+                tree = ET.parse(do_cmd_path)
+                root = tree.getroot()
+                # <DoCommands><DoCommand Name="..."><Params><Param Name="..." Type="..." />...
+                for cmd_node in root.findall(".//DoCommand"):
+                    cname = cmd_node.get("Name")
+                    params = []
+                    for p_node in cmd_node.findall(".//Param"):
+                        params.append((p_node.get("Name"), p_node.get("Type")))
+                    self.do_command_schema[cname] = params
+                print(f"[System] Loaded {len(self.do_command_schema)} command schemas from DoCommands.xml")
+            else:
+                 print(f"[System] Warning: DoCommands.xml not found at {do_cmd_path}")
+        except Exception as e:
+            print(f"[System] Error loading DoCommands.xml: {e}")
+
         if not cfg_path or not os.path.exists(cfg_path):
             print(f"[Config] Warning: OpenTTD config file not found at: {cfg_path}")
             return
@@ -349,19 +369,57 @@ class AdminClient:
                         data_len = struct.unpack_from('<H', payload, 7)[0]
                         data_buf = payload[9 : 9+data_len]
                         cmd_name = self.command_names.get(cmd_id, "Unknown")
+                        
+                        # Default params
+                        params = {'p1': 0, 'p2': 0, 'tile': 0, 'text': ""}
                         p1 = 0; p2 = 0; tile = 0; text = ""
+
+                        # Dynamic Parsing via DoCommands.xml schema
+                        if cmd_name in self.do_command_schema:
+                            schema = self.do_command_schema[cmd_name]
+                            off = 0
+                            for param_name, param_type in schema:
+                                if off >= len(data_buf): break
+                                val = None
+                                
+                                if param_type == "bool":
+                                    val = bool(data_buf[off]); off += 1
+                                elif param_type in ["int8", "byte", "sbyte", "uint8"]:
+                                    val = data_buf[off]; off += 1
+                                elif param_type in ["int16", "short", "uint16", "ushort"]:
+                                    val = struct.unpack_from('<H', data_buf, off)[0]; off += 2
+                                elif param_type in ["int32", "int", "uint32", "uint"]:
+                                    val = struct.unpack_from('<I', data_buf, off)[0]; off += 4
+                                elif param_type in ["int64", "long", "uint64", "ulong"]:
+                                    val = struct.unpack_from('<Q', data_buf, off)[0]; off += 8
+                                elif param_type == "string":
+                                    val, off_new = self.unpack_string(data_buf, off); off = off_new
+                                
+                                if val is not None:
+                                    params[param_name] = val
+                                    # Backwards compatibility mapping
+                                    if param_name == "Tile": tile = val
+                                    if param_type == "string": text = val
+
+                        # Legacy manual overrides (keep for safety/fallback)
                         if cmd_name == "CmdPlaceSign":
-                            if len(data_buf) >= 4:
-                                tile = struct.unpack_from('<I', data_buf, 0)[0]
-                                text, _ = self.unpack_string(data_buf, 4)
+                            if "Tile" in params: tile = params["Tile"]
+                            if "Text" in params: text = params["Text"]
                         elif cmd_name == "CmdRenameSign":
-                            if len(data_buf) >= 2:
-                                p1 = struct.unpack_from('<H', data_buf, 0)[0]
-                                text, _ = self.unpack_string(data_buf, 2)
+                             if "Text" in params: text = params["Text"]
+
+                        # Dispatch with params
                         for p in self.plugins:
                             if hasattr(p, 'on_do_command'):
-                                p.on_do_command(cid, cmd_id, p1, p2, tile, text, 0)
-                    except: pass
+                                try:
+                                    # Try new signature first
+                                    p.on_do_command(cid, cmd_id, p1, p2, tile, text, 0, params)
+                                except TypeError:
+                                    # Fallback to old signature
+                                    p.on_do_command(cid, cmd_id, p1, p2, tile, text, 0)
+                    except Exception as e:
+                        # self.log(f"Packet 127 Error: {e}")
+                        pass
 
             elif ptype == 124: # GAMESCRIPT
                 try:

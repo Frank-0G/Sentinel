@@ -26,7 +26,7 @@ class IPlugin:
     def on_company_remove(self, company_id: int, reason: int): pass
 
     def on_command_name(self, cmd_id: int, cmd_name: str): pass
-    def on_do_command(self, client_id: int, cmd_id: int, p1: int, p2: int, tile: int, text: str, frame: int): pass
+    def on_do_command(self, client_id: int, cmd_id: int, p1: int, p2: int, tile: int, text: str, frame: int, params: dict = None): pass
     
     def on_gamescript_event(self, event_type: str, data: dict): pass
 
