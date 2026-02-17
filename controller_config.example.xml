@@ -88,4 +88,19 @@
     </private>
   </welcome_message>
 
+  <!-- SECTION: GOAL SYSTEM -->
+  <!-- Configuration for the GoalSystem plugin (CityBuilder/Value goals and town protection). -->
+  <goal>
+    <!-- Target Company Value for Money-based goal (0 to disable). -->
+    <winlimit>100000000</winlimit>
+    <!-- Target Population for CityBuilder goal (0 to disable). -->
+    <population>2000</population>
+    <!-- Time in seconds between scoreboard announcements. -->
+    <interval>600</interval>
+    <!-- Radius of protection around claimed towns (in tiles). -->
+    <protectionrange>20</protectionrange>
+    <!-- Victory Count (Legacy setting, mostly unused). -->
+    <victorycount>10000</victorycount>
+  </goal>
+
 </config>
