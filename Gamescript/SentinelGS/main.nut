@@ -32,7 +32,11 @@ class SentinelCore extends GSController
             // FIX: We pass 'null' instead of 'this.api' because the wrappers 
             // now use the static 'Sentinel' class for communication.
             
-            if (mode == 1) {
+            if (mode == 0) {
+                require("plugins/CompanyValue/wrapper.nut");
+                this.active_plugin = Sentinel_CompanyValue(null);
+            }
+            else if (mode == 1) {
                 require("plugins/CityBuilder1/wrapper.nut");
                 this.active_plugin = Sentinel_CB1(null);
             } 

@@ -8,7 +8,15 @@ import os
 # Ensure we can import from parent directory
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from plugin_interface import IPlugin
+try:
+    from plugin_interface import IPlugin
+    from openttd_types import AdminUpdateType, AdminUpdateFrequency
+
+except ImportError:
+    # Fallback for when running directly or in IDE without proper path context
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from plugin_interface import IPlugin
+    from openttd_types import AdminUpdateType, AdminUpdateFrequency
 
 class GoalSystem(IPlugin):
     def __init__(self, client):
@@ -33,7 +41,7 @@ class GoalSystem(IPlugin):
         self.map_height = 0
         
         # Data Stores
-        self.company_data = {i: {'pop': 0, 'val': 0} for i in range(15)}
+        self.company_data = {i: {'pop': 0, 'val': 0, 'name': f"Company #{i+1}", 'color': "Unknown"} for i in range(15)}
         self.claimed_towns = {} # {cid: {'town': str, 'townid': int, 'center': (x,y), 'bbox': (minx,miny,maxx,maxy)}}
         self.town_demands = {} # {tid: [demand_dicts]}
         self.protection_exceptions = [] 
@@ -59,6 +67,52 @@ class GoalSystem(IPlugin):
             self.victory_count = int(cfg.get("victorycount", 10000))
             self.protection_range = int(cfg.get("protectionrange", 20))
 
+    def on_connected(self):
+        # Request WEEKLY updates for Company Economy (Daily is not supported by protocol for Economy)
+        self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
+        self.client.log(f"[{self.name}] Requested WEEKLY Company Economy updates.")
+
+    def get_company_details(self, cid):
+        """
+        Retrieves company name, color name, and list of player names.
+        Returns: (company_name, color_name, player_string)
+        """
+        data = self.client.get_service("DataController")
+        
+        # Defaults
+        c_name = self.company_data[cid].get('name', f"Company #{cid+1}")
+        c_color = "Unknown"
+        players = []
+        
+        if data:
+            # 1. Get Color
+            # Try to get color from DataController's company info if available
+            co_info = data.companies.get(cid)
+            if co_info and 'color' in co_info:
+                raw_color = co_info['color']
+                c_color, _ = data.get_color_info(raw_color)
+            else:
+                # Fallback to local data if DataController doesn't have it yet
+                # (Local data stores it as "Color X", so we might want to parse that or just leave it)
+                local_col = self.company_data[cid].get('color', "Color ?")
+                if local_col.startswith("Color "):
+                     try: 
+                         col_id = int(local_col.split(" ")[1])
+                         c_color, _ = data.get_color_info(col_id)
+                     except: c_color = local_col
+                else: c_color = local_col
+
+            # 2. Get Players
+            for client_id, info in data.clients.items():
+                if info.get('company') == cid:
+                    players.append(info.get('name', 'Unknown'))
+        
+        # Format players string: "Player1, Player2" or "No Players"
+        if not players: player_str = "No Players"
+        else: player_str = ", ".join(players)
+        
+        return c_name, c_color, player_str
+
     def on_tick(self):
         if not self.enabled: return
         now = time.time()
@@ -71,18 +125,50 @@ class GoalSystem(IPlugin):
             self.check_winners()
 
         if self.game_won and self.restart_countdown > 0:
-            if now % 1 <= 0.1: 
-                self.restart_countdown -= 1
-                if self.restart_countdown <= 0:
-                    sess = self.client.get_service("OpenttdSession")
-                    if sess: sess.restart_game()
-                    self.game_won = False
+            self.restart_countdown -= 1
+            
+            should_announce = False
+            if self.restart_countdown % 10 == 0: should_announce = True # 30, 20, 10
+            if self.restart_countdown <= 5: should_announce = True      # 5, 4, 3, 2, 1
+            
+            if should_announce and self.restart_countdown > 0:
+                 # Mirror C# Message: "New game starts in X seconds, hold on..."
+                 msg = f"New game starts in {self.restart_countdown} seconds, hold on..."
+                 self.client.send_chat(3, 0, 0, msg) # Server Chat
+                 
+                 # NOTE: Removed repeated "GOAL REACHED" message as per user request to reduce spam.
 
-        if "OpenttdSession" in self.client.services: # Stub cleanup check
-             pass
+
+            if self.restart_countdown <= 0:
+                self.client.log(f"[{self.name}] Triggering Game Restart now.")
+                sess = self.client.get_service("OpenttdSession")
+                if sess: 
+                    sess.restart_game()
+                else:
+                    self.client.log(f"[{self.name}] Error: OpenttdSession service not found!")
+                self.game_won = False
+                self.winner_cid = -1
+
+        pass # Stub cleanup check removed
 
         if now % 60 == 0:
             self.bad_action_count = {k: v-1 for k, v in self.bad_action_count.items() if v > 1}
+            
+    def on_new_game(self):
+        self.client.log(f"[{self.name}] New Game Detected! Resetting Goal System state.")
+        self.game_won = False
+        self.restart_countdown = -1
+        self.winner_cid = -1
+        self.claimed_towns.clear()
+        self.town_demands.clear()
+        
+        # Reset Company Data but keep keys/structure
+        for cid in self.company_data:
+            self.company_data[cid]['pop'] = 0
+            self.company_data[cid]['val'] = 0
+            # Name/Color might stay or update later via packets, strictly speaking new game resets them too usually,
+            # but we can leave them until updated by packet.
+            # safe to reset name to default if needed, but 'Company #X' is fallback logic anyway.
 
     # --- EVENT HANDLING ---
     def on_gamescript_event(self, event_type, data):
@@ -144,9 +230,34 @@ class GoalSystem(IPlugin):
                 cid = int(data.get("company", -1))
                 if cid >= 0: 
                     self.company_data[cid]['pop'] = int(data.get("population", 0))
-                    # Update claim if missing (this part might be redundant if 'claimed' event is reliable)
-                    # if 'townid' in data and cid not in self.claimed_towns:
-                    #     self.claimed_towns[cid] = {'town': 'Town', 'townid': data['townid']}
+
+            elif e == "multigoalsupdated":
+                cid = int(data.get("company", -1))
+                if cid >= 0:
+                    val = 0
+                    
+                    # Fix: Prioritize 'cvalue' if present, regardless of GMG (handles missing start packet)
+                    if "cvalue" in data:
+                        val = int(data.get("cvalue", 0))
+                        # Optional: Auto-correct GMG if we see cvalue
+                        if self.goal_master_game == 0: self.goal_master_game = 4 
+                        
+                    # Map field based on game type (0=Cargo, 1=Income, 2=Cash, 3=Rating, 4=Value)
+                    # Note: We treat all non-population goals as 'val' for the purpose of checking win limit.
+                    elif self.goal_master_game == 4:
+                        val = int(data.get("cvalue", 0))
+                    elif self.goal_master_game == 0:
+                        val = int(data.get("cargo", 0))
+                    elif self.goal_master_game == 1:
+                        val = int(data.get("income", 0))
+                    elif self.goal_master_game == 2:
+                        val = int(data.get("cash", 0))
+                    elif self.goal_master_game == 3:
+                        val = int(data.get("rating", 0))
+                    
+                    self.company_data[cid]['val'] = val
+                    # self.client.log(f"[{self.name}] Fast Update Co #{cid+1}: {val} (Type {self.goal_master_game})")
+                    self.check_winners()
 
         except Exception as err:
             self.client.log(f"[{self.name}] Event Error: {err}")
@@ -156,7 +267,17 @@ class GoalSystem(IPlugin):
     def on_company_economy(self, company_id, money, loan, income, delivered, performance, value):
          # Keep track of value/money
          if company_id in self.company_data:
-             self.company_data[company_id]['val'] = value # or logic to calculate score
+             # Only update 'val' from Economy packet if NOT in Company Value mode (Mode 4).
+             # In Mode 4, the GameScript sends authoritative high-frequency updates via 'multigoalsupdated'.
+             if self.goal_master_game != 4:
+                 self.company_data[company_id]['val'] = value 
+             # self.client.log(f"DEBUG: Economy Update Co {company_id} Val: {value} (GMG: {self.goal_master_game})")
+
+    def on_company_info(self, cid, name, manager, color, protected, passworded, founded, is_ai):
+        if cid in self.company_data:
+            self.company_data[cid]['name'] = name
+            # Map color int to string name if possible, for now use generic
+            self.company_data[cid]['color'] = f"Color {color}"
 
     # --- LOGGING & ERROR HANDLING ---
     def on_wrapper_log(self, text): pass
@@ -281,24 +402,39 @@ class GoalSystem(IPlugin):
     def get_progress(self, cid):
         if self.is_city_builder and self.targets['pop'] > 0:
             return (self.company_data[cid]['pop'] / self.targets['pop']) * 100
+        
         # Value based
         val = self.company_data[cid]['val']
-        if self.targets['value'] > 0:
-            return (val / self.targets['value']) * 100
+        target = self.targets['value']
+        
+        if target > 0:
+            return (val / target) * 100
         return 0
 
     def check_winners(self):
         for cid in range(15):
-            if self.get_progress(cid) >= 100:
+            progress = self.get_progress(cid)
+            if progress >= 100:
+                self.client.log(f"[{self.name}] Win detected for Company #{cid+1} (Progress: {progress}%)")
                 self.trigger_win(cid)
                 break
 
     def trigger_win(self, cid):
         self.game_won = True
+        self.winner_cid = cid # Store for periodic announcements
+        self.client.log(f"[{self.name}] Triggering WIN sequence for Company #{cid+1}")
+        
+        c_name, c_color, p_str = self.get_company_details(cid)
+        
+        # Exact C# Message: "--- GOAL REACHED! {CompanyName} ({ColorString}) ({Players}) has won this game!!! ---"
+        msg = f"--- GOAL REACHED! {c_name} ({c_color}) ({p_str}) has won this game!!! ---"
+        
         sess = self.client.get_service("OpenttdSession")
         if sess:
-            sess.send_server_message(f"--- GOAL REACHED! Company #{cid+1} WINS! ---")
-            sess.send_server_message("Restarting in 30 seconds...")
+            sess.send_server_message(msg)
+            # C# immediately sends the "starts in X seconds" message too
+            sess.send_server_message(f"New game starts in 30 seconds, hold on...")
+            
         self.restart_countdown = 30
 
     # --- COMMANDS ---
@@ -342,26 +478,95 @@ class GoalSystem(IPlugin):
             reply.append(f"#{cid+1}: {info['town']} (Pop: {pop})")
 
     def announce_scoreboard(self, force_reply=None):
-        header = "--- Company Ranking ---"
-        target_str = f"Target: {self.targets['pop']} Pop" if self.is_city_builder else f"Target: ${self.targets['value']}"
-        header = f"--- {target_str} ---"
+        # Color Map
+        colors = [
+            "Dark Blue", "Pale Green", "Pink", "Yellow", "Red", "Light Blue", "Green", "Dark Green",
+            "Blue", "Cream", "Mauve", "Purple", "Orange", "Brown", "Grey", "White"
+        ]
         
-        ranks = []
-        data_ctrl = self.client.get_service("DataController")
-        for i in range(15):
-             # Only list active companies
-             if data_ctrl and i in data_ctrl.companies:
-                p = self.get_progress(i)
-                ranks.append({'id': i, 'pct': p, 'name': data_ctrl.companies[i].get('name', f"Company {i+1}")})
-        ranks.sort(key=lambda x: x['pct'], reverse=True)
-
+        # 1. Determine Header & Unit
+        header = ""
+        unit_singular = ""
+        unit_plural = ""
+        
+        if self.is_city_builder:
+             target_val = self.targets['pop']
+             unit_singular = "inhabitant"
+             unit_plural = "inhabitants"
+             unit_str = unit_singular if target_val == 1 else unit_plural
+             header = f"--- First company with {target_val:,} {unit_str} wins the game. ---"
+        else:
+             target_val = self.targets['value']
+             # Pure CV Goal logic: "EUR company value"
+             header = f"--- First company with {target_val:,} EUR company value wins the game. ---"
+             
         if force_reply is not None: force_reply.append(header)
         else: self.client.send_chat(3, 0, 0, header) # Broadcast
 
+        # 2. Get and Sort Data
+        ranks = []
+        data_ctrl = self.client.get_service("DataController")
+        
+        for cid in range(15):
+             is_active = False
+             if data_ctrl and cid in data_ctrl.companies: is_active = True
+             else:
+                 # Fallback: Check if we have data (cast to int to be safe)
+                 pop = int(self.company_data[cid].get('pop', 0))
+                 val = int(self.company_data[cid].get('val', 0))
+                 if pop > 0 or val > 0: is_active = True
+             
+             if is_active:
+                 p = self.get_progress(cid)
+                 
+                 # Prepare Value Text
+                 pop = int(self.company_data[cid].get('pop', 0))
+                 val = int(self.company_data[cid].get('val', 0))
+                 
+                 value_text = ""
+                 if self.is_city_builder:
+                     # e.g. "1,200 inhabitants"
+                     u = unit_singular if pop == 1 else unit_plural
+                     value_text = f"{pop:,} {u}"
+                 else:
+                     # e.g. "100,000 EUR company value"
+                     value_text = f"{val:,} EUR company value"
+                 
+                 name = self.company_data[cid].get('name', f"Company #{cid+1}")
+                 
+                 # Resolve Color
+                 col_str = "Unknown"
+                 try:
+                     raw_col = str(self.company_data[cid].get('color', "Color 0"))
+                     if raw_col.startswith("Color "):
+                         col_parts = raw_col.split(" ")
+                         if len(col_parts) > 1:
+                             col_idx = int(col_parts[1])
+                             if 0 <= col_idx < len(colors): col_str = colors[col_idx]
+                             else: col_str = raw_col
+                         else: col_str = raw_col
+                     else: col_str = raw_col
+                 except: col_str = "Unknown"
+
+                 ranks.append({
+                     'id': cid, 
+                     'pct': int(p), 
+                     'name': name,
+                     'color': col_str,
+                     'value_text': value_text
+                 })
+
+        # Sort by percentage descending
+        ranks.sort(key=lambda x: x['pct'], reverse=True)
+
+        # 3. Output Top 3
         count = 0
-        for r in ranks:
+        for i, r in enumerate(ranks):
             if count >= 3: break
-            msg = f"#{r['id']+1} {r['name']}: {int(r['pct'])}%"
+            
+            # Format: - ({PCT}%) Rank #{RANK} is {NAME} ({COLOR}) with {VALUE_TEXT}
+            msg = f"- ({r['pct']}%) Rank #{i+1} is {r['name']} ({r['color']}) with {r['value_text']}"
+            
             if force_reply is not None: force_reply.append(msg)
             else: self.client.send_chat(3, 0, 0, msg)
             count += 1

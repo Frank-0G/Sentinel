@@ -7,10 +7,12 @@ class CompanyValue
     // GUI State
     main_goal_id = -1;
     company_goals = null; 
+    last_values = null;
 
     constructor(_api) {
         this.api = _api;
         this.company_goals = {};
+        this.last_values = {};
     }
 
     function GetName() { return "CompanyValue"; }
@@ -93,12 +95,44 @@ class CompanyValue
             local current_val = 0;
             try {
                 if (GSCompanyMode(c_id)) {
-                    current_val = GSCompany.GetBankBalance(GSCompany.COMPANY_SELF) - GSCompany.GetLoanAmount();
+                    // Create scope object, but wait, GSCompanyMode returns bool or void?
+                    // Actually, GSCompanyMode(cid) acts as a scope changer.
+                    // If it returns bool, it's boolean.
+                    // If it's a scope guard, it needs to be held.
+                    // Most similar scripts do: if (GSCompanyMode(x)) ...
+                    // Let's assume it IS a scope guard.
+
+                    // Let's assign and check.
+                    // If it returns bool, the guard is implicit?
+                    // No, usually guard object is returned.
+
+                    // Let's force assignment.
+                    local scope = GSCompanyMode(c_id);
+                    if (scope) {
+                         current_val = GSCompany.GetBankBalance(GSCompany.COMPANY_SELF) - GSCompany.GetLoanAmount();
+                    }
                 }
-            } catch (e) { continue; }
+            } catch (e) { 
+                this.api.Log("Error calc Co " + c_id + ": " + e);
+                continue; 
+            }
+
+            // DEBUG LOGGING
+            // this.api.Log("UpdateScoreboard: Co " + c_id + " Val " + this.FormatMoney(current_val));
+            // END DEBUG
 
             if (!this.has_winner && current_val >= this.goal_value) {
                 this.TriggerWin(c_id, current_val);
+            }
+
+            // Check if value changed and send update to controller
+            if (!(c_id in this.last_values) || this.last_values[c_id] != current_val) {
+                this.last_values[c_id] <- current_val;
+                this.api.SendToController({
+                    event = "multigoalsupdated",
+                    company = c_id,
+                    cvalue = current_val
+                });
             }
 
             local progress = (current_val * 100) / this.goal_value;

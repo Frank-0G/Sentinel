@@ -12,7 +12,8 @@
             "resetcompany",
             "resetcompanytimer",
             "cancelresetcompany",
-            "admin"
+            "admin",
+            "goalreached"
         ],
         "full-admin": [
             "restart",
@@ -28,7 +29,9 @@
             "name",
             "alogin",
             "alogout",
-            "reloadplugins"
+            "reloadplugins",
+            "force_update",
+            "debug_company"
         ]
     },
     "inheritance": {
