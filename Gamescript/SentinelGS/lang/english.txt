@@ -1,0 +1,739 @@
+STR_NEW_HQ				:{COMPANY} has claimed {TOWN}
+STR_PLACE_HQ			:Place your HQ in a town to claim it, cities cannot be claimed!
+STR_CITY			:.:: City ::.
+STR_HQCITY			:{COMPANY}'s Town
+STR_HQAREA_TOP			:/\ {COMPANY}'s Area /\
+STR_HQAREA_RIGHT			:> {COMPANY}'s Area
+STR_HQAREA_BOTTOM			:\/ {COMPANY}'s Area \/
+STR_HQAREA_LEFT			:{COMPANY}'s Area <
+STR_GOAL_START               :{BLACK}Welcome to the BTPro Playground!{}{}Please note that there are rules on the BTPro Servers.{}{}Type  {WHITE}!rules{BLACK}  to read all our houserules or visit our website:{}{}{WHITE}http://openttd.btpro.nl{BLACK}{}{}Enjoy your stay and play fair!
+STR_ADMIN	:{BIG_FONT}{PRESIDENT_NAME},{}{RED}an ADMIN is trying to contact you!{}{}{BLACK}Please read the chat and Press <ENTER> to send a reply.
+STR_GOAL_START_CITYBUILDER             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to increase town development in the town of your choice.{}{}Please build your {ORANGE}HQ{BLACK} in a town under {ORANGE}{NUM}{BLACK} Inhabitants.{}{}You have been granted:{}{}{ORANGE}exclusive transport rights {BLACK}in and around the town you choose.{}{}Your goal? Build a  {ORANGE}TOWN{BLACK} until reach the server goal. (type {ORANGE}!goal{BLACK} in chat){}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_TOWN_CARGOS_NEEDED_CB_BACKUP           :{GREEN}{NUM}   {LTBLUE}{CARGO_LIST} {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{COMMA} {BLACK}pop
+STR_TOWN_CARGOS_NEEDED_CB           :{GREEN}{STRING}   {LTBLUE}{CARGO_LIST} {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{NUM} {BLACK}pop
+STR_TOWN_CARGOS_NEEDED_CB_A           :{LTBLUE}{CARGO_LIST} {BLACK} after population above {GREEN}{NUM} {BLACK}Inhabitants
+STR_TOWN_CARGOS_NEEDED_CB_B           :{GREEN}{NUM}  {LTBLUE}{CARGO_LIST}  {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{NUM} {BLACK}population
+
+# -------------------- XSHUNTER'S CITYBUILDER STRINGS: --------------------
+
+# -------------------- INTERFACE --------------------
+
+# Interface Towns
+STR_TOWN_GUI_LIST_NEIGHBOURS             :Cities in the Neighbourhood:{}         {STRING}{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}
+STR_TOWN_GUI_LIST_NEIGHBOURS_FIRST	 	 : {ORANGE}{TOWN}
+STR_TOWN_GUI_LIST_NEIGHBOURS_MORE	 	 :{BLACK}, {ORANGE}{TOWN}
+STR_TOWN_GUI_LIST_NEIGHBOURS_NONE		 :{RED} None
+
+# Interface Signs
+STR_HQCITY_CONGESTED			:{COMPANY}'s Town ({ORANGE}Congested{WHITE})
+STR_SIGN_TOWN_CONGESTED		    		 :({ORANGE}Congested{WHITE})
+STR_SIGN_CITY_CONGESTED		    		 :.:: City ::. ({ORANGE}Congested{WHITE})
+
+# Interface Goals
+STR_REDUCE_TOWN_CONGESTION_GOAL          :Reduce the congestion in {TOWN}
+
+# Interface News
+// STR_NEWS_RECORD_TOWN_POPULATION_FIRST    :The City of {TOWN} is first to exceed {NUM} Inhabitants!
+// STR_NEWS_RECORD_TOWN_POPULATION_MORE     :The City of {TOWN} now has over {NUM} Inhabitants!
+
+STR_NEWS_TOWN_CONGESTED_GROW_REDUCED     :The traffic congestion in {TOWN} is too high. Until it is resolved, town growth rate is significantly reduced.
+STR_NEWS_TOWN_CONGESTED_GROW_STOPPED     :The traffic congestion in {TOWN} is too high. Nobody will move into the town until the situation is improved.
+
+STR_GOAL_GUI_SCOREBOARD                  :- ({NUM}%) Rank #{NUM} is {STRING} ({STRING}) with {NUM} point{P "" s}
+
+#Cargo at towngui
+STR_TOWN                                 :{STRING}{}{}
+STR_1                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_2                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_3                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Coal  ...................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_4                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Coal  ...................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Wood ..................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_5                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Coal  ...................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Wood ..................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Goods .................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_6                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Coal  ...................... available:  {ORANGE}{NUM}{}{BLACK}Food ...................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_7                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Coal  ...................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Food ...................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Goods .................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_8                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Water ................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_9                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Water ................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Food ...................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+STR_10                                    :{BLACK}Passengers  .......... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Mail  ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Water ................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Food ...................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{}{BLACK}Goods .................... available:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}
+
+# -------------------- SETTINGS --------------------
+
+# Setting Categories
+STR_SETTING_CATEGORY_CARGOGOALS			 :Cargo Goals
+STR_SETTING_CATEGORY_PERIODICGROWTH		 :Automated Growth
+STR_SETTING_CATEGORY_CONGESTION          :Congestion Effects
+STR_SETTING_CATEGORY_COMPATIBILTY        :NewGRF Compatibility
+STR_SETTING_CATEGORY_NEIGHBOURHOOD  	 :Neighbourhood Effects
+
+# Setting CargoGoals
+STR_SETTING_CARGOGOAL_DIFFICULTY         :Overall Difficulty of Cargo Goals
+STR_SETTING_CARGOGOAL_VARIETY 			 :The variety of required Cargo should be
+STR_SETTING_CARGOGOAL_VARIETY_0			 :Simplistic (Passengers and Mail only)
+STR_SETTING_CARGOGOAL_VARIETY_1			 :Complex (Passengers. Mail and up to 3 other)
+
+# Setting Periodic Growth
+STR_SETTING_PERIODICGROWTH_RATE			 :Towns will slowly expand even without goals met
+STR_SETTING_PERIODICGROWTH_RATE_0		 :Never
+STR_SETTING_PERIODICGROWTH_RATE_1		 :Rarely (Once a year)
+STR_SETTING_PERIODICGROWTH_RATE_2		 :Uncommon (Every 6 months)
+STR_SETTING_PERIODICGROWTH_RATE_3		 :Common (Every 3 months)
+STR_SETTING_PERIODICGROWTH_RATE_4		 :Often (Every 6 weeks)
+STR_SETTING_PERIODICGROWTH_CITYBONUS	 :Cities will benefit from Automated Growth
+STR_SETTING_PERIODICGROWTH_CITYBONUS_0	 :Same as Towns
+STR_SETTING_PERIODICGROWTH_CITYBONUS_1	 :Twice as much as Towns
+STR_SETTING_PERIODICGROWTH_CITYBONUS_2	 :Three times as much as Towns
+
+# Setting Congestion Effects
+STR_SETTING_CONGESTION_EFFECT			 :Vehicle Congestion slows City Growth
+STR_SETTING_CONGESTION_EFFECT_1			 :No
+STR_SETTING_CONGESTION_EFFECT_2			 :Somewhat (1/2)
+STR_SETTING_CONGESTION_EFFECT_3			 :Moderate (1/4)
+STR_SETTING_CONGESTION_EFFECT_4			 :Entirely
+STR_SETTING_CONGESTION_DIFFICULTY		 :Difficulty for City Congestion
+STR_SETTING_CONGESTION_DIFFICULTY_0		 :Very Easy (200%)
+STR_SETTING_CONGESTION_DIFFICULTY_1		 :Easy (150%)
+STR_SETTING_CONGESTION_DIFFICULTY_2		 :Normal (100%)
+STR_SETTING_CONGESTION_DIFFICULTY_3		 :Hard (75%)
+STR_SETTING_CONGESTION_DIFFICULTY_4		 :Very Hard (50%)
+STR_SETTING_CONGESTION_DIFFICULTY_5		 :Insane (25%)
+STR_SETTING_CONGESTION_DIFFICULTY_6		 :Disastrous (10%)
+
+# Setting NewGRF Compatibility
+STR_SETTING_NEWGRF_SET					 :Adjust Cargo Goals to match NewGRF-Set
+STR_SETTING_NEWGRF_SET_0				 :Default
+STR_SETTING_NEWGRF_SET_1				 :FIRS
+
+# Setting Neighbourhood Effects
+STR_SETTING_NEIGHBOURHOOD_ENABLE		 :Directly neighbouring towns influence each others Cargo Goals
+STR_SETTING_NEIGHBOURHOOD_MAX			 :A Town may have up to
+STR_SETTING_NEIGHBOURHOOD_MAX_1			 :1 Neighbour
+STR_SETTING_NEIGHBOURHOOD_MAX_2			 :2 Neighbours
+STR_SETTING_NEIGHBOURHOOD_MAX_3			 :3 Neighbours
+STR_SETTING_NEIGHBOURHOOD_MAX_4			 :4 Neighbours
+STR_SETTING_NEIGHBOURHOOD_MAX_5			 :5 Neighbours
+
+# STORYBOOK
+STR_STORY_HEAD                           : Previous month stats from company {NUM}
+STR_STORY_0                              : No stats available.
+STR_STORY_1                              :{BLACK}Passengers ............. delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_2                              :{BLACK}Mail .......................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_3                              :{BLACK}Coal ......................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_4                              :{BLACK}Wood ....................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_5                              :{BLACK}Iron .......................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_6                              :{BLACK}Steel ........................ delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_7                              :{BLACK}Goods ...................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_8                              :{BLACK}Fruit/Maize ............ delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_9                              :{BLACK}Livestock/Wheat .. delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_10                              :{BLACK}Food ......................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_11                              :{BLACK}Diamonds  ................ delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_12                              :{BLACK}Water  ..................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_13                              :{BLACK}Gold  ......................... delivered:  {ORANGE}{NUM}{BLACK}  needed:  {ORANGE}{NUM}{BLACK}  stored:  {ORANGE}{NUM}{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_GOAL_PASSED                    :{BLACK}Monthly goal passed. {ORANGE}
+STR_STORY_LOCAL1                         :{BLACK}Local authority: {ORANGE}None{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LOCAL2                         :{BLACK}Local authority: {ORANGE}Apalling{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LOCAL3                         :{BLACK}Local authority: {ORANGE}Very poor{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LOCAL4                         :{BLACK}Local authority: {ORANGE}Poor{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LOCAL5                         :{BLACK}Local authority: {ORANGE}Mediocre{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LOCAL6                         :{BLACK}Local authority: {ORANGE}Good{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LOCAL7                         :{BLACK}Local authority: {ORANGE}Very good{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LOCAL8                         :{BLACK}Local authority: {ORANGE}Excellent{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LOCAL9                         :{BLACK}Local authority: {ORANGE}Outstanding{BLACK}  days +/-: {ORANGE}{NUM}
+STR_STORY_LAST                           :{BLACK}Previous growth every: {ORANGE}{NUM} day{P "" s}{BLACK}  Current: {ORANGE}{NUM} day{P "" s}{BLACK}  Change: {ORANGE}{NUM} day{P "" s}
+
+# --------------------   CITYBUILDER V2 (Chucky's CB) --------------------
+STR_STORY_BONUS                          : {BLACK}Bonus growth: {ORANGE}{NUM}
+STR_COMMUNITYNAME       :BTPro Community
+STR_COMMUNITYURL        :http://openttd.btpro.nl
+
+# --------------------   CITYBUILDER V3 (Cargo) --------------------
+STR_STORY_CBC_TITLE                       :{WHITE}Cargo Goal Info
+#STR_TOWN3                                :{STRING}{}{}
+STR_TOWN3                                :{STRING}{}
+STR_TOWN4                                :{BLACK}Reset cargo amount in {ORANGE}{NUM}{BLACK} month{P "" s}. {}{STRING}
+STR_TUTORIAL                             :{YELLOW}How to play the Cargo CB ?{}{}{BLACK}First pick a small town by placing your headquarter. Cities cannot be claimed!{}{}Then click the name of town on map and figure out which cargo is required.{}{}Now deliver the known cargo to the stations of your town until goal is reached.{}{}Good luck!{}{}Note: Around your town a saved area is set up.
+STR_PASSENGERS                           :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} passengers delivered.
+STR_COAL                                 :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of coal delivered.
+STR_RUBBER                               :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} kiloliters of rubber delivered.
+STR_MAIL                                 :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} bags of mail delivered.
+STR_OIL                                  :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} kiloliters of oil delivered.
+STR_LIVESTOCK                            :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} items of livestock delivered.
+STR_FRUITS                               :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of fruits delivered.
+STR_GRAIN                                :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of grain delivered.
+STR_WHEAT                                :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of wheat delivered.
+STR_MAIZE                                :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of maize delivered.
+STR_GOODS                                :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} crates of goods delivered.
+STR_WOOD                                 :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of wood delivered.
+STR_IRONORE                              :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of iron ore delivered.
+STR_COPPERORE                            :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of copper ore delivered.
+STR_VALUABLES                            :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} bags of valuables delivered.
+STR_GOLD                                 :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} bags of gold delivered.
+STR_DIAMONDS                             :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} bags of diamonds delivered.
+STR_FOOD                                 :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of food delivered.
+STR_STEEL                                :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of steel delivered.
+STR_PAPER                                :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of paper delivered.
+STR_WATER                                :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} kiloliters of water delivered.
+STR_SUGAR                                :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of sugar delivered.
+STR_TOYS                                 :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} toys delivered.
+STR_BATTERIES                            :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} batteries delivered.
+STR_SWEETS                               :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} bags of sweets delivered.
+STR_TOFFEE                               :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of toffee delivered.
+STR_COLA                                 :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} kiloliters of cola delivered.
+STR_CANDYFLOSS                           :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} tonnes of candyfloss delivered.
+STR_BUBBLES                              :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} bubbles delivered.
+STR_PLASTIC                              :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} kiloliters of plastic delivered.
+STR_FIZZYDRINKS                          :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{COMMA}{BLACK} fizzy drinks delivered.
+STR_CITYBUILDER_START_CB_CARGO           :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to deliver cargo on the map.{}{}Your goal? Transport {WHITE} {CARGO_LONG}, within a period of {WHITE}{NUM} month{P "" s}{BLACK}.{}{}## ATTENTION ##{}{}Cargo must be delivered to claimed town,{}or to town industries (depending on type)!{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_I_START_CB_CARGO         :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to deliver cargo on the map.{}{}Transport as many and fast you can!{}{}Your goal? Transport {WHITE}{CARGO_LONG} {BLACK}.{}{}## ATTENTION ##{}{}Cargo must be delivered to claimed town,{}or to town industries (depending on type)!{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_UNIT_INFO                            :{CARGO_LONG}
+STR_UNIT_INFO2                           :{CARGO_LIST}
+STR_TOWN_INFO                            :{BLACK}Goal: {ORANGE}{COMMA}{BLACK} / {ORANGE}{CARGO_LONG}{BLACK} delivered.
+
+# -------------------- CARGO/DIV GOAL --------------------
+
+STR_SCORE           :Score: {NUM}
+STR_GOAL            :Transport {NUM} cargo items.
+STR_GOAL_SHOW            :{BLACK}Cargo Info:
+STR_GOAL_SHOW_ALL            :{BLACK}(All cargo types)
+STR_GOAL_SHOW_NOPAX            :{BLACK}(Passengers and Mail don't count)
+STR_GOAL_SHOW_PAX_PERCENTAGE            :{BLACK}(All cargo types, Passengers and Mail counts {NUM}%)
+STR_GOAL_DELIVER            :{BLACK}Cargo counting : {YELLOW}{CARGO_LIST}{BLACK}.
+STR_GOAL_DELIVER_PERCENTAGE            :{BLACK}Cargo counting : {YELLOW}{CARGO_LIST} ({NUM}%){BLACK}.
+STR_GOAL_DELIVER_QUARTER            :{BLACK}Cargo counting: {YELLOW}{CARGO_LIST}{BLACK} - Next quarter: {GOLD}{CARGO_LIST}{BLACK}.
+STR_GOAL_DELIVER_QUARTER_PERCENTAGE_XO            :{BLACK}Cargo counting: {YELLOW}{CARGO_LIST} ({NUM}%){BLACK} - Next quarter: {GOLD}{CARGO_LIST}{BLACK}.
+STR_GOAL_DELIVER_QUARTER_PERCENTAGE_XX            :{BLACK}Cargo counting: {YELLOW}{CARGO_LIST} ({NUM}%){BLACK} - Next quarter: {GOLD}{CARGO_LIST} ({NUM}%){BLACK}.
+STR_GOAL_DELIVER_QUARTER_PERCENTAGE_OX            :{BLACK}Cargo counting: {YELLOW}{CARGO_LIST}{BLACK} - Next quarter: {GOLD}{CARGO_LIST} ({NUM}%){BLACK}.
+STR_GOAL_LAST_DELIVERED            :{BLACK}Last quarter: {GOLD}{NUM} {BLACK}items of {GOLD}{CARGO_LIST}{BLACK}.
+STR_GOAL_INCOME            :Reach yearly income of {YELLOW}{NUM}{BLACK} euros.
+STR_GOAL_INCOME_TIME            :Reach yearly income of {NUM} euros in  {WHITE}{NUM} year{P "" s}{BLACK}.
+STR_GOAL_INCOME_LAST            :Last year income: {WHITE}{NUM} {BLACK}euros.
+STR_GOAL_CARGO            :Transport {NUM} cargo items {YELLOW}or {ORANGE}the max you can, in  {WHITE}{NUM} year{P "" s}{BLACK}.
+STR_STORY_DIV_TITLE                   :{WHITE}Goal Info
+STR_GOAL_CASH            :Get {YELLOW}{NUM}{BLACK} euros of Cash in Bank.
+STR_GOAL_CASH_TIME            :Get {NUM} euros of Cash in Bank in  {WHITE}{NUM} year{P "" s}{BLACK}.
+STR_GOAL_RATING            :Reach a Performance Rating of {YELLOW}{NUM}{BLACK} points.
+STR_GOAL_RATING_TIME            :Reach a Performance Rating of {NUM} points in  {WHITE}{NUM} year{P "" s}{BLACK}.
+STR_GOAL_CV            :Reach a Company Value of {YELLOW}{NUM}{BLACK} euros.
+STR_GOAL_CV_TIME            :Reach a Company Value of {NUM} euros in  {WHITE}{NUM} year{P "" s}{BLACK}.
+STR_CITYBUILDER_I_START_CARGO             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to deliver any cargo on the map.{}{}Transport as many and fast you can!{}{}Your goal? Transport  {WHITE}{NUM} items of cargo {BLACK}.{}{} (GoalGUI for more DETAILS){}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_I_START_CARGO_MISC             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to deliver any cargo on the map.{}{}Transport as many and fast you can!{}{}Your goal? Transport  {WHITE}{NUM} items of cargo {BLACK}.{}{} (check the cargo that counts in GoalGUI){}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_START_CARGO               :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to deliver any cargo on the map.{}{}Transport as many and fast you can!{}{}Your goal? Transport max cargo items in  {WHITE}{NUM} year{P "" s}{BLACK}.{}{} (check GoalGUI for details){}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_START_CARGO_MISC               :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to deliver any cargo on the map.{}{}Transport as many and fast you can!{}{}Your goal? Transport max cargo items in  {WHITE}{NUM} year{P "" s}{BLACK}.{}{} (check GoalGUI for details){}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_I_START_INCOME             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest yearly income.{}{}Make the biggest profit you can!{}{}Your goal? Reach yearly Income of  {WHITE}{NUM}{BLACK} euros.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_START_INCOME               :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest yearly income.{}{}Make the biggest profit you can!{}{}Your goal? Reach max Income in  {WHITE}{NUM} year{P "" s}{BLACK}.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_I_START_CASH             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest Cash in Bank.{}{}Make the biggest profit you can!{}{}Your goal? Get  {WHITE}{NUM} euros{BLACK} of Cash in Bank.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_START_CASH               :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest Cash in Bank.{}{}Make the biggest profit you can!{}{}Your goal? Get max Cash in Bank in  {WHITE}{NUM} year{P "" s}{BLACK}.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_I_START_RATING             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest Performance Rating.{}{}Your goal? Reach Performance Rating of  {WHITE}{NUM} points{BLACK}.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_START_RATING               :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest Performance Rating.{}{}Your goal? Reach max Performance Rating in  {WHITE}{NUM} year{P "" s}{BLACK}.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_I_START_CV             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest Company Value.{}{}Make the biggest profit you can!{}{}Your goal? Reach Company Value of  {WHITE}{NUM} euros{BLACK}.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_START_CV               :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest Company Value.{}{}Make the biggest profit you can!{}{}Your goal? Reach max Company Value in  {WHITE}{NUM} year{P "" s}{BLACK}.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_START_CV_STORY               :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to reach the highest Company Value.{}{}Make the biggest profit you can!{}{}Your goal? Reach max Company Value (Check with{WHITE} !cv{BLACK}).{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_SCORELIST_CARGO           :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} {YELLOW}[{NUM}%]{BLACK} - Transported: {WHITE}{NUM}{BLACK} items.
+STR_CITYBUILDER_SCORELIST_INCOME           :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} {YELLOW}[{NUM}%]{BLACK} - Income: {WHITE}{NUM}{BLACK} euros. (last year: {NUM} euros)
+STR_CITYBUILDER_SCORELIST_CASH           :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} {YELLOW}[{NUM}%]{BLACK} - Cash: {WHITE}{NUM}{BLACK} euros.
+STR_CITYBUILDER_SCORELIST_RATING           :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} {YELLOW}[{NUM}%]{BLACK} - Rating: {WHITE}{NUM}{BLACK} points.
+STR_CITYBUILDER_SCORELIST_CV           :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} {YELLOW}[{NUM}%]{BLACK} - Company Value: {WHITE}{NUM}{BLACK} euros.
+STR_CITYBUILDER_SCORELIST_TIMED_CARGO     :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} - Transported: {WHITE}{NUM}{BLACK} items.
+STR_CITYBUILDER_SCORELIST_TIMED_INCOME     :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} - Income: {WHITE}{NUM}{BLACK} euros.
+STR_CITYBUILDER_SCORELIST_TIMED_CASH     :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} - Cash: {WHITE}{NUM}{BLACK} euros.
+STR_CITYBUILDER_SCORELIST_TIMED_RATING     :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} - Rating: {WHITE}{NUM}{BLACK} points.
+STR_CITYBUILDER_SCORELIST_TIMED_CV     :{WHITE}# {NUM}{BLACK} :{GOLD}{COMPANY}{BLACK} - Company Value: {WHITE}{NUM}{BLACK} euros.
+
+# -------------------- APHID'S CITYBUILDER STRINGS: --------------------
+
+STR_CITYBUILDER_TOWN                :This is a report from {TOWN}. It houses {NUM} registered citizens. {} 
+STR_CITYBUILDER_CARGOLINE           :{NUM} of {NUM} {CARGO_LIST}.{} 
+STR_CITYBUILDER_WAREHOUSE           :Warehouses hold another {NUM} of {NUM} units.
+STR_CITYBUILDER_VILLAGE             :Supply a monthly passenger transport service to start growth.{} 
+STR_CITYBUILDER_ENDLINE             :Deliver additional cargo to grow the town!
+STR_CITYBUILDER_NOT_GROWING         :Our town is not growing.{} 
+STR_CITYBUILDER_GROWING             :Our town is growing!{} 
+STR_CITYBUILDER_GROWING_NAME        :The town or city of {TOWN} is growing.
+STR_CITYBUILDER_METROPOLIS_NOPAX    :The metropolis demands additional transport services for its people before it will grow any further!
+STR_CITYBUILDER_CARGO_TRANSPORTED   :{CARGO_SHORT} / {CARGO_LONG}
+STR_CITYBUILDER_CARGO_LMTRANSPORTED :{CARGO_SHORT} / {CARGO_SHORT} / {CARGO_LONG}
+STR_CITYBUILDER_CARGO_LMMET         :{GREEN}{CARGO_SHORT} / {CARGO_SHORT} / {CARGO_LONG}{BLACK}
+STR_CITYBUILDER_CARGO_LMMORE        :{RED}{CARGO_SHORT} / {CARGO_SHORT} / {CARGO_LONG}{BLACK}
+STR_CITYBUILDER_GOALS               :Cargo Delivered / Required / Reserve
+STR_CITYBUILDER_START               :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to increase town development in the town of your choice.{}{}Please pick a small town (Under {NUM} Inhabitants) by building your {ORANGE}HQ{BLACK} in the town.{}{}You have been granted:{}{}{ORANGE}exclusive transport rights{}{}{BLACK}in and around the town you choose.{}{}Your goal? Build a {ORANGE}TOWN{BLACK} in  {WHITE}{NUM} year{P "" s}.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_FREEBUILDER_START   :Dear company executive. You have been hired as a public servant to increase town development in the local area. A substantial amount of funds have been invested in your transport company for this purpose. Respect other companies. Public transport companies need to make money. You also need to transport from towns the cargoes they demand. In the eventual progress evaluation, due in {RED}{NUM} year{P "" s}{BLACK}, you will be judged based on these criteria. 
+STR_CITYBUILDER_COOP_START          :Dear company executive. You have been hired as a public servant to increase town development in the local area. A substantial amount of funds have been invested in your transport company for this purpose. You are expected to work with other companies to maximize the local growth potential. A progress evaluation, due in {RED}{NUM} year{P "" s}{BLACK}, will evaluate the performance of you and the others. By building a HQ building inside a town, you will gain some special benefits. If one or more such buildings exists, those companies have building rights in the local area. They also enjoy financial benefits, but may not build outside the area. Perhaps delegating important areas might improve your success?
+STR_CITYBUILDER_METROPOLIS_START    :Dear company executive. You have been hired as a public servant to increase development in the town of {TOWN}. This small settlement is to grow into a world-class city. The one and only thing I ask of you and your rival companies is to work together. Bring this settlement into the world. By building a HQ building inside a town, you will gain some special benefits. If one or more such buildings exists, those companies have building rights in the local area. They also enjoy financial benefits. Perhaps delegating important areas might improve your success? An evaluation of all companies is due in {RED}{NUM} year{P "" s}{BLACK}. Do NOT disappoint me. Because cooperation is expected, all companies that contributed significantly to our goals will receive the exact same rating. 
+STR_CITYBUILDER_I_START             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to increase town development in the town of your choice.{}{}Please pick a small town (Under {NUM} Inhabitants) by building your {ORANGE}HQ{BLACK} in the town.{}{}You have been granted:{}{}{ORANGE}exclusive transport rights{}{}{BLACK}in and around the town you choose.{}{}Your goal? Build a  {ORANGE}TOWN{BLACK} of at least  {WHITE}{NUM} Inhabitants.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_CITYBUILDER_I_FREEBUILDER_START :Dear company executive. You have been hired as a public servant to increase town development in the local area. A substantial amount of funds have been invested in your transport company for this purpose. Respect other companies. Public transport companies need to make money. You also need to transport from towns the cargoes they demand.  
+STR_CITYBUILDER_I_COOP_START        :Dear company executive. You have been hired as a public servant to increase town development in the local area. A substantial amount of funds have been invested in your transport company for this purpose. You are expected to work with other companies to maximize the local growth potential. By building a HQ building inside a town, you will gain some special benefits. If one or more such buildings exists, those companies have building rights in the local area. They also enjoy financial benefits, but may not build outside the area. Perhaps delegating important areas might improve your success?
+STR_CITYBUILDER_I_METROPOLIS_START  :Dear company executive. You have been hired as a public servant to increase development in the town of {TOWN}. This small settlement is to grow into a world-class city. The one and only thing I ask of you and your rival companies is to work together. Bring this settlement into the world. By building a HQ building inside a town, you will gain some special benefits. If one or more such buildings exists, those companies have building rights in the local area. They also enjoy financial benefits. Perhaps delegating important areas might improve your success? Because cooperation is expected, all companies that contributed significantly to our goals will receive the exact same rating. 
+STR_CITYBUILDER_SCORELIST           :{WHITE}# {NUM}{BLACK} : {GOLD}{COMPANY}{BLACK} {YELLOW}[{NUM}%]{BLACK}: Town: {ORANGE}{TOWN}{BLACK} with {WHITE}{NUM}{BLACK} inhabitants.
+STR_CITYBUILDER_SCORELIST_TIMED     :{WHITE}# {NUM}{BLACK} : {GOLD}{COMPANY}{BLACK}: Town: {ORANGE}{TOWN}{BLACK} with {WHITE}{NUM}{BLACK} inhabitants.
+STR_CITYBUILDER_SCORELIST_NOTOWN    :{WHITE}# {NUM}{BLACK} : {GOLD}{COMPANY}{BLACK}: No town claimed.
+STR_CITYBUILDER_SCORELIST_LINE      :{BLACK}->> {ORANGE}# CityBuilder # - Goal is: {GREEN}{NUM}{BLACK} inhabitants.
+STR_CITYBUILDER_SCORELIST_LINE_TIME :{BLACK}->> {ORANGE}# CityBuilder # - Goal is: {BLACK}Biggest town in {GREEN}{NUM}{BLACK} year{P "" s}. Game started in {WHITE}{NUM}{BLACK}.
+STR_CITYBUILDER_SCORELIST_TIME_LEFT :{BLACK}Time left: {WHITE}{NUM}{BLACK} year{P "" s} and {WHITE}{NUM}{BLACK} month{P "" s}.
+STR_CITYBUILDER_HQ_PLACE_INFO       :Place your HQ in a town with less than {YELLOW}{COMMA} {BLACK}population to claim it, cities cannot be claimed! {}{}Open town window (click on town name) to see the demmands!
+STR_CITYBUILDER_WON                 :Dear company executive. {}{}Congratulations! {}{}Your company was {ORANGE}the most succesful company{BLACK}, with population of... {}{}{NUM} inhabitants! {}{}A new game will start soon!!
+STR_CITYBUILDER_CLOSE               :Dear company executive. {}{}Well done! Your company was very succesful, close to the best performer, with population of: {}{}{NUM} inhabitants! {}{}A new game will start soon!!
+STR_CITYBUILDER_GOOD                :Dear company executive. {}{}Your company did a fairly good job, with population of: {}{}{NUM} inhabitants. {}{}A new game will start soon!!
+STR_CITYBUILDER_OKAY                :Dear company executive. {}{}Your company had a reasonable performance, but some other companies fared much better. You finished with population of {}{}{NUM} inhabitants.  {}{}A new game will start soon!!
+STR_CITYBUILDER_LOST                :Dear company executive. {}{}Your company performance was found lacking. You finished with population of {}{}{NUM} inhabitants. {}{}A new game will start soon!!
+STR_CITYBUILDER_DESTROYED           :Dear company executive. {}{}Your company have a long way to improve! {}{}You finished with population of {}{}{NUM} inhabitants. {}{} Don't give up! {}{}A new game will start soon!!
+STR_CITYBUILDER_COOP_FINISH         :Good job! You and your fellow colleagues have impressed us with a score of:{}{NUM}
+STR_CITYBUILDER_EXTRA_FUNDING       :Dear company executive. We are pleased with your progress, and ask of you to Accept our official grant of {NUM} pounds worth of taxpayers' money, to be added to company assets effective immediately.
+STR_CITYBUILDER_TOO_FEW_TOWNS       :Only {NUM} suitable towns found.{}This limits the number of companies that can claim a town on this map!
+STR_CITYBUILDER_TOWN_CLAIM          :The town of {TOWN} has been claimed by {COMPANY}
+STR_CITYBUILDER_TOWN_CLAIM_POPUP    :Congratulations, you are now the proud owner of{}{}{WHITE}{TOWN}{BLACK}{}{}Now it's time to start building your City! :-){}{}To see the demands of your town, open the TOWN GUI window.{}{}The town demands get updated at the beginning of every gamemonth!{}{}Make sure to meet the town demands every month to allow your town to grow and become a City.{}{}NOTE: You can also use the command:{}{}{WHITE}!ts{}{}{BLACK}to see the town statistics.{}{}---:::---{}{}{LTBLUE}For more info, strategies, tips & tricks, check our wiki:{}{}{GOLD}http://openttd.btpro.nl/wiki
+STR_CITYBUILDER_TOWN_CLAIM_SAME     :{WHITE}{TOWN}{BLACK} was already your claimed town. {}{}You can continue! :-)
+STR_CITYBUILDER_TOOLARGE            :You are not allowed to claim this town. It is too large. Please claim a town of at most {NUM} inhabitants.
+STR_CITYBUILDER_TOOFAR              :Please locate your HQ within {NUM} tiles of the town center to claim a town.
+STR_CITYBUILDER_ALREADY_CLAIMED     :This town has already been claimed by {COMPANY}.
+STR_CITYBUILDER_CLOSE_CLAIMED       :Your protected area would overlap with the area of someone else, you cannot claim this town, please relocate your HQ!
+STR_CITYBUILDER_CLAIM_CITY          :You are not allowed to claim a city. 
+STR_CITYBUILDER_TAKEOVER            :The town of {TOWN} is now a muncipality of {TOWN}!
+STR_CITYBUILDER_TOWNOWNER           :Owner: {WHITE}{COMPANY}
+STR_CITYBUILDER_TOWNOWNER_SIGN      :{COMPANY}'s Town
+STR_CITYBUILDER_CITY                :..::CITY::..
+STR_CITYBUILDER_CITY_GROW           :This city is growing! {GREEN}{NUM}% {BLACK}of {NUM}% passengers transported.
+STR_CITYBUILDER_CITY_NOGROW         :This city is not growing. {RED}{NUM}% {BLACK}of {NUM}% passengers transported.
+STR_CITYBUILDER_CITY_GROW_ROADW     :This city is growing! {GREEN}{NUM}% {BLACK}of {NUM}% {CARGO_LIST} transported. {}{RED}The city failed to place {BLUE}{NUM}{RED} house{P "" s}!{BLACK} Try placing roads and removing obstructions.
+STR_CITYBUILDER_CITY_NOGROW_ROADW   :This city is not growing. {RED}{NUM}% {BLACK}of {NUM}% {CARGO_LIST} transported. {}{RED}The city failed to place {BLUE}{NUM}{RED} house{P "" s}!{BLACK} Try placing roads and removing obstructions.
+STR_CITYBUILDER_TACITY_GROW         :This town is growing! {GREEN}{NUM}% {BLACK}of {NUM}% {CARGO_LIST} transported.
+STR_CITYBUILDER_TACITY_NOGROW       :This town is not growing. {RED}{NUM}% {BLACK}of {NUM}% {CARGO_LIST} transported.
+STR_CITYBUILDER_TACITY_GROW_ROADW   :This town is growing! {GREEN}{NUM}% {BLACK}of {NUM}% {CARGO_LIST} transported. {}{RED}The town failed to place {BLUE}{NUM}{RED} house{P "" s}!{BLACK} Try placing roads and removing obstructions.
+STR_CITYBUILDER_TACITY_NOGROW_ROADW :This town is not growing. {RED}{NUM}% {BLACK}of {NUM}% {CARGO_LIST} transported. {}{RED}The town failed to place {BLUE}{NUM}{RED} house{P "" s}!{BLACK} Try placing roads and removing obstructions.
+STR_CITYBUILDER_SIGN_HAMLET         :Growing!
+STR_CITYBUILDER_SIGN_VILLAGE        :1/1 passenger service
+STR_CITYBUILDER_SIGN_VILLAGE_NG     :0/1 passenger service
+
+STR_CITYBUILDER_SEEGOALWINDOW       :{}Owner: {WHITE}{COMPANY}.{}{}{BLACK}NOTE: This town now requires {}more than 3 demands, {}please open the {ORANGE}Goal GUI{BLACK} to view these demands, {}otherwise use the command: {WHITE}!ts {NUM}{BLACK} !
+STR_CITYBUILDER_SEEGOALWINDOW_MORE  :{}Owner: {WHITE}{COMPANY}.{}{}{BLACK}NOTE: This town now requires {}more than 3 demands, {}please open the {ORANGE}Goal GUI{BLACK} to view these demands, {}otherwise use the command: {WHITE}!ts {NUM}{BLACK} ! {}{}{BLACK}Next Demand:  {LTBLUE}{CARGO_LIST}{BLACK}  at  {RED}{NUM}{BLACK}  inhabitants!
+STR_CITYBUILDER_GW_START_COMPANY_GOALS :{ORANGE}Company Scores:
+STR_CITYBUILDER_GW_DEMANDS_TO       :Wants
+STR_CITYBUILDER_GW_DEMANDS_FROM     :Distributes
+STR_CITYBUILDER_GW_GOALS            :{GOLD}Your Town requirements  {BLACK}({PURPLE}violet{BLACK} = full growth at {GOLD}{NUM}%{BLACK} of requirement): 
+STR_CITYBUILDER_GW_POP              :{BLACK}Population: {WHITE}{NUM}{BLACK} people. Houses: {WHITE}{NUM}{BLACK} buildings.
+STR_CITYBUILDER_GW_NEXT             :{BLACK}->> Next Town Demand: {LTBLUE}{CARGO_LIST}{BLACK}  at  {ORANGE}{NUM}{BLACK}  population!
+STR_CITYBUILDER_GW_NEXT_SPACE       :{BLACK}---
+STR_CITYBUILDER_GW_HAMLET           :{WHITE}Your town is so small it will grow by itself!
+STR_CITYBUILDER_GW_VILLAGE          :{WHITE}Supply a monthly passenger transport service to grow your village.
+STR_CITYBUILDER_GW_NOT_GROWING      :{RED}Your town is not growing.
+STR_CITYBUILDER_GW_STAGNANT         :{ORANGE}Your town is stagnant.
+STR_CITYBUILDER_GW_B_GROWING        :{YELLOW}Your town is growing slowly.
+STR_CITYBUILDER_GW_A_GROWING        :{GREEN}Your town is growing!
+STR_CITYBUILDER_GW_A                :{LTBLUE}{CARGO_LIST}:  {BLACK}Delivered / Required: {GREEN}{NUM} {BLACK}/{SILVER} {NUM}   {BLACK}|   Storage: {LTBLUE}{NUM}  {BLACK}units  [ {NUM} % ]
+STR_CITYBUILDER_GW_B                :{LTBLUE}{CARGO_LIST}:  {BLACK}Delivered / Required: {YELLOW}{NUM} {BLACK}/{SILVER} {NUM}   {BLACK}|   Storage: {GOLD}{NUM}  {BLACK}units  [ {NUM} % ]
+STR_CITYBUILDER_GW_C                :{LTBLUE}{CARGO_LIST}:  {BLACK}Delivered / Required: {RED}{NUM} {BLACK}/{SILVER} {NUM}   {BLACK}|   Storage: {RED}{NUM}  {BLACK}units  [ {NUM} % ] 
+STR_CITYBUILDER_GW_D                :{LTBLUE}{CARGO_LIST}:  {BLACK}Delivered / Required: {GREEN}{NUM} {BLACK}/{SILVER} {NUM} 
+STR_CITYBUILDER_GW_E                :{LTBLUE}{CARGO_LIST}:  {BLACK}Delivered / Required: {RED}{NUM} {BLACK}/{SILVER} {NUM}
+STR_CITYBUILDER_GW_F                :{LTBLUE}{CARGO_LIST}:  {BLACK}Delivered / Required: {PURPLE}{NUM} {BLACK}/{SILVER} {NUM}
+STR_CITYBUILDER_GW_G                :{LTBLUE}{CARGO_LIST}:  {BLACK}Delivered / Required: {PURPLE}{NUM} {BLACK}/{SILVER} {NUM}   {BLACK}|   Storage: {LTBLUE}{NUM}  {BLACK}units  [ {NUM} % ]
+STR_CITYBUILDER_GW_H                :{LTBLUE}{CARGO_LIST}: {BLACK}Taken / Required: {GREEN}{NUM} {BLACK}/{SILVER} {NUM} 
+STR_CITYBUILDER_GW_I                :{LTBLUE}{CARGO_LIST}: {BLACK}Taken / Required: {RED}{NUM} {BLACK}/{SILVER} {NUM}
+STR_CITYBUILDER_GW_J                :{LTBLUE}{CARGO_LIST}: {BLACK}Taken / Required: {PURPLE}{NUM} {BLACK}/{SILVER} {NUM}
+STR_CITYBUILDER_GW_ROADS            :{RED}The town failed to place {PURPLE}{NUM}{RED} house{P "" s}! {BLACK} Try placing roads and removing obstructions.
+STR_CITYBUILDER_GW_MAILTR_A         :{GREEN}{NUM}%{BLACK} of mail transported.
+STR_CITYBUILDER_GW_MAILTR_B         :{RED}{NUM}%{BLACK} of mail transported. Transport more mail.
+STR_CITYBUILDER_GW_PAXTR_A          :{GREEN}{NUM}%{BLACK} of passengers transported.
+STR_CITYBUILDER_GW_PAXTR_B          :{RED}{NUM}%{BLACK} of passengers transported. Transport additional passengers.
+STR_CITYBUILDER_SUBSIDY_1           :Town Requests:
+STR_CITYBUILDER_SUBSIDY_2           :Request from {TOWN} has ended.
+STR_CITYBUILDER_SUBSIDY_3           :{LTBLUE}{TOWN}{ORANGE} awards you score for {WHITE}{CARGO_LONG}{ORANGE} or more for another 3 months
+STR_CITYBUILDER_SUBSIDY_4           :{LTBLUE}{TOWN}{ORANGE} awards you score for {WHITE}{CARGO_LONG}{ORANGE} or more for another 6 months
+STR_CITYBUILDER_SUBSIDY_5           :{LTBLUE}{TOWN}{ORANGE} awards you score for {WHITE}{CARGO_LONG}{ORANGE} or more for another 9 months
+STR_CITYBUILDER_SUBSIDY_6           :{LTBLUE}{TOWN}{ORANGE} will award you score for {WHITE}{CARGO_LONG}{ORANGE} or more in 3 months
+STR_CITYBUILDER_SUBSIDY_7           :{LTBLUE}{TOWN}{ORANGE} will award you score for {WHITE}{CARGO_LONG}{ORANGE} or more in 6 months
+STR_CITYBUILDER_SUBSIDY_8           :{LTBLUE}{TOWN}{ORANGE} will award you score for {WHITE}{CARGO_LONG}{ORANGE} or more in 9 months
+STR_CITYBUILDER_SUBSIDY_SCORE       :Towns have awarded you {NUM} points for  transporting cargo.
+
+STR_CONCAT                          :{STRING}{STRING}
+STR_CITYBUILDER_CONCAT2             :{STRING}{STRING}
+STR_CITYBUILDER_CONCAT3             :{STRING}{STRING}{STRING}
+STR_CITYBUILDER_CONCAT4             :{STRING}{STRING}{STRING}{STRING}
+STR_CITYBUILDER_CONCAT5             :{STRING}{STRING}{STRING}{STRING}{STRING}
+STR_CITYBUILDER_CONCAT6             :{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}
+STR_CITYBUILDER_CONCAT7             :{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}
+STR_CITYBUILDER_CONCAT8             :{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}{STRING}
+
+STR_CITYBUILDER_CONCAT01            :{STRING}{STRING1}
+STR_CITYBUILDER_CONCAT02            :{STRING}{STRING2}
+STR_CITYBUILDER_CONCAT021           :{STRING}{STRING2}{STRING1}
+STR_CITYBUILDER_CONCAT00            :{STRING}{STRING}
+STR_CITYBUILDER_CONCAT001           :{STRING}{STRING}{STRING1}
+STR_CITYBUILDER_CONCAT002           :{STRING}{STRING}{STRING2}
+STR_CITYBUILDER_CONCAT0021          :{STRING}{STRING}{STRING2}{STRING1}
+STR_CITYBUILDER_CONCAT04            :{STRING}{STRING4}
+STR_CITYBUILDER_CONCAT041           :{STRING}{STRING4}{STRING1}
+STR_CITYBUILDER_CONCAT042           :{STRING}{STRING4}{STRING2}
+STR_CITYBUILDER_CONCAT0421          :{STRING}{STRING4}{STRING2}{STRING1}
+STR_CITYBUILDER_CONCAT044           :{STRING}{STRING4}{STRING4}
+STR_CITYBUILDER_CONCAT0441          :{STRING}{STRING4}{STRING4}{STRING1}
+STR_CITYBUILDER_CONCAT0442          :{STRING}{STRING4}{STRING4}{STRING2}
+STR_CITYBUILDER_CONCAT04421         :{STRING}{STRING4}{STRING4}{STRING2}{STRING1}
+STR_CITYBUILDER_CONCAT0444          :{STRING}{STRING4}{STRING4}{STRING4}
+STR_CITYBUILDER_CONCAT04441         :{STRING}{STRING4}{STRING4}{STRING4}{STRING1}
+STR_CITYBUILDER_CONCAT04442         :{STRING}{STRING4}{STRING4}{STRING4}{STRING2}
+STR_CITYBUILDER_CONCAT044421        :{STRING}{STRING4}{STRING4}{STRING4}{STRING2}{STRING1}
+STR_CITYBUILDER_CONCAT02222         :{STRING}{STRING2}{STRING2}{STRING2}{STRING2}
+STR_CITYBUILDER_CONCAT022221        :{STRING}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}
+STR_CITYBUILDER_CONCAT022222        :{STRING}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}
+STR_CITYBUILDER_CONCAT0222221       :{STRING}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}
+
+STR_CITYBUILDER_NEWS_NOT_GROWING    :Your town is not growing.
+STR_CITYBUILDER_NEWS_STAGNANT       :Your town is stagnant.
+STR_CITYBUILDER_NEWS_B_GROWING      :Your town is growing slowly.
+STR_CITYBUILDER_NEWS_A_GROWING      :Your town is growing!
+STR_CITYBUILDER_NEWS_A              :{}{CARGO_LIST}: {NUM} / {NUM} | Storage: {NUM} 
+STR_CITYBUILDER_NEWS_D              :{}{CARGO_LIST}: {NUM} / {NUM} {SKIP}
+STR_CITYBUILDER_NEWS_NEXT           :{}Next: {CARGO_LIST} at {NUM} population!
+STR_CITYBUILDER_NEWS_ROADS          :{}The town failed to place {NUM} house{P "" s}! Try placing roads and removing obstructions.
+STR_CITYBUILDER_NEWS_HAMLET         :Your town is so small it will grow by itself!
+STR_CITYBUILDER_NEWS_VILLAGE        :{}Supply a monthly passenger transport service to grow your village.
+STR_CITYBUILDER_NEWS_MA             :{}{CARGO_LIST}: {RAW_STRING}
+STR_CITYBUILDER_NEWS_MD             :{}{CARGO_LIST}: {RAW_STRING}
+STR_CITYBUILDER_NEWS_MAILTR_A		:{NUM}% mail transported
+STR_CITYBUILDER_NEWS_MAILTR_B		:Only {NUM}% mail - Take more mail
+STR_CITYBUILDER_NEWS_PAXTR_A		:{NUM}% pass transported
+STR_CITYBUILDER_NEWS_PAXTR_B		:Only {NUM}% pax - Take more pass
+
+STR_CITYBUILDER_TW_NOT_GROWING      :{RED}This town is not growing
+STR_CITYBUILDER_TW_STAGNANT         :{ORANGE}This town is stagnant
+STR_CITYBUILDER_TW_B_GROWING        :{YELLOW}This town is growing slowly
+STR_CITYBUILDER_TW_A_GROWING        :{GREEN}This town is growing!
+STR_CITYBUILDER_TW_A                :{}{LTBLUE}{CARGO_LIST}:  {GREEN}{NUM}  {BLACK}/{SILVER}  {NUM}{BLACK}  |  Storage:  {LTBLUE}{NUM}
+STR_CITYBUILDER_TW_B                :{}{LTBLUE}{CARGO_LIST}:  {YELLOW}{NUM}  {BLACK}/{SILVER}  {NUM}{BLACK}  |  Storage:  {GOLD}{NUM}
+STR_CITYBUILDER_TW_C                :{}{LTBLUE}{CARGO_LIST}:  {RED}{NUM}  {BLACK}/{SILVER}  {NUM}{BLACK}  |  Storage:  {RED}{NUM}
+STR_CITYBUILDER_TW_D                :{}{LTBLUE}{CARGO_LIST}:  {GREEN}{NUM}  {BLACK}/{SILVER}  {NUM}  {SKIP}
+STR_CITYBUILDER_TW_E                :{}{LTBLUE}{CARGO_LIST}:  {RED}{NUM}  {BLACK}/{SILVER}  {NUM}  {SKIP}
+STR_CITYBUILDER_TW_F                :{}{LTBLUE}{CARGO_LIST}:  {BLUE}{NUM}  {BLACK}/{SILVER}  {NUM}  {SKIP}
+STR_CITYBUILDER_TW_G                :{}{LTBLUE}{CARGO_LIST}:  {BLUE}{NUM}  {BLACK}/{SILVER}  {NUM}{BLACK}  |  Storage:  {LTBLUE}{NUM}
+STR_CITYBUILDER_TW_NEXT             :{}{BLACK}Next Demand:  {LTBLUE}{CARGO_LIST}{BLACK}  at  {ORANGE}{NUM}{BLACK}  inhabitants!
+STR_CITYBUILDER_TW_ROADS            :{}{RED}The town failed to place  {BLUE}{NUM}{RED}  house{P "" s}!  {BLACK} Try placing roads and removing obstructions.
+STR_CITYBUILDER_TW_HAMLET           :{}{WHITE}This town is so small it will grow by itself!
+STR_CITYBUILDER_TW_VILLAGE          :{}{WHITE}This town needs a monthly passenger transport service to grow.
+STR_CITYBUILDER_TW_VILLAGE_SUP      :{WHITE}Claimed town will need a monthly passenger transport service to grow.
+STR_CITYBUILDER_TW_MA               :{LTBLUE}{CARGO_LIST}: {BLACK}{RAW_STRING}
+STR_CITYBUILDER_TW_MD               :{LTBLUE}{CARGO_LIST}: {BLACK}{RAW_STRING}
+
+STR_CITYBUILDER_SB_GOTO             :{GREEN}Go to the town
+STR_CITYBUILDER_SB_POPULATION       :Town population: {YELLOW}{NUM}
+
+STR_CITYBUILDER_TW_OWNER            :{BLACK}Owner: {WHITE}{COMPANY}
+STR_CITYBUILDER_TW_OWNER_NONE       :{SKIP}
+STR_CITYBUILDER_TW_GARGO_LIST_OK    :{}{LTBLUE}{CARGO_LIST}{BLACK}: {GREEN}OK {BLACK}(Extra {BLUE}{NUM}{BLACK})
+STR_CITYBUILDER_TW_GARGO_LIST_MM    :{}{LTBLUE}{CARGO_LIST}{BLACK}: {YELLOW}ok {BLACK}(Storage use: {ORANGE}{NUM}{BLACK})
+STR_CITYBUILDER_TW_GARGO_LIST_MISS  :{}{LTBLUE}{CARGO_LIST}{BLACK}: {RED}Missing {BLACK}({RED}{NUM}{BLACK})
+STR_CITYBUILDER_TW_FINAL_4_R        :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}{STRING}
+STR_CITYBUILDER_TW_FINAL_5_R        :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}{STRING}
+STR_CITYBUILDER_TW_FINAL_6_R        :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}{STRING}
+STR_CITYBUILDER_TW_FINAL_7_R        :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}{STRING}
+STR_CITYBUILDER_TW_FINAL_4_         :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+STR_CITYBUILDER_TW_FINAL_5_         :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+STR_CITYBUILDER_TW_FINAL_6_         :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+STR_CITYBUILDER_TW_FINAL_7_         :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+STR_CITYBUILDER_TW_FINAL_4          :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+STR_CITYBUILDER_TW_FINAL_5          :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+STR_CITYBUILDER_TW_FINAL_6          :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+STR_CITYBUILDER_TW_FINAL_7          :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+STR_CITYBUILDER_TW_FINAL_GOAL_GUI   :{}{ORANGE}(See Details in {YELLOW}Goal GUI{ORANGE} or type {YELLOW}!ts{ORANGE})
+
+STR_CITYBUILDER_TW_FINAL_8          :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}
+STR_CITYBUILDER_TW_FINAL_9          :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING}
+
+STR_CITYBUILDER_TW_FINAL_4R         :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}
+STR_CITYBUILDER_TW_FINAL_5R         :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}
+STR_CITYBUILDER_TW_FINAL_6R         :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}
+STR_CITYBUILDER_TW_FINAL_7R         :{STRING1}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING1}
+
+STR_CITYBUILDER_TW_TOO_MANY         :{BLACK}Owner: {WHITE}{COMPANY}.{}{BLACK}NOTE: This town now requires {}too many demands, {}please open the {ORANGE}Goal GUI{BLACK} to view these demands, {}otherwise use the command: {WHITE}!ts {NUM}{BLACK} !
+STR_CITYBUILDER_TW_TOO_MANY_MORE    :{BLACK}Owner: {WHITE}{COMPANY}.{}{BLACK}NOTE: This town now requires {}too many demands, {}please open the {ORANGE}Goal GUI{BLACK} to view these demands, {}otherwise use the command: {WHITE}!ts {NUM}{BLACK} {}{}{BLACK}Next Demand:  {LTBLUE}{CARGO_LIST}{BLACK}  at  {RED}{NUM}{BLACK}  inhabitants!
+
+STR_STORY_TITLE                   :{WHITE}City Builder Info
+STR_STORY_TITLE_COM               :{WHITE}Company Value Info
+STR_STORY_TITLE_REQ               :{WHITE}City Builder Requirements
+STR_STORY_TITLE_LIM               :{WHITE}Game Limits / Limitations
+STR_TOWN_CLAIMED_RES              :{BLACK}Town will require: {GRAY}<>
+STR_TOWN_CLAIMED_DIST              :{BLACK}Town will distribute: {GRAY}<>
+STR_TOWN_CLAIMED_CARGOS_DECAY     :{GREEN}{NUM}   {LTBLUE}{CARGO_LIST} {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{COMMA} {BLACK}pop {ORANGE}* {BLACK}Decay {GREEN}{NUM}%
+STR_TOWN_CLAIMED_CARGOS           :{GREEN}{NUM}   {LTBLUE}{CARGO_LIST} {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{COMMA} {BLACK}pop
+STR_TOWN_CLAIMED_SUP_CARGOS       :{GREEN}{LTBLUE}{CARGO_LIST} {ORANGE}* {BLACK}From {GREEN}{COMMA} {BLACK}pop
+STR_POINT_TO_STORY_REQ            :{BLACK}You can check town required cargo list at {YELLOW}Story Page {BLACK}anytime
+STR_TOWN_CLAIMED_DIST_RES          :{GRAY}<> Internal traffic (Passengers/Mail) counts too.
+STR_TOWN_CLAIMED_DIST_FACTOR      :{BLACK}({ORANGE}{NUM} %{BLACK} of town production)
+STR_TOWN_CLAIMED_BANK_TEMPERATE   :{ORANGE}Fund a {WHITE}Bank {ORANGE}in town(s) may be necessary when Valuables required.
+STR_TOWN_CLAIMED_BANK_ARCTIC      :{ORANGE}Fund a {WHITE}Bank {ORANGE}in town(s) may be necessary when Gold required.
+STR_TOWN_CLAIMED_BANK_TROPIC      :{ORANGE}Fund a {WHITE}Bank {ORANGE}in town(s) may be necessary when Diamonds required.
+STR_TOWN_CLAIMED_BANK_TOYLAND     :{ORANGE}Fund a {WHITE}Bank {ORANGE}in town(s) may be necessary when Cargo required.
+STR_TOWN_CLAIMED_BANK_FIRS        :{ORANGE}May be necessary to {WHITE}Fund {ORANGE} industries in town when Cargo required.
+STR_TOWN_CLAIMED_BANK_ECS         :{ORANGE}May be necessary to {WHITE}Fund {ORANGE} industries in town when Cargo required.
+STR_TOWN_CLAIMED_BANK_YETI        :{ORANGE}May be necessary to {WHITE}Fund {ORANGE} industries in town when Cargo required.
+STR_TOWN_CLAIMED_BANK_GLOBAL      :{ORANGE}Check {WHITE}Industry chain {ORANGE}.
+
+#dummy
+STR_EMTPY0                        : 
+STR_EMTPY1                        :{SKIP}
+STR_EMTPY2                        :{SKIP}{SKIP}
+STR_EMTPY3                        :{SKIP}{SKIP}{SKIP}
+
+STR_CITYBUILDER_SS_TOWN1            :-= Town Info =-
+STR_CITYBUILDER_SS_TOWN2_NAME       :Town Name: {TOWN}
+STR_CITYBUILDER_SS_TOWN3_INH        :Inhabitants: {NUM}
+STR_CITYBUILDER_SS_TOWN4_HC         :No. of Houses: {NUM}
+STR_CITYBUILDER_SS_TOWN5_EMPTY      : 
+STR_CITYBUILDER_SS_TOWN6_CI         :-= Cargo Information =-
+STR_CITYBUILDER_SS_TOWNX_CARGOLINE  :{CARGO_SHORT} / {CARGO_LONG} (Delivered), Storage: {CARGO_LONG}
+STR_CITYBUILDER_SS_TOWNX_REQLINE    :{CARGO_SHORT} / {CARGO_LONG} (Still Required), Storage: {CARGO_LONG}
+STR_CITYBUILDER_SS_TOWNY_CARGOLINE  :{CARGO_SHORT} / {CARGO_LONG} (Delivered)
+STR_CITYBUILDER_SS_TOWNY_REQLINE    :{CARGO_SHORT} / {CARGO_LONG} (Still Required)
+STR_CITYBUILDER_SS_NOTOWN           :Your company does not have a claimed town. No statistics available!
+
+STR_CITYBUILDER_CARGO_INTRO			:Towns now require {CARGO_LIST} to grow above {NUM} population!
+STR_CITYBUILDER_CARGO_TBINTRO		:Towns will require {CARGO_LIST} to grow above {NUM} population in {NUM} years.
+
+STR_CITYBUILDER_INFO_REQ00          :cargo #{NUM} ({CARGO_LIST}) required monthly per 1,000 pop
+STR_CITYBUILDER_CONF_DBGLEVEL       :Debug level
+
+# -------------------- BUSY BEE GOAL --------------------
+##plural 0
+
+STR_COMPANY_GOAL_REWARD                :Deliver {GOLD}{CARGO_LONG} {ORANGE}to {STRING}{ORANGE} (Reward: {WHITE}{STRING}{CURRENCY_LONG}{ORANGE})
+STR_COMPANY_GOAL                       :Deliver {GOLD}{CARGO_LONG} {ORANGE}to {STRING}
+STR_COMPANY_GOAL_REWARD_NEWS           :New goal! Deliver {CARGO_LONG} to {STRING} - Reward: {STRING}{CURRENCY_LONG}
+STR_COMPANY_GOAL_NEWS                  :New goal! Deliver {CARGO_LONG} to {STRING}
+STR_COMPANY_GOAL_FIRST_LINE       :{WHITE}Goals already completed: {GREEN}{NUM}
+STR_COMPANY_GOAL_FIRST_LINE2      :{WHITE}Goals already completed: {GREEN}{NUM} {SILVER}( {NUM}% )
+STR_PROGRESS                           :{YELLOW}{NUM}% {ORANGE}done
+STR_COMPANY_GOAL_REWARD_WON_NEWS       :Goal won! {CARGO_LONG} delivered to {STRING} and earned {STRING}{CURRENCY_LONG}
+STR_COMPANY_GOAL_WON_NEWS              :Goal won! {CARGO_LONG} delivered to {STRING}
+STR_TIMEOUT_YEARS                      :{GOLD}{NUM} {ORANGE}year{P "" s} remaining
+STR_TIMEOUT_MONTHS                     :{GOLD}{NUM} {ORANGE}month{P "" s} remaining
+STR_TIMEOUT_DAYS                       :{GOLD}{NUM} {ORANGE}day{P "" s} remaining
+STR_TOWN_NAME                          :{WHITE}{TOWN}
+STR_TOWN_NAME_NEWS                     :{TOWN}
+STR_INDUSTRY_NAME                      :{YELLOW}{INDUSTRY}
+STR_INDUSTRY_NAME_NEWS                 :{INDUSTRY}
+STR_STORY_BUSYBEE_TITLE     :{WHITE}Busy Bee Goals Info
+STR_I_START_BUSYBEE         :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to transport cargo on the map.{}{}Check Goal GUI to see what are the BusyBee goals!{}{}There are {WHITE}{NUM} BusyBee goals {BLACK}shown in Company goals. Choose wisely.{}{}The BusyBee goals are valid for {WHITE}{NUM} {BLACK}years.{}{}(Initial goals can take up to 2 months to appear,{}{}have patience ^^.){}{}New goals appear when current ones are completed or timeout.{}{}First company that complete {WHITE}{NUM} {BLACK}BusyBee goals, wins the game.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_I_START_BUSYBEE_TIME    :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to transport cargo on the map.{}{}Check Goal GUI to see what are the BusyBee goals!{}{}There are {WHITE}{NUM} BusyBee goals {BLACK}shown in Company goals. Choose wisely.{}{}The BusyBee goals are valid for {WHITE}{NUM} {BLACK}years.{}{}(Initial goals can take up to 2 months to appear,{}{}have patience ^^.){}{}New goals appear when current ones are completed or timeout.{}{}First company that complete {WHITE}{NUM} {BLACK}BusyBee goals in {WHITE}{NUM} {BLACK} years, wins the game.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_GOAL_BUSYBEE_TIME       :{BLACK}Complete {YELLOW}{NUM} {BLACK}BusyBee goals in  {WHITE}{NUM} year{P "" s}{BLACK}  (Shown in Company goals). Type {YELLOW}!goal{BLACK} to see current scores.
+STR_GOAL_BUSYBEE            :{BLACK}Complete {YELLOW}{NUM} {BLACK}BusyBee goals. Type {YELLOW}!goal{BLACK} to see current scores.
+STR_GOAL_BUSYBEE_1          :{BLACK}(Shown in Company goals).
+STR_BUSYBEE_SCORELIST_TIMED :{WHITE}# {NUM}{BLACK} : {GOLD}{COMPANY}{BLACK} - Completed: {WHITE}{NUM}{BLACK} BusyBee goals.
+STR_BUSYBEE_SCORELIST       :{WHITE}# {NUM}{BLACK} : {GOLD}{COMPANY}{BLACK} {YELLOW}[{NUM}%]{BLACK} - Completed: {WHITE}{NUM}{BLACK} BusyBee goals.
+STR_GOAL_BUSYBEE_OPEN       :{BLACK}click here to open {YELLOW}Goal GUI {BLACK}window.
+STR_STORY_BUSYBEE_COMP_HEAD :{YELLOW}..:: {WHITE}{COMPANY} {YELLOW}::.. Stats
+STR_STORY_BUSYBEE_COMP_CMP  :{BLACK}..:: {ORANGE}{COMPANY} {BLACK}::.. completed goals: 
+STR_STORY_BUSYBEE_COMP_CMP2 :{BLACK}..:: {ORANGE}{COMPANY} {BLACK}::.. completed goals: {GREEN}{NUM}
+STR_STORY_BUSYBEE_NOCOMPANY :{YELLOW}No stats available.
+STR_STORY_BUSYBEE_NOSTATS   :{RED}No Goals completed.
+STR_COMPANY_GOAL_S_TOWN     :{BLACK}- Delivered: {GOLD}{CARGO_LONG} {BLACK}to {ORANGE}{TOWN}
+STR_COMPANY_GOAL_S_IND      :{BLACK}- Delivered: {GOLD}{CARGO_LONG} {BLACK}to {ORANGE}{INDUSTRY}
+
+
+# -------------------- Cargo BEE GOAL --------------------
+##plural 0
+
+STR_STORY_CARGOBEE_TITLE     :{WHITE}Cargo Bee Goal Info
+STR_I_START_CARGOBEE         :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to transport cargo on the map.{}{}Check Goal GUI to see what is the CargoBee goal!{}{}First company that complete their {BLACK}CargoBee goal, wins the game.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_I_START_CARGOBEE_TIME    :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to transport cargo on the map.{}{}Check Goal GUI to see what is the CargoBee goal!{}{}First company that complete their {BLACK}CargoBee goal within {WHITE}{NUM} {BLACK} years, wins the game.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_GOAL_CARGOBEE_TIME       :{BLACK}Deliver {ORANGE}{CARGO_LONG} {BLACK} in  {WHITE}{NUM} year{P "" s}{BLACK}.
+STR_GOAL_CARGOBEE            :{BLACK}Deliver {ORANGE}{CARGO_LONG} {BLACK}.
+STR_GOAL_CARGOBEE_DEST       :{BLACK}(Destination is shown in Company Goal Window)
+STR_PROGRESS_CARGOBEE        :{YELLOW}{NUM}% {ORANGE}done
+STR_CARGOBEE_SCORES          :{ORANGE}Company Scores:
+
+
+# -------------------- NOVA's CB GOAL --------------------
+##plural 0
+# Simpleton City Builder   english.txt
+#
+
+#town area
+STR_HQTOWN                        :{COMPANY}'s Town
+#STR_HQAREA_TOP                    : ^ {COMPANY}'s Area ^
+#STR_HQAREA_RIGHT                  :> {COMPANY}'s Area 
+#STR_HQAREA_BOTTOM                 : v {COMPANY}'s Area v
+#STR_HQAREA_LEFT                   :{COMPANY}'s Area <
+STR_HQERR                         :You can't claim CITY
+#STR_CITY                          :.:: City ::.
+STR_CITY2                         :{YELLOW}.:: City ::.
+
+#welcome message
+#STR_WELCOME                       :{}{BIG_FONT}Hello and welcome to the City Builder experience{}{}Brought to you by {}{}{YELLOW}Novapolis Team{}{}{WHITE}http://novapolis.net{}{}
+STR_WELCOME                        :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to increase town development in the town of your choice.{}{}Please pick a small town (Under {NUM} Inhabitants) by building your {ORANGE}HQ{BLACK} in the town.{}{}You have been granted:{}{}{ORANGE}exclusive transport rights{}{}{BLACK}in and around the town you choose.{}{}Your goal? Build a  {ORANGE}TOWN{BLACK} of at least  {WHITE}{NUM} Inhabitants.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_WELCOMET                       :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to increase town development in the town of your choice.{}{}Please pick a small town (Under {NUM} Inhabitants) by building your {ORANGE}HQ{BLACK} in the town.{}{}You have been granted:{}{}{ORANGE}exclusive transport rights{}{}{BLACK}in and around the town you choose.{}{}Your goal? Build a {ORANGE}TOWN{BLACK} in  {WHITE}{NUM} year{P "" s}.{}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+
+
+#news
+#STR_NEW_HQ                        :{COMPANY} has claimed {TOWN}
+#STR_PLACE_HQ                      :Place your HQ in a town to claim it, cities cannot be claimed!
+STR_TOWN_CLAIMED                  :{COMPANY} claimed {TOWN}
+STR_TOWN_POPLIMIT                 :{COMPANY} failed to claim {TOWN} because of too big population
+STR_TOWN_NOTCLAIMED               :{COMPANY} have not found any town nearby
+STR_CITY_NOTCLAIMED               :{COMPANY} can not claim a CITY
+STR_TOWN_HAS_OWNER                :{TOWN} is already claimed by {COMPANY}
+STR_TOWN_NEIGHBOUR_CLOSE          :{COMPANY} tried to claim town too close to another company
+
+#information
+STR_PLACE_HQ_INFO                 :Place your HQ in a town with less than {YELLOW}{COMMA} {BLACK}population to claim it, cities cannot be claimed!
+STR_TOWN_CLAIMED_INFO             :{BLACK}You claimed {YELLOW}{TOWN}{BLACK}. {}{}You can see what your town need in town window or in goal gui.
+STR_TOWN_POPLIMIT_INFO            :{YELLOW}{TOWN} {BLACK}has too high population to be claimed. Maximum population allowed is {YELLOW}{COMMA}
+STR_TOWN_NOTCLAIMED_INFO          :No town nearby
+STR_CITY_NOTCLAIMED_INFO          :You can not claim a {YELLOW}CITY
+STR_TOWN_HAS_OWNER_INFO           :{YELLOW}{TOWN} {BLACK}is already claimed
+STR_TOWN_NEIGHBOUR_CLOSE_INFO     :{YELLOW}{TOWN} {BLACK}is too close to another claimed town
+
+#STR_TOWN_CLAIMED_RES              :{}Town will require {}{STRING2}{}{STRING2}{}{STRING2}{}{STRING2}{}{STRING2}{}{STRING2}
+#STR_TOWN_CLAIMED_RES              :{BLACK}Town will require
+STR_TOWN_CLAIMED_CARGOSN_DECAY     :{GREEN}{NUM}   {LTBLUE}{CARGO_LIST} {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{COMMA} {BLACK}pop {ORANGE}* {BLACK}Decay {GREEN}{NUM}%
+STR_TOWN_CLAIMED_CARGOSN           :{GREEN}{NUM}   {LTBLUE}{CARGO_LIST} {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{COMMA} {BLACK}pop
+#STR_POINT_TO_STORY_REQ            :{BLACK}You can check town required cargo list at {YELLOW}Story Page {BLACK}anytime
+
+#dummy
+STR_EMPTY0                        :
+STR_EMPTY1                        :{STRING}
+STR_EMPTY2                        :{STRING}{STRING}
+STR_EMPTY3                        :{STRING}{STRING}{STRING}
+STR_PLUS                          :+
+
+
+#goal gui
+STR_GLOBAL_GOAL_CB                :{ORANGE}CITY BUILDER ::: Goal for the game is  :  {GREEN}{COMMA} {BLACK}population
+STR_GAME_LENGTH                   :   {GREEN}{NUM}  {BLACK}year{P "" s} to game end
+
+STR_TOWN_CB_HEADER                :  {ORANGE}Your town requirements
+
+STR_SCORE_GOAL_CB                 :{WHITE}   #{NUM} {YELLOW}[{NUM}%] {BLACK}: {YELLOW}{COMPANY} {BLACK}with {YELLOW}{COMMA} {BLACK}population in {YELLOW}{TOWN}
+STR_SCORE_NOGOAL_CB               :{WHITE}   #{NUM} {BLACK}: {YELLOW}{COMPANY} {BLACK}with {YELLOW}{COMMA} {BLACK}population  in {YELLOW}{TOWN}
+
+STR_TOWN_REQ_GUI                  :  {LTBLUE}{CARGO_LIST}:   {BLACK}Delivered / Required: {YELLOW}{COMMA} {BLACK}/ {DKGREEN}{COMMA}{BLACK}  |  Storage: {GREEN}{COMMA} {BLACK}units  ( {YELLOW}{NUM}{BLACK} % )
+#STR_TOWN_REQ_GUI                  :  {LTBLUE}{CARGO_LIST}:   {BLACK}Storage: {GREEN}{COMMA} {BLACK}units  ( {YELLOW}{NUM}{BLACK} % ), Delivered / Required : {YELLOW}{COMMA} {BLACK}/ {DKGREEN}{COMMA}
+STR_TOWN_REQ_GUI_NOSTORAGE        :  {LTBLUE}{CARGO_LIST}:   {BLACK}Delivered / Required: {YELLOW}{COMMA} {BLACK}/ {DKGREEN}{COMMA}
+
+STR_TOWN_GROWTYPE_GROW            :  {BLACK}Town is {GREEN}growing {YELLOW}{NUM} {BLACK}month{P "" s} in row. Growed {YELLOW}{NUM} {BLACK}month{P "" s} out of {YELLOW}{NUM} {BLACK}in total
+STR_TOWN_GROWTYPE_NOTGROW         :  {BLACK}Town is {RED}not {BLACK}growing {YELLOW}{NUM} {BLACK}month{P "" s} in row. Growth stucked {YELLOW}{NUM} {BLACK}month{P "" s} out of {YELLOW}{NUM} {BLACK}in total
+
+STR_TOWN_FUNDED                   :  {BLACK}Town buildings are funded for {YELLOW}{NUM} {BLACK}month{P "" s}. Town was funded for {YELLOW}{NUM} {BLACK}month{P "" s} in total.
+
+STR_TOWN_MISSING_CARGO            :  {BLACK}Town is missing :   {WHITE}{CARGO_LIST}
+STR_TOWN_GROWTH_RATE              :  {BLACK}1 house in {ORANGE}{COMMA} {BLACK}days ({ORANGE}{COMMA}{BLACK}%), next in {YELLOW}{COMMA}{BLACK} day{P "" s}
+
+STR_TOWN_NEXT_CARGO               :  {BLACK}-->> Next Town Demand: {LTBLUE}{CARGO_LIST}  {BLACK}at  {ORANGE}{COMMA} {BLACK}population
+
+
+#town gui
+STR_TOWNGUI                       :{STRING}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}{STRING2}
+
+STR_TOWNW_GROWTYPE_GROW           :{BLACK}Town is {GREEN}growing
+STR_TOWNW_GROWTYPE_NOTGROW        :{BLACK}Town is {RED}not {BLACK}growing
+STR_TOWNW_GROWTYPE_NOTGROW_SRV    :{WHITE}Missing service
+STR_TOWNW_GROWTYPE_LIGHT_GROW     :{BLACK}->> (Keep up town's passenger and mail service)
+
+STR_TOWNW_GROWTYPE_GROW_PLUS      :{BLACK}Town is {GREEN}growing{}   {BLACK}Cargo amounts missing:
+STR_TOWNW_GROWTYPE_NOTGROW_PLUS   :{BLACK}Town is {RED}not {BLACK}growing{}   {BLACK}Cargo amounts missing:
+
+STR_TOWN_OWNED_COMPANY            :{}{BLACK}Owner: {WHITE}{COMPANY}{}   {BLACK}Cargo amounts (Goal GUI for details):{STRING}
+
+STR_TOWN_CARGO_GOOD               :{}    {GREEN}{CARGO_LIST}   OK{STRING}
+STR_TOWN_CARGO_YES                :{}    {ORANGE}{CARGO_LIST}   {COMMA}
+STR_TOWN_CARGO_NO                 :{}    {SILVER}{CARGO_LIST}   {COMMA}
+
+
+STR_TOWNW_MISSING_CARGO           :{}   {BLACK}Town is missing :   {WHITE}{CARGO_LIST}{STRING}
+STR_TOWNW_GROWTH_RATE             :{}   {BLACK}Growth {ORANGE}{COMMA}{BLACK}%, next in {YELLOW}{COMMA}{BLACK} day{P "" s}
+
+STR_TOWNW_NEXT_CARGO              :{}   {BLACK}Next Demand: {LTBLUE}{CARGO_LIST} {BLACK}at {RED}{COMMA} {BLACK}population
+
+STR_SEE_GOAL_GUI                  :{}   {BLACK}See more details in {WHITE}Goal Gui{STRING}{STRING}
+
+#town names according to population
+STR_TOWNNAME_POP0                 :Settlement
+STR_TOWNNAME_POP1                 :Resort
+STR_TOWNNAME_POP2                 :Village
+STR_TOWNNAME_POP3                 :Town
+STR_TOWNNAME_POP4                 :City
+STR_TOWNNAME_POP5                 :Metropolis
+
+STR_TOWNNAME_PRESIDENT            : {PRESIDENT_NAME}'s' {STRING}
+
+#goal progress
+STR_WINNER_GOAL                   :{YELLOW}{COMPANY} {BLACK}has won, achieved the goal with {YELLOW}{COMMA} {BLACK}population
+STR_WINNER_TIME                   :{BLACK}Game has ended.{} {YELLOW}{COMPANY} {BLACK}has won with {YELLOW}{COMMA} {BLACK}population
+
+#STR_STORY_TITLE_REQ               :{GREEN}City Builder Requirements
+
+#STR_STORY_TITLE                   :{WHITE}City Builder annual awards
+STR_STORY_PROGRESS                :{WHITE}{NUM} {BLACK}: {YELLOW}{COMPANY} {BLACK}with {YELLOW}{COMMA} {BLACK}population ({YELLOW}{STRING}{COMMA}{BLACK}).
+
+#test
+#STR_COLOURS                       :{BLACK}ABC  {WHITE}ABC {RED}ABC    {GREEN}ABC {BLUE}ABC   {YELLOW}ABC {ORANGE}ABC {PURPLE}ABC {GRAY}ABC   {BROWN}ABC {SILVER}ABC {GOLD}ABC {CREAM}ABC  {LTBLUE}ABC {DKBLUE}ABC {DKGREEN}ABC {LTBROWN}ABC
+
+#usable and well visible in GUI:
+#{BLACK} {WHITE} {GREEN} {YELLOW} {ORANGE} {SILVER} {GOLD} {LTBLUE} {DKGREEN}
+#usable colours
+#{BLACK}  {WHITE} {RED}    {GREEN} {BLUE}   {YELLOW} {ORANGE} {PURPLE} {GRAY}   {BROWN} {SILVER} {GOLD} {CREAM}  {LTBLUE} {DKBLUE} {DKGREEN} {LTBROWN}
+
+# Limitations GS
+STR_BUILD_ERROR_PLACE								:You can't build the building anywhere, but the original location!
+
+STR_BUILD_ERROR_RAILDEPOS							:You can't build railway depot!
+STR_BUILD_ERROR_ROADDEPOS							:You can't build road depot!
+STR_BUILD_ERROR_WATERDEPOS							:You can't build ship dock!
+STR_BUILD_ERROR_RAILSTATIONS						:You can't build railway station!
+STR_BUILD_ERROR_TRUCKSTOPS							:You can't build truck loading station!
+STR_BUILD_ERROR_BUSSTOPS							:You can't build bus stop!
+STR_BUILD_ERROR_WATERDOCKS							:You can't build dock!
+STR_BUILD_ERROR_AIRPORTS							:You can't build airport!
+
+STR_BUILD_ERROR_MORE_RAILDEPOS						:You can't build any more railway depot!
+STR_BUILD_ERROR_MORE_ROADDEPOS						:You can't build any more road depot!
+STR_BUILD_ERROR_MORE_WATERDEPOS						:You can't build any more ship dock!
+STR_BUILD_ERROR_MORE_RAILSTATIONS					:You can't build any more railway station!
+STR_BUILD_ERROR_MORE_TRUCKSTOPS						:You can't build any more truck loading station!
+STR_BUILD_ERROR_MORE_BUSSTOPS						:You can't build any more bus stop!
+STR_BUILD_ERROR_MORE_WATERDOCKS						:You can't build any more dock!
+STR_BUILD_ERROR_MORE_AIRPORTS						:You can't build any more airport!
+
+STR_BUILD_ERROR_NUM_RAILDEPOS						:You can only build {NUM} railway depot!
+STR_BUILD_ERROR_NUM_ROADDEPOS						:You can only build {NUM} road depot!
+STR_BUILD_ERROR_NUM_WATERDEPOS						:You can only build {NUM} ship dock!
+STR_BUILD_ERROR_NUM_RAILSTATIONS					:You can only build {NUM} railway station!
+STR_BUILD_ERROR_NUM_TRUCKSTOPS						:You can only build {NUM} truck loading station!
+STR_BUILD_ERROR_NUM_BUSSTOPS						:You can only build {NUM} bus stop!
+STR_BUILD_ERROR_NUM_WATERDOCKS						:You can only build {NUM} dock!
+STR_BUILD_ERROR_NUM_AIRPORTS						:You can only build {NUM} airport!
+
+STR_PURCHASE_ERROR_RAILVEHICLES						:You can't buy engine!
+STR_PURCHASE_ERROR_TRUCKVEHICLES					:You can't buy truck!
+STR_PURCHASE_ERROR_BUSVEHICLES						:You can't buy bus!
+STR_PURCHASE_ERROR_WATERVEHICLES					:You can't buy ship!
+STR_PURCHASE_ERROR_AIRVEHICLE						:You can't buy airplane!
+
+STR_PURCHASE_ERROR_MORE_RAILVEHICLES				:You can't buy any more engines!
+STR_PURCHASE_ERROR_MORE_TRUCKVEHICLES				:You can't buy any more trucks!
+STR_PURCHASE_ERROR_MORE_BUSVEHICLES					:You can't buy any more buses!
+STR_PURCHASE_ERROR_MORE_WATERVEHICLES				:You can't buy any more ships!
+STR_PURCHASE_ERROR_MORE_AIRVEHICLES					:You can't buy any more airplanes!
+
+STR_PURCHASE_ERROR_NUM_RAILVEHICLES					:You can only buy {NUM} engines!
+STR_PURCHASE_ERROR_NUM_TRUCKVEHICLES				:You can only buy {NUM} trucks!
+STR_PURCHASE_ERROR_NUM_BUSVEHICLES					:You can only buy {NUM} buses!
+STR_PURCHASE_ERROR_NUM_WATERVEHICLES				:You can only buy {NUM} ships!
+STR_PURCHASE_ERROR_NUM_AIRVEHICLES					:You can only buy {NUM} airplanes!
+
+STR_LIMITATIONS_LIMS_DIS            				:{WHITE}<< Disabled >>{BLACK}
+STR_LIMITATIONS_RULES               				:{BLACK}ALWAYS check server rules by typing {WHITE}!rules{BLACK} on chat!{BLACK}
+STR_LIMITATIONS_LIM_TITLE          					:{RED}Limits:{BLACK}
+STR_LIMITATIONS_LIM_YEAR          					:Starting Year: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_LOAN          					:Loan: {GREEN}{NUM} {BLACK}GBP
+STR_LIMITATIONS_LIM_TRAINS         					:Trains: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_RVS            					:Road Vehicles: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_PLANES         					:Planes: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_SHIPS         					:Ships: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_ST             					:Stations: {GREEN}{NUM} {BLACK}tiles
+
+STR_LIMITATIONS_LIMS_TITLE          				:{RED}Other Limitations:{BLACK}
+STR_LIMITATIONS_LIMS_RAILDEPO      					:Rail Depots: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_ROADDEPO      					:Road Depots: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_WATERDEPO     					:Ship Depots: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_RAILSTATIONS  					:Rail Stations: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_TRUCKSTATIONS 					:Truck Stations: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_BUSSTATIONS  					:Bus Stations: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_WATERDOCKS   					:Docks: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_AIRPORTS     					:Airports: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_TRUCKS        					:Trucks: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_BUSSES        					:Busses: {GREEN}{NUM} {BLACK}
