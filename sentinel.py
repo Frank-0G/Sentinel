@@ -124,6 +124,7 @@ class AdminClient:
         self.dashboard_active = False
         
         self.command_names = {} 
+        self._initial_sync_done = False
 
     def print_banner(self):
         print("\033[2J\033[H")
@@ -171,9 +172,9 @@ class AdminClient:
             net = parser["network"] if "network" in parser else {}
             # We try to read it, but Packet 101 will overwrite this with the real live value
             self.game_cfg["server_name"] = net.get("server_name", "Unnamed Server")
-            self.game_cfg["max_clients"] = net.getint("max_clients", 25)
-            self.game_cfg["max_companies"] = net.getint("max_companies", 15)
-            self.game_cfg["server_port"] = net.getint("server_port", 3979)
+            self.game_cfg["max_clients"] = int(net.get("max_clients", 25))
+            self.game_cfg["max_companies"] = int(net.get("max_companies", 15))
+            self.game_cfg["server_port"] = int(net.get("server_port", 3979))
             
             # GAME CREATION
             gen = parser["game_creation"] if "game_creation" in parser else {}
@@ -245,10 +246,8 @@ class AdminClient:
 
     # --- CENTRAL PACKET DISPATCHER ---
     def _dispatch_packet(self, ptype, payload):
-        # DEBUG: unexpected/all packets
-        # if ptype not in [119, 107]: # Filter out chat/date to reduce noise
-        # print(f"[DEBUG] Received Packet: {ptype} (len={len(payload)})")
-            
+        # self.log(f"[DEBUG] Packet: {ptype} (len={len(payload)})")
+        
         for p in self.plugins:
             try: p.on_event(ptype, payload)
             except: pass
@@ -432,8 +431,16 @@ class AdminClient:
                 except Exception as e: 
                     self.log(f"[Gamescript] Error parsing Packet 124: {e}")
 
+            elif ptype == 103 or ptype == ServerPacketType.SERVER_PROTOCOL: # SERVER_PROTOCOL
+                # If we get protocol info, we can also try syncing here as a fallback
+                if not hasattr(self, '_initial_sync_done'):
+                     self._do_initial_sync()
+
             elif ptype == ServerPacketType.SERVER_WELCOME:  # Packet 104
                 try:
+                    if not hasattr(self, '_initial_sync_done'):
+                        self._do_initial_sync()
+                    
                     server_name, off = self.unpack_string(payload, 0)
                     version, off = self.unpack_string(payload, off)
                     
@@ -446,7 +453,6 @@ class AdminClient:
                         map_name, off = self.unpack_string(payload, off)
                         if off + 13 <= len(payload):
                             seed, landscape, start_date, width, height = struct.unpack_from('<IBIHH', payload, off)
-                            self.log(f"[Network] Connected to '{server_name}'. Map: {width}x{height}, '{map_name}'")
                             for p in self.plugins:
                                 if hasattr(p, 'on_map_info'):
                                     p.on_map_info(server_name, width, height, map_name, seed, landscape, start_date, 0)
@@ -497,6 +503,38 @@ class AdminClient:
                 except Exception as e: self.log(f"Tick Error ({p.name}): {e}")
             time.sleep(1.0)
 
+    def _do_initial_sync(self):
+        """Unified initialization sequence called once readiness is confirmed."""
+        if hasattr(self, '_initial_sync_done'): return
+        self._initial_sync_done = True
+        
+        self.log("[Network] Syncing game details...")
+        
+        # 1. Subscriptions (Bitmask 0x40 = Automatic updates)
+        freq = AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, freq)
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, freq)
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_CHAT, freq)
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_CONSOLE, freq)
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_CMD_LOGGING, freq)
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_GAMESCRIPT, freq)
+        
+        # Note: CMD_NAMES (7) does not support AUTOMATIC (64) freq. Polled below.
+        
+        # Periodic updates (Weekly/Poll)
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
+        self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_DATE, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
+
+        # 2. Initial Polling (Fetch current state immediately)
+        self.send_poll(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, 0xFFFFFFFF)
+        self.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, 0xFFFFFFFF)
+        self.send_poll(AdminUpdateType.ADMIN_UPDATE_CMD_NAMES, 0)
+        self.send_poll(AdminUpdateType.ADMIN_UPDATE_DATE, 0)
+        
+        # Fetch Seed via RCON
+        self.send_rcon("getseed")
+
     def connect(self, host, port, password):
         max_retries = 5; attempt = 0
         while attempt < max_retries:
@@ -515,10 +553,7 @@ class AdminClient:
                 
                 self.send_packet(AdminPacketType.ADMIN_JOIN, self._pack_string(password) + self._pack_string(self.name) + self._pack_string(self.version))
                 
-                self.log("[Network] Connection Established! Fetching seed...")
-                
-                # Fetch Seed immediately
-                self.send_rcon("getseed")
+                self.log("[Network] Connection Established! Waiting for server readiness...")
                 
                 for p in self.plugins:
                     if hasattr(p, 'on_connected'): p.on_connected()

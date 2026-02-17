@@ -24,10 +24,8 @@ class GameScriptConnector(IPlugin):
             self.db_config = {k: v for k, v in self.db_config.items() if k in valid_keys}
 
     def on_connected(self):
-        self.client.log(f"[{self.name}] Connector Active. Linked to DB: {self.db_config.get('database', 'Unknown')}")
-        # Subscribe to Console Logs (so we see the GSLog.Info)
-        self.client.send_packet(AdminPacketType.ADMIN_UPDATE_FREQUENCY, 
-                              struct.pack('<HH', AdminUpdateType.ADMIN_UPDATE_CONSOLE, 0x40))
+        # Subscriptions handled by central AdminClient
+        pass
 
     def on_event(self, packet_type, payload):
         # 1. Packet 124 (Native GS Packet - Keep just in case)

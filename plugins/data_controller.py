@@ -23,27 +23,12 @@ class DataController(IPlugin):
         self.last_poll = 0
 
     def _subscribe(self):
-        # print(f"[DEBUG][DataController] Subscribing to updates...")
-        self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC)
-        self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC)
-        self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
-        self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
-        self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_DATE, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
-        
-        # Subscribe to CMD_LOGGING (8)
-        # self.client.send_update_frequency(8, AdminUpdateFrequency.ADMIN_FREQUENCY_AUTOMATIC)
+        # Subscriptions handled by central AdminClient
+        pass
 
     def _initial_poll(self):
-        # print(f"[DEBUG][DataController] Sends initial poll... (PARTIAL)")
-        try:
-            self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, 0xFFFFFFFF)
-            self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, 0xFFFFFFFF)
-            # self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, 0xFFFFFFFF)
-            # self.client.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, 0xFFFFFFFF)
-            
-            # Poll CMD_NAMES (7) once on connect
-            # self.client.send_poll(7, 0) 
-        except Exception: pass
+        # Initial polling handled by central AdminClient
+        pass
 
     def on_tick(self):
         """Periodically poll for fresh data to ensure single source of truth."""
@@ -65,12 +50,8 @@ class DataController(IPlugin):
         except: pass
 
     def on_connected(self):
-        # print(f"[DEBUG][DataController] Connected event received")
-        try:
-            self._subscribe()
-            self._initial_poll()
-            self.last_poll = time.time()  # Initialize polling timer
-        except: pass
+        # Polling/Subscriptions handled by central AdminClient
+        self.last_poll = time.time()  # Initialize polling timer
 
     def on_map_info(self, server_name, width, height, map_name, seed, landscape, start_date, flags):
         """Called when SERVER_WELCOME packet is received with map details."""

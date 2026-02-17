@@ -68,9 +68,8 @@ class GoalSystem(IPlugin):
             self.protection_range = int(cfg.get("protectionrange", 20))
 
     def on_connected(self):
-        # Request WEEKLY updates for Company Economy (Daily is not supported by protocol for Economy)
-        self.client.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
-        self.client.log(f"[{self.name}] Requested WEEKLY Company Economy updates.")
+        # Subscriptions handled by central AdminClient
+        pass
 
     def get_company_details(self, cid):
         """

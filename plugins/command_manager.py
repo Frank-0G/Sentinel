@@ -170,11 +170,8 @@ class CommandManager(IPlugin):
         self.load_triggers()
 
     def on_connected(self):
-        # FIX: Added subscription for GAMESCRIPT (9) so we receive JSON packets!
-        self.client.log(f"[{self.name}] Connected. Subscribing to CHAT, CLIENT_INFO, and GAMESCRIPT...")
-        self.client.send_packet(AdminPacketType.ADMIN_UPDATE_FREQUENCY, struct.pack('<HH', 5, 0x40)) # Chat
-        self.client.send_packet(AdminPacketType.ADMIN_UPDATE_FREQUENCY, struct.pack('<HH', 1, 0x40)) # Client Info
-        self.client.send_packet(AdminPacketType.ADMIN_UPDATE_FREQUENCY, struct.pack('<HH', 9, 0x40)) # GameScript
+        # Subscriptions handled by central AdminClient
+        pass
 
     def _get_service_safe(self, name):
         if hasattr(self.client, 'get_service'): return self.client.get_service(name)
