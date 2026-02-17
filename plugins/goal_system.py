@@ -570,3 +570,55 @@ class GoalSystem(IPlugin):
             if force_reply is not None: force_reply.append(msg)
             else: self.client.send_chat(3, 0, 0, msg)
             count += 1
+
+    def cmd_goalreached(self, cmd, args, reply, source, context):
+        if self.game_won:
+            reply.append("The game has already been won.")
+            return
+
+        # Check for online players
+        data_ctrl = self.client.get_service("DataController")
+        player_count = len(data_ctrl.clients) if data_ctrl else 0
+        
+        # If no players online, restart immediately
+        if player_count == 0:
+             sess = self.client.get_service("OpenttdSession")
+             if sess:
+                 reply.append("No players online. Restarting game immediately...")
+                 self.client.log(f"[{self.name}] Admin forced restart (No players online).")
+                 sess.restart_game()
+             else:
+                 reply.append("Error: OpenttdSession not found.")
+             return
+
+        # Normal Win Logic (with players)
+        # Optional: Allow specifying a winner, otherwise pick the leader
+        target_cid = -1
+        if args:
+             try:
+                 target_cid = int(args[0]) - 1 # 1-based to 0-based
+             except: pass
+        
+        if target_cid < 0:
+            # Find current leader
+            best_cid = -1
+            best_val = -1
+            
+            for cid in self.company_data:
+                val = self.get_progress(cid)
+                if val > best_val:
+                    best_val = val
+                    best_cid = cid
+            
+            target_cid = best_cid
+
+        if target_cid >= 0:
+            name = self.company_data[target_cid].get('name', f"Company #{target_cid+1}")
+            reply.append(f"Forcing win for {name}...")
+            self.client.log(f"[{self.name}] Admin forced win for Company {target_cid}")
+            
+            # Use standard trigger_win for consistency
+            self.trigger_win(target_cid)
+            
+        else:
+            reply.append("Could not determine a winner to force.")
