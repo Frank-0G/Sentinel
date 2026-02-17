@@ -286,7 +286,7 @@ class IRCBridge(IPlugin):
         except: pass
 
     def on_wrapper_log(self, text):
-        if "Map generation percentage complete: 90" in text: self.on_new_game()
+        if "Map generation percentage complete: 90" in text: pass # on_new_game() handled by SERVER_NEWGAME packet
         if "CmdSaveGame: Saved game to" in text:
             try:
                 filename = text.split("Saved game to ", 1)[1].strip()
@@ -428,7 +428,9 @@ class IRCBridge(IPlugin):
              try:
                 msg, _ = self.client.unpack_string(pl, 6)
                 if "GOAL REACHED!" in msg: 
-                    self.send_to_channel(f"/me \x0311***\x03\x02 {msg}", "gameactions")
+                    # Clean up the message to avoid "Double GOAL REACHED"
+                    clean_msg = msg.replace("GOAL REACHED!", "").replace("---", "").strip()
+                    self.send_to_channel(f"/me \x0311***\x03\x02 \x0304GOAL REACHED!\x03 {clean_msg}", "gameactions")
              except: pass
     
     def on_data_event(self, etype, data):
@@ -495,8 +497,9 @@ class IRCBridge(IPlugin):
                                     for chan in self.channels:
                                         self.send_raw(f"JOIN {chan}")
                                     joined = True
-                                    msg = self.format_msg("gamerestarted")
-                                    self.send_to_channel("/me " + msg, "announcements")
+                                    # msg = self.format_msg("gamerestarted")
+                                    # self.send_to_channel("/me " + msg, "announcements")
+                                    self.client.log(f"[{self.name}] IRC Joined channels.")
                                 if parts[1] == "433": 
                                     self.send_raw(f"NICK {self.nickname}_")
                                 if "PRIVMSG" in line: self.handle_privmsg(line)

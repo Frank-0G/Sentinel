@@ -228,17 +228,9 @@ class DiscordBridge(IPlugin):
                 await self.update_status()
                 # Run the admin scan
                 await self._scan_admins_on_ready()
-                # Send startup message to all channels (for admin monitoring)
-                startup_msg = self.formats.get("gamerestarted", "🔄 **The game has been (re)started**")
-                for ch_id in self.channels.keys():
-                    try:
-                        channel = self.bot.get_channel(ch_id)
-                        if not channel:
-                            channel = await self.bot.fetch_channel(ch_id)
-                        if channel:
-                            await channel.send(startup_msg)
-                    except Exception as e:
-                        print(f"[{self.name}] Error sending startup message to {ch_id}: {e}")
+                # Send startup message ONLY if not a new session (avoid double-dip with on_new_game)
+                # startup_msg = self.formats.get("gamerestarted", "🔄 **The game has been (re)started**")
+                self.client.log(f"[{self.name}] Discord Ready. Monitoring {len(self.channels)} channels.")
 
             @self.bot.event
             async def on_command_error(ctx, error):
@@ -568,7 +560,7 @@ class DiscordBridge(IPlugin):
             self._dispatch_discord(self.update_status())
 
     def on_wrapper_log(self, text):
-        if "Map generation percentage complete: 90" in text: self.on_new_game()
+        if "Map generation percentage complete: 90" in text: pass # on_new_game() handled by SERVER_NEWGAME packet
         
         # Started Company Logic
         # Format: *** Frank has started a new company (#1)
@@ -768,7 +760,9 @@ class DiscordBridge(IPlugin):
              try:
                 msg, _ = self.client.unpack_string(pl, 6)
                 if "GOAL REACHED!" in msg: 
-                    self._dispatch_discord(self._send_msg(f"🏆 **GOAL REACHED!** {msg}"))
+                    # Clean up the message to avoid "Double GOAL REACHED"
+                    clean_msg = msg.replace("GOAL REACHED!", "").replace("---", "").strip()
+                    self._dispatch_discord(self._send_msg(f"🏆 **GOAL REACHED!** {clean_msg}"))
              except: pass
     
     def on_data_event(self, etype, data):
