@@ -36,6 +36,8 @@ Sentinel comes with a suite of built-in plugins covering a wide range of functio
 
 ### Logging
 *   **Chat Log DB**: Logs all server chat (Public, Team, Private, IRC, Admin) to a MySQL database.
+    > [!IMPORTANT]
+    > To log **TEAM** chats, a custom patch is required in the OpenTTD source code, as the default Admin Port does not advertise team-only messages.
 *   **Chat Logger**: Simple file/console logging.
 
 ## 🛠️ Requirements
