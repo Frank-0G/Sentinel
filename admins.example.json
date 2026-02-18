@@ -1,6 +1,12 @@
 {
     "groups": {
-        "half-admin": [
+        "scanner": [
+            "goalreached",
+            "status",
+            "me",
+            "help"
+        ],
+        "moderator": [
             "kick",
             "move",
             "pause",
@@ -12,8 +18,7 @@
             "resetcompany",
             "resetcompanytimer",
             "cancelresetcompany",
-            "admin",
-            "goalreached"
+            "admin"
         ],
         "full-admin": [
             "restart",
@@ -35,23 +40,31 @@
         ]
     },
     "inheritance": {
+        "moderator": [
+            "scanner"
+        ],
         "full-admin": [
-            "half-admin"
+            "moderator"
         ],
         "operator": [
             "full-admin"
         ]
     },
     "users": {
-        "admin_user": "operator",
-        "moderator_user": "half-admin"
+        "frank": "operator",
+        "john_mod": "moderator",
+        "guest_scanner": "scanner"
     },
     "irc_auth": {
-        "admin_user": "IRC_Account_Name",
-        "moderator_user": "IRC_Account_Name_2"
+        "frank": "Frank_IRC",
+        "john_mod": "John_IRC_Account"
+    },
+    "discord_ids": {
+        "267050129985503246": "frank",
+        "123456789012345678": "john_mod"
     },
     "passwords": {
-        "admin_user": "secure_password_here",
-        "moderator_user": "another_secure_password"
+        "frank": "super_secure_password_123",
+        "john_mod": "moderator_pass_456"
     }
 }
