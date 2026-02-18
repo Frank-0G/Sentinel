@@ -47,7 +47,7 @@ def _xml_to_dict(node):
                 d[child.tag] = val
         return d
     else:
-        text = node.text if node.text else ""
+        text = node.text.strip() if node.text else ""
         if text.lower() == "true": return True
         if text.lower() == "false": return False
         if text.isdigit(): return int(text)
@@ -221,7 +221,7 @@ class AdminClient:
                     self.current_seed = parts[1].strip()
             except: pass
 
-        if not self.dashboard_active:
+        if not self.dashboard_active and self.config.get("wrapper_logs", True):
              print(f"[WRAPPER] {text.strip()}")
         for p in self.plugins:
             if hasattr(p, 'on_wrapper_log'): 
@@ -669,7 +669,10 @@ if __name__ == "__main__":
         
         if not launcher.start(): sys.exit(1)
         threading.Thread(target=monitor_wrapper_output, daemon=True).start()
-        print("[Launcher] Waiting for server..."); server_ready_event.wait(timeout=config.get("launch_wait", 60))
+        print("[Launcher] OpenTTD Server is Starting, Please wait...")
+        if not config.get("wrapper_logs", True):
+             print("[Launcher] TIP: If you want to see what is happening, please enable the 'Wrapper Logs' in the settings.")
+        server_ready_event.wait(timeout=config.get("launch_wait", 60))
         
         client.load_plugins(PLUGINS_DIR)
         client.connect(config.get("admin_host", "127.0.0.1"), config.get("admin_port", 3979), config.get("admin_password", ""))

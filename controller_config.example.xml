@@ -52,6 +52,8 @@
   <trigger_file>triggers.json</trigger_file>
 
   <!-- SECTION: AUTOMATION -->
+  <!-- Set to false to disable "[WRAPPER]" logs on the console. -->
+  <wrapper_logs>true</wrapper_logs>
   <!-- Time in minutes between automatic server restarts when EMPTY (no players, no companies) (0 to disable). -->
   <auto_restart_minutes>60</auto_restart_minutes>
   <!-- Time in minutes between automatic server restarts when ABANDONED (no players, but companies exist) (0 to disable). -->

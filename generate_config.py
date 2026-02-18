@@ -26,7 +26,7 @@ xml_content = r"""<config>
 
     <trigger_prefix>!</trigger_prefix>
     <trigger_file>triggers.json</trigger_file>
-
+    <wrapper_logs>true</wrapper_logs>
     <auto_restart_minutes>60</auto_restart_minutes>
     
     <chat_log_retention_days>365</chat_log_retention_days>
