@@ -197,13 +197,14 @@ class IRCBridge(IPlugin):
                         self.send_raw(f"PRIVMSG {chan} :{line}")
                     time.sleep(0.5) # Prevent flooding
 
-    def send_msg(self, msg):
-        first_chan = list(self.channels.keys())[0] if self.channels else "#openttd"
+    def send_msg(self, msg, target=None):
+        if not target:
+            target = list(self.channels.keys())[0] if self.channels else "#openttd"
         # Handle multiline messages
         lines = msg.split("\n")
         for line in lines:
             if line.strip():
-                self.send_raw(f"PRIVMSG {first_chan} :{line}")
+                self.send_raw(f"PRIVMSG {target} :{line}")
                 time.sleep(0.5)
     
     def send_notice(self, target, msg):
@@ -589,8 +590,8 @@ class IRCBridge(IPlugin):
                 admin_user = self.get_admin_username(irc_account)
                 is_admin = (admin_user is not None)
                 if not irc_account: self.whois_queue.append(sender)
-                success, reply = mgr.handle_command(cmd_payload.strip(), source="irc", is_admin=is_admin, admin_name=admin_user if admin_user else sender)
-                if success and reply: self.send_msg(reply)
+                success, reply = mgr.handle_command(cmd_payload.strip(), source="irc", is_admin=is_admin, admin_name=admin_user if admin_user else sender, context={'irc_target': sender})
+                if success and reply: self.send_msg(reply, target=sender)
             else:
                 # Chat Link Logic
                 meta_parts = parts[0].split()

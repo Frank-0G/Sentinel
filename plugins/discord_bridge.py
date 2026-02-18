@@ -305,7 +305,7 @@ class DiscordBridge(IPlugin):
                         mgr = self.client.get_service("CommandManager")
                     
                     if mgr:
-                        success, reply = mgr.handle_command(cmd_payload, source="discord", is_admin=False, admin_name=message.author.name, context={'discord_id': str(message.author.id), 'prefix_used': prefix_used})
+                        success, reply = mgr.handle_command(cmd_payload, source="discord", is_admin=False, admin_name=message.author.name, context={'discord_id': str(message.author.id), 'prefix_used': prefix_used, 'discord_channel_id': message.channel.id})
                         if reply:
                             await message.channel.send(reply)
             
@@ -535,6 +535,20 @@ class DiscordBridge(IPlugin):
         # If we got here, we failed
         print(f"[{self.name}] Dispatch Failed! Running={self.running}, Loop={target_loop}")
         coro.close()
+
+    def send_msg_to_channel(self, msg, channel_id):
+        """Send message to a specific channel (async-safe via dispatch)."""
+        async def _send():
+            try:
+                channel = self.bot.get_channel(channel_id)
+                if not channel:
+                    channel = await self.bot.fetch_channel(channel_id)
+                if channel:
+                    await channel.send(msg)
+            except Exception as e:
+                print(f"[{self.name}] Send Msg Error to {channel_id}: {e}")
+        
+        self._dispatch_discord(_send())
 
     async def _send_msg(self, msg):
         """Send message to all configured channels (for admin monitoring)."""

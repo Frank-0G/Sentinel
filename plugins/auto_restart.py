@@ -131,7 +131,7 @@ class AutoRestart(IPlugin):
 
         threading.Thread(target=kill_sequence, daemon=True).start()
 
-    def process_command(self, cmd, args, source, admin_name, cid):
+    def process_command(self, cmd, args, source, admin_name, cid, context=None):
         if cmd == "restart":
             msg = f"Manual server restart triggered by {admin_name}."
             self.perform_restart_sequence(msg)

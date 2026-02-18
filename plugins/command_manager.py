@@ -366,20 +366,20 @@ class CommandManager(IPlugin):
             if cmd in ["login", "logout", "me", "vipstatus", "sponsor", "addvip", "extendvip", "vipmembership", "whois", "rank"]:
                 comm = self.get_community()
                 cid = context.get('cid') if context else None
-                if comm: return True, comm.process_command(cmd, args, source, effective_name, cid)
+                if comm: return True, comm.process_command(cmd, args, source, effective_name, cid, context)
                 return True, "Community plugin missing or not loaded."
 
             if cmd == "restart" and not args: 
                 restarter = self._get_service_safe("AutoRestart")
                 if restarter:
                     cid = context.get('cid') if context else None
-                    return True, restarter.process_command(cmd, args, source, effective_name, cid)
+                    return True, restarter.process_command(cmd, args, source, effective_name, cid, context)
 
             if cmd in ["restarttimer", "timer", "rt"]:
                 restarter = self._get_service_safe("AutoRestart")
                 if restarter:
                     cid = context.get('cid') if context else None
-                    return True, restarter.process_command(cmd, args, source, effective_name, cid)
+                    return True, restarter.process_command(cmd, args, source, effective_name, cid, context)
             
             if conf:
                 resp = conf.get("response")
