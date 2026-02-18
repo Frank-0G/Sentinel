@@ -136,4 +136,32 @@ class AutoRestart(IPlugin):
             msg = f"Manual server restart triggered by {admin_name}."
             self.perform_restart_sequence(msg)
             return "Restart sequence initiated."
+            
+        if cmd == "restarttimer":
+            if self.restart_triggered:
+                return "Restart is already in progress (shutting down in 5 seconds)."
+            
+            if self.empty_since == 0:
+                return "The restart timer is not currently active (server is active or feature is disabled)."
+                
+            data = self.get_data()
+            if not data: return "Unable to retrieve game data."
+            
+            has_companies = (len(data.companies) > 0)
+            limit_min = self.limit_abandoned_min if has_companies else self.limit_empty_min
+            
+            if limit_min <= 0:
+                return "The auto-restart timer is disabled for this server state."
+                
+            elapsed = time.time() - self.empty_since
+            remaining = (limit_min * 60) - elapsed
+            
+            if remaining <= 0:
+                return "The timer has expired; restart should trigger any moment."
+                
+            # Format remaining time
+            rem_mins = math.ceil(remaining / 60)
+            state_text = "abandoned companies" if has_companies else "empty server"
+            return f"Auto-restart ({state_text}) in approximately {rem_mins} minute{'s' if rem_mins != 1 else ''}."
+            
         return None

@@ -42,7 +42,7 @@ class CommandManager(IPlugin):
             "login", "logout", "me", "vipstatus", "sponsor", "addvip", "extendvip", 
             "vipmembership", "whois", "rank", "help", "status", "server", "version", 
             "players", "companies", "cv", "shutdown", "name", "kick", "saveme", 
-            "savedcompanies", "restart", "restartserver", "rules", "admin", "rcon", "say", "ban", 
+            "savedcompanies", "restart", "restartserver", "restarttimer", "timer", "rt", "rules", "admin", "rcon", "say", "ban", 
             "pause", "unpause", "reset", "move", "emptycompany", "lockcompany", "unlockcompany",
             "plugins", "reloadplugins", "vote", "yes", "no", "votekick", "voteban", 
             "voterestart", "votereset", "cancelvote", "votestatus", "alogin", "alogout",
@@ -106,7 +106,8 @@ class CommandManager(IPlugin):
             "townstats": ["Usage: !townstats <CompanyID>", "Displays CityBuilder town requirements for a specific company."],
             "claimed": ["Usage: !claimed", "Lists all currently claimed towns and their owners."],
             "goalreached": ["Usage: !goalreached", "Admin only: Forces the current game to end and declares the leader as winner."],
-            "awarning": ["Usage: !awarning <CompanyID>", "Admin only: Issues a warning to a company."]
+            "awarning": ["Usage: !awarning <CompanyID>", "Admin only: Issues a warning to a company."],
+            "restarttimer": ["Usage: !restarttimer", "Shows the remaining time before an automatic server restart."]
         }
 
         self.local_handlers = {
@@ -369,6 +370,12 @@ class CommandManager(IPlugin):
                 return True, "Community plugin missing or not loaded."
 
             if cmd == "restart" and not args: 
+                restarter = self._get_service_safe("AutoRestart")
+                if restarter:
+                    cid = context.get('cid') if context else None
+                    return True, restarter.process_command(cmd, args, source, effective_name, cid)
+
+            if cmd in ["restarttimer", "timer", "rt"]:
                 restarter = self._get_service_safe("AutoRestart")
                 if restarter:
                     cid = context.get('cid') if context else None

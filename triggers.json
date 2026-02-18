@@ -13,6 +13,19 @@
         "discord": true
     },
     {
+        "name": "restarttimer",
+        "admin": false,
+        "irc": true,
+        "in_game": false,
+        "description": "Checks the remaining time before an automatic server restart.",
+        "aliases": [
+            "timer",
+            "rt"
+        ],
+        "response": null,
+        "discord": true
+    },
+    {
         "name": "progress",
         "admin": false,
         "irc": true,
