@@ -249,10 +249,9 @@ class AdminClient:
 
     # --- CENTRAL PACKET DISPATCHER ---
     def _dispatch_packet(self, ptype, payload):
-        # Proactive Initial Sync Trigger
         if not self._initial_sync_done:
             # Trigger on Protocol, Welcome, or first Client/Company info
-            if ptype in [101, 103, 104, 109, 114]:
+            if ptype in [103, 104, 109, 114]:
                 self._do_initial_sync()
 
         for p in self.plugins:
@@ -480,7 +479,12 @@ class AdminClient:
             elif ptype == ServerPacketType.SERVER_DATE:
                 if len(payload) >= 4:
                     date_val = struct.unpack('<I', payload[0:4])[0]
-                    self.current_year = int(date_val / 365.2425)
+                    # Robust Year Calculation handling old (1920-based) and new (0-based) dates
+                    if date_val > 500000: # New system (roughly year 1369+)
+                        self.current_year = int(date_val / 365.2425)
+                    else: # Old system (Days since 1920)
+                        self.current_year = 1920 + int(date_val / 365.2425)
+                    
                     for p in self.plugins: 
                         if hasattr(p, 'on_date_change'): p.on_date_change(date_val)
 
@@ -531,8 +535,6 @@ class AdminClient:
         self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_CMD_LOGGING, freq)
         self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_GAMESCRIPT, freq)
         
-        # Note: CMD_NAMES (7) does not support AUTOMATIC (64) freq. Polled below.
-        
         # Periodic updates (Weekly/Poll)
         self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
         self.send_update_frequency(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, AdminUpdateFrequency.ADMIN_FREQUENCY_WEEKLY)
@@ -548,13 +550,19 @@ class AdminClient:
         self.send_rcon("getseed")
 
     def connect(self, host, port, password):
-        max_retries = 20; attempt = 0
+        max_retries = 20
+        attempt = 0
+        base_delay = 1.0
+        max_delay = 30.0
+
         while attempt < max_retries:
             try:
                 attempt += 1
-                self.log(f"[Network] Connecting to {host}:{port}...")
                 # use create_connection for dual-stack (IPv4/IPv6) support
                 self.socket = socket.create_connection((host, port), timeout=15.0)
+                peer = self.socket.getpeername()
+                self.log(f"[Network] Connection Established to {peer[0]}! Sending Handshake...")
+                
                 self.socket.settimeout(None)
                 self.connected = True
                 self._stop_event.clear()
@@ -562,18 +570,27 @@ class AdminClient:
                 threading.Thread(target=self._receive_loop, daemon=True).start()
                 threading.Thread(target=self._plugin_tick_loop, daemon=True).start()
                 
+                # Send ADMIN_JOIN packet
                 self.send_packet(AdminPacketType.ADMIN_JOIN, self._pack_string(password) + self._pack_string(self.name) + self._pack_string(self.version))
-                
-                self.log("[Network] Connection Established! Waiting for server readiness...")
+                self.log(f"[Network] Handshake (ADMIN_JOIN) sent. Waiting for server response...")
                 
                 for p in self.plugins:
                     if hasattr(p, 'on_connected'): p.on_connected()
                 return
             except Exception as e:
                 self.log(f"[Network] Connection Failed: {e}")
-                if self.socket: self.socket.close(); self.socket = None
-                if attempt < max_retries: time.sleep(2)
-                else: raise Exception(f"Could not connect after {max_retries} attempts.")
+                if self.socket:
+                    self.socket.close()
+                    self.socket = None
+                
+                if attempt < max_retries:
+                    # Exponential Backoff with Jitter
+                    delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
+                    actual_delay = delay * (0.5 + 0.5 * (hash(str(time.time())) % 100 / 100.0))
+                    self.log(f"[Network] Retrying in {actual_delay:.2f} seconds...")
+                    time.sleep(actual_delay)
+                else:
+                    raise Exception(f"Could not connect after {max_retries} attempts.")
 
     def disconnect(self):
         if self.connected:
@@ -646,7 +663,8 @@ if __name__ == "__main__":
                     for line in iter(launcher.process.stdout.readline, ''):
                         if line: 
                             client.broadcast_wrapper_log(line)
-                            if "Map generation percentage complete: 90" in line and not server_ready_event.is_set(): server_ready_event.set()
+                            if ("Map generated, starting game" in line or "Map generation percentage complete: 100" in line) and not server_ready_event.is_set(): 
+                                server_ready_event.set()
             except: pass
         
         if not launcher.start(): sys.exit(1)
