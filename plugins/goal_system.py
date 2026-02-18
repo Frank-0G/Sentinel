@@ -43,12 +43,14 @@ class GoalSystem(IPlugin):
         # Data Stores
         self.company_data = {i: {'pop': 0, 'val': 0, 'name': f"Company #{i+1}", 'color': "Unknown"} for i in range(15)}
         self.claimed_towns = {} # {cid: {'town': str, 'townid': int, 'center': (x,y), 'bbox': (minx,miny,maxx,maxy)}}
+        self.claim_stats = {} # {cid: {stats_dict}}
         self.town_demands = {} # {tid: [demand_dicts]}
         self.protection_exceptions = [] 
         
         self.game_won = False
         self.restart_countdown = -1
         self.last_announce = time.time()
+        self.last_db_sync = 0
         
         # Anti-Flood / Protection
         self.bad_action_count = {} 
@@ -122,6 +124,10 @@ class GoalSystem(IPlugin):
             self.last_announce = now
             self.announce_scoreboard()
 
+        if not self.game_won and self.is_city_builder and (now - self.last_db_sync > 30):
+            self.last_db_sync = now
+            self.sync_cb_data_to_db()
+
         if not self.game_won:
             self.check_winners()
 
@@ -161,7 +167,9 @@ class GoalSystem(IPlugin):
         self.restart_countdown = -1
         self.winner_cid = -1
         self.claimed_towns.clear()
+        self.claim_stats.clear()
         self.town_demands.clear()
+        self.last_db_sync = time.time()
         
         # Reset Company Data but keep keys/structure
         for cid in self.company_data:
@@ -211,21 +219,38 @@ class GoalSystem(IPlugin):
                         self.client.log(f"[{self.name}] Claim: Co #{cid+1} -> {town_name} @ {loc_x},{loc_y}")
                         
                 elif action == "unclaimed":
-                     cid = int(data.get("company", -1))
-                     self.claimed_towns.pop(cid, None)
+                    cid = int(data.get("company", -1))
+                    self.claimed_towns.pop(cid, None)
+                    self.claim_stats.pop(cid, None)
 
                 elif action == "towndemands":
                     tid = int(data.get("townid", -1))
                     if tid >= 0:
                         if "demands" in data: 
-                            # If 'demands' is delivered as a list, store it directly
                             self.town_demands[tid] = data["demands"]
                         elif "cargo" in data:
-                            # Accumulate incremental updates
                             if tid not in self.town_demands: self.town_demands[tid] = []
-                            # Ensure it is a list before appending
                             if isinstance(self.town_demands[tid], list):
                                 self.town_demands[tid].append(data)
+
+                elif action == "townstats":
+                    cid = int(data.get("company", -1))
+                    if cid >= 0:
+                        # Store in a separate dict for sync
+                        self.claim_stats[cid] = {
+                            'cid': cid,
+                            'tid': int(data.get("townid", -1)),
+                            'name': data.get("townname", "Unknown"),
+                            'pop': int(data.get("population", 0)),
+                            'house_count': int(data.get("housecount", 0)),
+                            'growth_rate': int(data.get("growthrate", 0)),
+                            'statue': data.get("statue", "False").lower() == "true",
+                            'location': data.get("location", "0x0")
+                        }
+
+                elif action == "cleardemands":
+                    self.claim_stats.clear()
+                    self.town_demands.clear()
 
             elif e == "populationupdated": 
                 cid = int(data.get("company", -1))
@@ -259,11 +284,30 @@ class GoalSystem(IPlugin):
                     self.company_data[cid]['val'] = val
                     # self.client.log(f"[{self.name}] Fast Update Co #{cid+1}: {val} (Type {self.goal_master_game})")
                     self.check_winners()
-
+        
         except Exception as err:
             self.client.log(f"[{self.name}] Event Error: {err}")
             import traceback
             traceback.print_exc()
+
+    def sync_cb_data_to_db(self):
+        comm = self.client.get_service("Community")
+        if not comm: return
+        
+        # Match C# sequence: sync stats, then town names, then refill
+        # send_server_stats happens in Community.on_tick every 30s as well.
+        # But here we do the CB specific ones
+        
+        comm.delete_town_names()
+        for cid, s in self.claim_stats.items():
+            comm.send_company_stats(cid, s['tid'], s['name'], s['pop'], s['house_count'], s['growth_rate'], s['statue'], s['location'])
+            
+        comm.delete_company_demands()
+        for tid, demands in self.town_demands.items():
+            if isinstance(demands, list):
+                for d in demands:
+                    # d should have: cargo_suffix, cargo_supply, cargo_goal, cargo_stocked
+                    comm.send_company_demands(tid, d.get('cargo_suffix', ''), d.get('cargo_supply', 0), d.get('cargo_goal', 0), d.get('cargo_stocked', 0))
 
     def on_company_economy(self, company_id, money, loan, income, delivered, performance, value):
          # Keep track of value/money

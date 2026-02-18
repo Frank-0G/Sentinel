@@ -132,24 +132,26 @@ class DataController(IPlugin):
             "value": value
         })
 
-    def on_company_stats(self, company_id, vehicles, stations, airports, harbors):
+    def on_company_stats(self, company_id, vehs, infra):
         if company_id not in self.companies:
             self.companies[company_id] = {}
         
-        # vehicles is a tuple: (trains, road_vehs, aircraft, ships)
-        trains, road_vehs, aircraft, ships = 0, 0, 0, 0
-        if isinstance(vehicles, (tuple, list)) and len(vehicles) >= 4:
-            trains, road_vehs, aircraft, ships = vehicles
+        # vehs: (trains, lorries, busses, planes, ships)
+        # infra: (train_stations, lorry_stations, bus_stations, airports, harbours)
+        trains, lorries, busses, planes, ships = vehs
+        train_stats, lorry_stats, bus_stats, airports, harbors = infra
         
         self.companies[company_id].update({
-            "vehicles": trains + road_vehs + aircraft + ships, # Total sum for legacy scoring
+            "vehicles": sum(vehs),
             "trains": trains,
-            "roadvehicles": road_vehs,
-            "aircraft": aircraft,
+            "roadvehicles": lorries + busses,
+            "aircraft": planes,
             "ships": ships,
-            "stations": stations,
+            "trainstations": train_stats,
+            "roadstations": lorry_stats + bus_stats,
             "airports": airports,
-            "harbors": harbors
+            "harbors": harbors,
+            "stations": sum(infra)
         })
 
     def on_company_remove(self, company_id, reason):
