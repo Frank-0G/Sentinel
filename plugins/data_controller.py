@@ -136,8 +136,17 @@ class DataController(IPlugin):
         if company_id not in self.companies:
             self.companies[company_id] = {}
         
+        # vehicles is a tuple: (trains, road_vehs, aircraft, ships)
+        trains, road_vehs, aircraft, ships = 0, 0, 0, 0
+        if isinstance(vehicles, (tuple, list)) and len(vehicles) >= 4:
+            trains, road_vehs, aircraft, ships = vehicles
+        
         self.companies[company_id].update({
-            "vehicles": vehicles,
+            "vehicles": trains + road_vehs + aircraft + ships, # Total sum for legacy scoring
+            "trains": trains,
+            "roadvehicles": road_vehs,
+            "aircraft": aircraft,
+            "ships": ships,
             "stations": stations,
             "airports": airports,
             "harbors": harbors

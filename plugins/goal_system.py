@@ -73,8 +73,8 @@ class GoalSystem(IPlugin):
 
     def get_company_details(self, cid):
         """
-        Retrieves company name, color name, and list of player names.
-        Returns: (company_name, color_name, player_string)
+        Retrieves company name, color name, list of player names, and duration played.
+        Returns: (company_name, color_name, player_string, duration_text)
         """
         data = self.client.get_service("DataController")
         
@@ -82,35 +82,37 @@ class GoalSystem(IPlugin):
         c_name = self.company_data[cid].get('name', f"Company #{cid+1}")
         c_color = "Unknown"
         players = []
+        duration_text = ""
         
         if data:
             # 1. Get Color
-            # Try to get color from DataController's company info if available
             co_info = data.companies.get(cid)
-            if co_info and 'color' in co_info:
-                raw_color = co_info['color']
-                c_color, _ = data.get_color_info(raw_color)
-            else:
-                # Fallback to local data if DataController doesn't have it yet
-                # (Local data stores it as "Color X", so we might want to parse that or just leave it)
-                local_col = self.company_data[cid].get('color', "Color ?")
-                if local_col.startswith("Color "):
-                     try: 
-                         col_id = int(local_col.split(" ")[1])
-                         c_color, _ = data.get_color_info(col_id)
-                     except: c_color = local_col
-                else: c_color = local_col
+            if co_info:
+                if 'color' in co_info:
+                    raw_color = co_info['color']
+                    c_color, _ = data.get_color_info(raw_color)
+                
+                # 2. Get Duration
+                founded = co_info.get('joined') # Using 'joined' as best proxy for founding real-time
+                if founded:
+                    diff = int(time.time() - founded)
+                    hours = diff // 3600
+                    minutes = (diff % 3600) // 60
+                    seconds = diff % 60
+                    if hours > 0: duration_text = f" in {hours}h {minutes}m {seconds}s"
+                    elif minutes > 0: duration_text = f" in {minutes}m {seconds}s"
+                    else: duration_text = f" in {seconds}s"
 
-            # 2. Get Players
+            # 3. Get Players
             for client_id, info in data.clients.items():
                 if info.get('company') == cid:
                     players.append(info.get('name', 'Unknown'))
         
-        # Format players string: "Player1, Player2" or "No Players"
-        if not players: player_str = "No Players"
+        # Format players string: "Player1, Player2" or "Empty" (C# says "Empty" for player string if none)
+        if not players: player_str = "Empty"
         else: player_str = ", ".join(players)
         
-        return c_name, c_color, player_str
+        return c_name, c_color, player_str, duration_text
 
     def on_tick(self):
         if not self.enabled: return
@@ -415,18 +417,18 @@ class GoalSystem(IPlugin):
             progress = self.get_progress(cid)
             if progress >= 100:
                 self.client.log(f"[{self.name}] Win detected for Company #{cid+1} (Progress: {progress}%)")
-                self.trigger_win(cid)
+                self.trigger_win(cid, abort=False)
                 break
 
-    def trigger_win(self, cid):
+    def trigger_win(self, cid, abort=False):
         self.game_won = True
         self.winner_cid = cid # Store for periodic announcements
         self.client.log(f"[{self.name}] Triggering WIN sequence for Company #{cid+1}")
         
-        c_name, c_color, p_str = self.get_company_details(cid)
+        c_name, c_color, p_str, win_duration = self.get_company_details(cid)
         
-        # Exact C# Message: "--- GOAL REACHED! {CompanyName} ({ColorString}) ({Players}) has won this game!!! ---"
-        msg = f"--- GOAL REACHED! {c_name} ({c_color}) ({p_str}) has won this game!!! ---"
+        # Exact C# Message: "--- GOAL REACHED! {CompanyName} ({ColorString}) ({Players}) has won this game{winDuration}!!! ---"
+        msg = f"--- GOAL REACHED! {c_name} ({c_color}) ({p_str}) has won this game{win_duration}!!! ---"
         
         sess = self.client.get_service("OpenttdSession")
         if sess:
@@ -436,9 +438,17 @@ class GoalSystem(IPlugin):
             
         self.restart_countdown = 30
 
+        # Notify Community Plugin to calculate points
+        comm = self.client.get_service("Community")
+        if comm:
+            try:
+                comm.on_goal_reached(cid, self.targets.copy(), abort)
+            except Exception as e:
+                self.client.log(f"[{self.name}] Error notifying Community plugin: {e}")
+
     # --- COMMANDS ---
     def cmd_goal(self, cmd, args, reply, source, context):
-        self.announce_scoreboard(reply)
+        self.announce_scoreboard(reply, context=context, source=source)
 
     def cmd_townstats(self, cmd, args, reply, source, context):
         cid = -1
@@ -476,26 +486,60 @@ class GoalSystem(IPlugin):
             pop = self.company_data[cid]['pop']
             reply.append(f"#{cid+1}: {info['town']} (Pop: {pop})")
 
-    def announce_scoreboard(self, force_reply=None):
+    def announce_scoreboard(self, force_reply=None, context=None, source=None):
         # Color Map
         colors = [
             "Dark Blue", "Pale Green", "Pink", "Yellow", "Red", "Light Blue", "Green", "Dark Green",
             "Blue", "Cream", "Mauve", "Purple", "Orange", "Brown", "Grey", "White"
         ]
         
-        # 1. Determine Header & Unit
+        # 1. Private Messages (only if force_reply is present and goal is active)
+        if force_reply is not None:
+             # Restrict scoring strings to in-game (source == "game")
+             if source != "game":
+                  goal_active = False # Don't show these on IRC/Discord
+             else:
+                  goal_active = self.is_city_builder or self.targets.get('score', 0) > 0 or self.targets.get('value', 0) > 0
+             
+             if goal_active:
+                  force_reply.append("When the goal is reached all logged in players will score points, the winner gets an additional bonus!")
+                  
+                  comm = self.client.get_service("Community")
+                  cid = context.get('cid', -1) if context else -1
+                  
+                  if comm and cid != -1:
+                       data_ctrl = self.client.get_service("DataController")
+                       player_cid = data_ctrl.clients[cid].get('company', 255) if data_ctrl and cid in data_ctrl.clients else 255
+                       
+                       is_logged_in = False
+                       if comm and hasattr(comm, 'auth_users'):
+                            if cid in comm.auth_users:
+                                 is_logged_in = True
+
+                       if is_logged_in:
+                            if player_cid != 255:
+                                 score = comm.get_player_current_score(player_cid)
+                                 bonus_score = int(score * 1.5)
+                                 force_reply.append(f"Your current score in this game is: {score} point{'s' if score != 1 else ''} (if your company would win the game now: {bonus_score})")
+                       else:
+                            force_reply.append(f"You are not logged in. You can still login now if you want to score any points, check: {comm.website_url}")
+
+        # 2. Determine Header & Unit
         header = ""
         unit_singular = ""
         unit_plural = ""
         
         if self.is_city_builder:
-             target_val = self.targets['pop']
-             unit_singular = "inhabitant"
-             unit_plural = "inhabitants"
+             target_val = self.targets.get('pop', 0)
+             unit_singular = self.client.config.get("goal_unit_name", "inhabitant")
+             unit_plural = self.client.config.get("goal_unit_name_plural", "inhabitants")
              unit_str = unit_singular if target_val == 1 else unit_plural
              header = f"--- First company with {target_val:,} {unit_str} wins the game. ---"
+        elif self.targets.get('score', 0) > 0:
+             target_val = self.targets['score']
+             header = f"--- First company with a score of {target_val:,} wins the game. ---"
         else:
-             target_val = self.targets['value']
+             target_val = self.targets.get('value', 0)
              # Pure CV Goal logic: "EUR company value"
              header = f"--- First company with {target_val:,} EUR company value wins the game. ---"
              
@@ -564,8 +608,13 @@ class GoalSystem(IPlugin):
             if count >= 3: break
             
             # Format: - ({PCT}%) Rank #{RANK} is {NAME} ({COLOR}) with {VALUE_TEXT}
-            msg = f"- ({r['pct']}%) Rank #{i+1} is {r['name']} ({r['color']}) with {r['value_text']}"
-            
+            # C# Rank string: "- ({0}%) Rank #{1} is {2} ({3}) with {4} point{5}" if it's points
+            if self.targets.get('score', 0) > 0:
+                pts = int(r.get('pts', 0))
+                msg = f"- ({r['pct']}%) Rank #{i+1} is {r['name']} ({r['color']}) with {pts:,} point{'s' if pts != 1 else ''}"
+            else:
+                msg = f"- ({r['pct']}%) Rank #{i+1} is {r['name']} ({r['color']}) with {r['value_text']}"
+             
             if force_reply is not None: force_reply.append(msg)
             else: self.client.send_chat(3, 0, 0, msg)
             count += 1
@@ -616,8 +665,8 @@ class GoalSystem(IPlugin):
             reply.append(f"Forcing win for {name}...")
             self.client.log(f"[{self.name}] Admin forced win for Company {target_cid}")
             
-            # Use standard trigger_win for consistency
-            self.trigger_win(target_cid)
+            # Use standard trigger_win for consistency (forced win = abort=True)
+            self.trigger_win(target_cid, abort=True)
             
         else:
             reply.append("Could not determine a winner to force.")
