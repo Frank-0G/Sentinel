@@ -257,21 +257,26 @@ class AdminClient:
                 if len(payload) >= 4:
                     cid = struct.unpack('<I', payload[0:4])[0]
                     try:
-                        ip = ""; name = ""
+                        ip = ""; name = ""; company_id = 255
                         if ptype == ServerPacketType.SERVER_CLIENT_INFO:
                             ip, off = self.unpack_string(payload, 4)
                             name, off = self.unpack_string(payload, off)
+                            lang, off = self.unpack_string(payload, off)
+                            if off + 4 <= len(payload): off += 4 # Skip join date
+                            if off < len(payload): company_id = payload[off]
                         else:
                             name, off = self.unpack_string(payload, 4)
-                        company_id = 255
-                        if len(payload) > 0: company_id = payload[-1]
+                            if off < len(payload): company_id = payload[off]
+
                         if ptype == ServerPacketType.SERVER_CLIENT_INFO:
                             for p in self.plugins: 
                                 if hasattr(p, 'on_player_join'): p.on_player_join(cid, name, ip, company_id)
                         else:
                             for p in self.plugins:
                                 if hasattr(p, 'on_player_update'): p.on_player_update(cid, name, company_id)
-                    except: pass
+                    except Exception as e:
+                        # self.log(f"Error parsing Player Info: {e}")
+                        pass
 
             elif ptype == ServerPacketType.SERVER_CLIENT_QUIT:
                 if len(payload) >= 4:

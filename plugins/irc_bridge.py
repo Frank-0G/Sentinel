@@ -286,7 +286,7 @@ class IRCBridge(IPlugin):
         except: pass
 
     def on_wrapper_log(self, text):
-        if "Map generation percentage complete: 90" in text: pass # on_new_game() handled by SERVER_NEWGAME packet
+        if "Map generation percentage complete: 90" in text: self.on_new_game()
         if "CmdSaveGame: Saved game to" in text:
             try:
                 filename = text.split("Saved game to ", 1)[1].strip()

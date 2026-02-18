@@ -62,6 +62,10 @@ class OpenttdSession(IPlugin):
         """Restarts the game (map reset)."""
         self.client.send_rcon("restart")
 
+    def rename_player(self, client_id, name):
+        """Changes a player's name."""
+        self.client.send_rcon(f"client_name {client_id} \"{name}\"")
+
     # --- SCREENSHOT LOGIC ---
     def take_screenshot(self, tile_or_x, y=None):
         try:

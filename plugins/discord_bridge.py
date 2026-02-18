@@ -560,7 +560,7 @@ class DiscordBridge(IPlugin):
             self._dispatch_discord(self.update_status())
 
     def on_wrapper_log(self, text):
-        if "Map generation percentage complete: 90" in text: pass # on_new_game() handled by SERVER_NEWGAME packet
+        if "Map generation percentage complete: 90" in text: self.on_new_game()
         
         # Started Company Logic
         # Format: *** Frank has started a new company (#1)

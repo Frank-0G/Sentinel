@@ -75,6 +75,7 @@ class CommandManager(IPlugin):
             "shutdown": ["Usage: !shutdown [now]", "Shuts down the server."],
             "restart": ["Usage: !restart", "Restarts the game (map reset)."],
             "restartserver": ["Usage: !restartserver", "Restarts the Sentinel controller."],
+            "name": ["Usage: !name <NewName>", "Changes your in-game name."],
             "cv": ["Usage: !cv", "Shows the goal of the current game script."],
             "rules": ["Usage: !rules", "Shows the server rules."],
             "admin": ["Usage: !admin", "Lists available admin commands."],
@@ -132,6 +133,7 @@ class CommandManager(IPlugin):
             "server": self.cmd_server,
             "version": self.cmd_version,
             "companies": self.cmd_companies,
+            "name": self.cmd_name,
             "cv": self.cmd_cv,
             "plugins": self.cmd_plugins,
             "alogin": self.cmd_auth,
@@ -998,6 +1000,29 @@ class CommandManager(IPlugin):
         ss = cfg.get("station_spread", 12)
         tl = cfg.get("max_train_length", 7)
         reply.append(f"Current vehicle limits: Trains: {t}, Road vehicles: {r}, Ships: {s}, Aircraft: {a} | Station spread: {ss} tile(s), Train length: {tl} tile(s)")
+
+    def cmd_name(self, cmd, args, reply, source, admin_name, context):
+        if source != "game":
+            reply.append("The !name command can only be used in-game.")
+            return
+        if not args:
+            reply.append("Usage: !name <NewName>")
+            return
+        
+        cid = context.get('cid')
+        new_name = " ".join(args).strip()
+        
+        if len(new_name) < 2:
+            reply.append("Error: Name is too short.")
+            return
+            
+        session = self.get_session()
+        if session:
+            session.rename_player(cid, new_name)
+            # Confirmation comes via namechange event normally, but we can send a ack
+            reply.append(f"Requesting name change to '{new_name}'...")
+        else:
+            reply.append("Error: OpenttdSession not available.")
 
     def cmd_rules(self, cmd, args, reply, source, admin_name, context):
         reply.append("Rules: Be nice.")
