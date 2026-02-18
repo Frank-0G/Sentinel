@@ -12,6 +12,7 @@ These plugins provide essential services used by other plugins and the controlle
     *   Advanced company reset commands with multiple player handling options (`!resetcompany`, `!resetcompanykick`, `!resetcompanyban`)
     *   Company reset timer system for delayed resets (`!resetcompanytimer`, `!cancelresetcompany`)
     *   Separated restart commands: `!restart` (game/map only) and `!restartserver` (full Sentinel restart)
+    *   **New `!name <newname>` command**: Allows players to rename themselves, with changes automatically broadcast to external bridges.
 *   **`admin_manager.py`**: Manages the connection lifecycle, protocol negotiation, and packet handling with the OpenTTD Admin Port.
 *   **`geoip_service.py`**: Uses the MaxMind GeoIP database to resolve player IP addresses to country codes and names. Used for welcome messages and logging.
 
@@ -29,8 +30,10 @@ Plugins focused on server management and protecting the game environment.
 
 Plugins that handle chat, logging, and external communication.
 
-*   **`irc_bridge.py`**: Connects the server to an IRC channel. It relays in-game chat to IRC and IRC messages to the game (colored chat support). Also reports server events like joins, quits, and company updates.
+*   **`irc_bridge.py`**: Connects the server to an IRC channel. It relays in-game chat to IRC and IRC messages to the game (colored chat support). Also reports server events like joins, quits, and company updates, including **"Started Company"** detection from server logs.
 *   **`discord_bridge.py`**: Full two-way Discord integration. Relays all in-game chat (including public player commands) to Discord and vice versa. Features include:
+    *   **Dynamic Event Tracking**: Intelligent tracking of "Started Company" events to ensure correct messaging sequence.
+    *   **Name Change Sync**: Real-time notification of player renames.
     *   Server status presence updates
     *   Rich embed notifications for game events
     *   Admin authentication via DM

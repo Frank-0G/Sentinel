@@ -9,7 +9,7 @@ It features a robust **Plugin Architecture**, allowing developers to easily exte
 Sentinel comes with a suite of built-in plugins covering a wide range of functionality:
 
 ### Core Administration
-*   **Sentinel Core**: The micro-kernel that manages the Admin Port connection and plugin lifecycle.
+*   **Sentinel Core**: The micro-kernel that manages the Admin Port connection and plugin lifecycle. Features **IPv4/IPv6 Dual-Stack support** and **Robust Reconnection** (automatic retries with extended timeouts).
 *   **Command Manager**: Handles in-game commands with a comprehensive permission system, including:
     *   Company management: `!reset`, `!emptycompany`, `!lockcompany`, `!unlockcompany`
     *   Advanced company reset with player handling: `!resetcompany`, `!resetcompanykick`, `!resetcompanyban`, `!resetcompanytimer`
@@ -144,6 +144,7 @@ class MyPlugin(IPlugin):
 *   `!logout`: Logout from your account (in-game only)
 *   `!me`: Show your login status (in-game only)
 *   `!help`: List available commands
+*   `!name <newname>`: Rename yourself (synced to Discord/IRC)
 *   `!status`: Show server information
 *   `!vipstatus [username]`: Check VIP membership status
 *   `!sponsor`: Show current game sponsor
