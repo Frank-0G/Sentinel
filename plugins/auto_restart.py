@@ -28,6 +28,11 @@ class AutoRestart(IPlugin):
             if p.name == "IRCBridge": return p
         return None
 
+    def get_discord(self):
+        for p in self.client.plugins:
+            if p.name == "DiscordBridge": return p
+        return None
+
     def on_load(self):
         self.client.log(f"[{self.name}] Loaded. Restart interval: {self.limit_minutes} minutes.")
 
@@ -69,7 +74,11 @@ class AutoRestart(IPlugin):
 
         # 1. IRC Message
         irc = self.get_irc()
-        if irc: irc.send_msg(broadcast_msg)
+        if irc: irc.send_to_channel(broadcast_msg, "announcements")
+        
+        # 2. Discord Message
+        discord = self.get_discord()
+        if discord: discord.send_msg(broadcast_msg)
         
         self.client.log(f"[{self.name}] {broadcast_msg}")
 
@@ -79,7 +88,8 @@ class AutoRestart(IPlugin):
         # 3. Quit & Restart Wrapper
         def kill_sequence():
             time.sleep(5.0)
-            if irc: irc.send_msg("OpenTTD server process terminated.")
+            if irc: irc.send_to_channel("OpenTTD server process terminated.", "announcements")
+            if discord: discord.send_msg("OpenTTD server process terminated.")
             self.client.send_rcon("quit")
             
             time.sleep(2.0)

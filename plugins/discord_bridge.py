@@ -515,6 +515,10 @@ class DiscordBridge(IPlugin):
         }
 
     # --- BRIDGE METHODS (Async Dispatch) ---
+    def send_msg(self, msg):
+        """Public method for other plugins to send a message to all Discord channels."""
+        self._dispatch_discord(self._send_msg(msg))
+
     def _dispatch_discord(self, coro):
         target_loop = self.bot.loop if self.bot else self.loop
         if self.running and target_loop:
