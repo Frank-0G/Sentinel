@@ -67,7 +67,8 @@ class DiscordBridge(IPlugin):
             "companymerge": "🤝 **$companyname** (#$companyid/$companycolor) merged into **$tcompanyname** (#$tcompanyid/$tcompanycolor)",
             "companytrouble": "⚠️ **$companyname** (#$companyid/$companycolor) is in trouble!",
             "mapsaved": "💾 Game saved to $message",
-            "maploaded": "📂 Map loaded: $message"
+            "maploaded": "📂 Map loaded: $message",
+            "sentinelstarted": "🚀 **Sentinel Started and Active!**\n🔄 **The game has been (re)started**"
         }
         
         # Local cache is prone to de-sync if we miss events. 
@@ -228,8 +229,11 @@ class DiscordBridge(IPlugin):
                 await self.update_status()
                 # Run the admin scan
                 await self._scan_admins_on_ready()
-                # Send startup message ONLY if not a new session (avoid double-dip with on_new_game)
-                # startup_msg = self.formats.get("gamerestarted", "🔄 **The game has been (re)started**")
+                
+                # Send startup message
+                msg = self.formats.get("sentinelstarted", "🚀 **Sentinel is now running and active!**\n🔄 **The game has been (re)started**")
+                await self._send_msg(msg)
+                
                 self.client.log(f"[{self.name}] Discord Ready. Monitoring {len(self.channels)} channels.")
 
             @self.bot.event
@@ -560,7 +564,7 @@ class DiscordBridge(IPlugin):
             self._dispatch_discord(self.update_status())
 
     def on_wrapper_log(self, text):
-        if "Map generation percentage complete: 90" in text: self.on_new_game()
+        if "Map generation percentage complete: 90" in text: pass # on_new_game triggered via protocol instead
         
         # Started Company Logic
         # Format: *** Frank has started a new company (#1)
@@ -607,8 +611,16 @@ class DiscordBridge(IPlugin):
         
         # If client is already in cache, this is just a polled update, not a new join
         if cid in self.client_cache:
-            iso = self.get_iso(ip) # Update ISO just in case
-            self.client_cache[cid].update({'name': name, 'ip': ip, 'company': company_id, 'iso': iso})
+            old = self.client_cache[cid]
+            # If name or company changed during poll, delegate to on_player_update for notifications
+            if old['name'] != name or old['company'] != company_id:
+                self.on_player_update(cid, name, company_id)
+            else:
+                # Just update ISO if it was unknown (e.g. initial poll might have better info)
+                if old.get('iso') == '?' or old.get('iso') == '??':
+                    iso = self.get_iso(ip)
+                    self.client_cache[cid]['iso'] = iso
+                    self.client_cache[cid]['ip'] = ip
             return
 
         iso = self.get_iso(ip)
@@ -714,13 +726,12 @@ class DiscordBridge(IPlugin):
                  msg = self.format_msg("joinedspectators", playername=name, playerid=cid, playercountryshort=iso)
                  self._dispatch_discord(self._send_msg(msg))
             else:
-                 # Check if this company was just "started" by this user via wrapper log
-                 if company_id in self.pending_started_companies:
-                     # Suppress "Joined" message because we already sent "Started"
-                     self.pending_started_companies.remove(company_id)
-                 else:
-                     msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor)
-                     self._dispatch_discord(self._send_msg(msg))
+                  msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor)
+                  self._dispatch_discord(self._send_msg(msg))
+                  
+                  if company_id in self.pending_started_companies:
+                      # Clear pending, but we already sent Join so Started will follow from on_company_info
+                      self.pending_started_companies.remove(company_id)
 
             self.client_cache[cid]['company'] = company_id
         

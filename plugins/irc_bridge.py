@@ -4,7 +4,8 @@ import time
 import ssl
 import xml.etree.ElementTree as ET
 import os
-import json # ADDED THIS MISSING IMPORT
+import json 
+import re
 from plugin_interface import IPlugin
 from openttd_types import ServerPacketType, NetworkAction
 
@@ -69,6 +70,7 @@ class IRCBridge(IPlugin):
         self.recent_companies = {} 
         
         self.pending_started_companies = set()
+        self.pending_start_events = {} # Track CID waiting for company info
         self.last_new_game = 0
         self.cmd_map = {} 
         self.placed_signs = {} 
@@ -98,7 +100,8 @@ class IRCBridge(IPlugin):
             "companymerge": "* \x0311\x02!!\x03 $companyname ($companyid/$companycolor) has been merged into $tcompanyname ($tcompanyid/$tcompanycolor)",
             "companytrouble": "* \x037\x02!!\x03 $companyname ($companyid/$companycolor) is in trouble!",
             "mapsaved": "* \x0311\x02!\x02\x03 Game has been saved to $message.",
-            "maploaded": "* \x0311\x02!\x02\x03 Map loaded: $message."
+            "maploaded": "* \x0311\x02!\x02\x03 Map loaded: $message.",
+            "sentinelstarted": "/me 🚀 \x02Sentinel Started and Active!\x02\n/me ----- The game has been (re)started -----"
         }
 
     def load_config(self):
@@ -160,6 +163,11 @@ class IRCBridge(IPlugin):
     def get_manager(self): return self.client.get_service("CommandManager")
     def get_admin_manager(self): return self.client.get_service("AdminManager")
     def get_geoip(self): return self.client.get_service("GeoIPService")
+
+    def get_cid_by_name(self, name):
+        for cid, data in self.client_cache.items():
+            if data['name'] == name: return cid
+        return None
 
     def get_iso(self, ip):
         svc = self.get_geoip()
@@ -286,7 +294,30 @@ class IRCBridge(IPlugin):
         except: pass
 
     def on_wrapper_log(self, text):
-        if "Map generation percentage complete: 90" in text: self.on_new_game()
+        if "Map generation percentage complete: 90" in text: pass # on_new_game triggered via protocol
+        
+        # Started Company Logic
+        # Format: *** Frank has started a new company (#1)
+        if "has started a new company" in text:
+            try:
+                # Regex to extract name and company ID
+                match = re.search(r"\*\*\* (.*) has started a new company \(#(\d+)\)", text.strip())
+                if match:
+                    name = match.group(1).strip()
+                    human_id = int(match.group(2))
+                    company_id = human_id - 1
+                    
+                    cid = self.get_cid_by_name(name)
+                    if cid is not None:
+                        # Queue this event until we get company info (color)
+                        if company_id not in self.company_cache:
+                            self.pending_start_events[company_id] = cid
+                            self.pending_started_companies.add(company_id)
+                        else:
+                            self.send_company_started(cid, company_id)
+                            self.pending_started_companies.add(company_id)
+            except: pass
+
         if "CmdSaveGame: Saved game to" in text:
             try:
                 filename = text.split("Saved game to ", 1)[1].strip()
@@ -303,7 +334,14 @@ class IRCBridge(IPlugin):
         
         # If client is already in cache, this is just a polled update, not a new join
         if cid in self.client_cache:
-            self.client_cache[cid].update({'name': name, 'ip': ip, 'company': company_id})
+            old = self.client_cache[cid]
+            # If name or company changed during poll, delegate to on_player_update for notifications
+            if old['name'] != name or old['company'] != company_id:
+                self.on_player_update(cid, name, company_id)
+            else:
+                # Just update IP if it was unknown
+                if old.get('ip') == '?':
+                    self.client_cache[cid]['ip'] = ip
             return
 
         self.topic_update_pending = True
@@ -356,7 +394,7 @@ class IRCBridge(IPlugin):
 
     def on_new_game(self):
         self.recent_companies = {} # Reset
-        if time.time() - self.last_new_game < 10: return
+        if time.time() - self.last_new_game < 20: return
         self.last_new_game = time.time()
         self.client_cache.clear()
         self.company_cache.clear()
@@ -380,6 +418,11 @@ class IRCBridge(IPlugin):
         if was_pw and not pw:
             msg = self.format_msg("companyunprotected", companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
             self.send_to_channel("/me " + msg, "announcements")
+        
+        # Check if we were waiting to send a "Started Company" message for this ID
+        if cid in self.pending_start_events:
+            player_cid = self.pending_start_events.pop(cid)
+            self.send_company_started(player_cid, cid)
 
     def on_player_update(self, cid, name, company_id):
         if cid == 1: return
@@ -402,8 +445,10 @@ class IRCBridge(IPlugin):
             else:
                  msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playerip=old['ip'], playercountryshort=iso, companyid=company_id+1, companycolor=ccolor)
                  self.send_to_channel("/me " + msg, "gameactions")
+                 # NOTE: send_company_started is now handled via on_wrapper_log + on_company_info/on_player_update 
+                 # logic to ensure color is ready. 
+                 # We still clear pending here if it fired.
                  if company_id in self.pending_started_companies:
-                     self.send_company_started(cid, company_id)
                      self.pending_started_companies.remove(company_id)
             self.client_cache[cid]['company'] = company_id
         
@@ -496,9 +541,11 @@ class IRCBridge(IPlugin):
                                 if (" 001 " in line or " 376 " in line) and not joined:
                                     for chan in self.channels:
                                         self.send_raw(f"JOIN {chan}")
+                                    # Send startup message
+                                    msg = self.formats.get("sentinelstarted", "/me 🚀 \x02Sentinel Started and Active!\x02\n/me ----- The game has been (re)started -----")
+                                    self.send_to_channel(msg, "announcements")
                                     joined = True
-                                    # msg = self.format_msg("gamerestarted")
-                                    # self.send_to_channel("/me " + msg, "announcements")
+                                    
                                     self.client.log(f"[{self.name}] IRC Joined channels.")
                                 if parts[1] == "433": 
                                     self.send_raw(f"NICK {self.nickname}_")
