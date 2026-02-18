@@ -61,6 +61,3 @@ Plugins that enhance the player experience or bridge the game with specific comm
 *   **`goal_system.py`**: Manages game objectives. Players can check the current goal (`!goal`) or server status (`!cv`).
 *   **`openttd_session.py`**: A helper service that abstracts sending private messages and managing specific user session data.
 
-## 🔌 Legacy / Stubs
-
-*   **`sentinel_gateway.py`**: Deprecated. Previous entry point for GameScript communication. Functionality has been moved to `gamescript_connector.py`. Kept as a stub for backward compatibility if needed.

@@ -22,7 +22,7 @@ class IPlugin:
     def on_company_created(self, company_id: int): pass
     def on_company_info(self, company_id: int, name: str, manager: str, color: int, protected: bool, passworded: bool, founded: int | None, is_ai: bool | None): pass
     def on_company_economy(self, company_id: int, money: int, loan: int, income: int, delivered: int, performance: int, value: int): pass
-    def on_company_stats(self, company_id: int, vehicles: tuple, stations: int, airports: int, harbors: int): pass
+    def on_company_stats(self, company_id: int, trains: int, rv: int, ships: int, aircraft: int, train_stations: int, road_stations: int, airports: int, harbors: int): pass
     def on_company_remove(self, company_id: int, reason: int): pass
 
     def on_command_name(self, cmd_id: int, cmd_name: str): pass

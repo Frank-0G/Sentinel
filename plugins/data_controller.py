@@ -132,26 +132,21 @@ class DataController(IPlugin):
             "value": value
         })
 
-    def on_company_stats(self, company_id, vehs, infra):
+    def on_company_stats(self, company_id, trains, rv, ships, aircraft, train_stations, road_stations, airports, harbors):
         if company_id not in self.companies:
             self.companies[company_id] = {}
         
-        # vehs: (trains, lorries, busses, planes, ships)
-        # infra: (train_stations, lorry_stations, bus_stations, airports, harbours)
-        trains, lorries, busses, planes, ships = vehs
-        train_stats, lorry_stats, bus_stats, airports, harbors = infra
-        
         self.companies[company_id].update({
-            "vehicles": sum(vehs),
+            "vehicles": trains + rv + ships + aircraft,
             "trains": trains,
-            "roadvehicles": lorries + busses,
-            "aircraft": planes,
+            "roadvehicles": rv,
+            "aircraft": aircraft,
             "ships": ships,
-            "trainstations": train_stats,
-            "roadstations": lorry_stats + bus_stats,
+            "trainstations": train_stations,
+            "roadstations": road_stations,
             "airports": airports,
             "harbors": harbors,
-            "stations": sum(infra)
+            "stations": train_stations + road_stations + airports + harbors
         })
 
     def on_company_remove(self, company_id, reason):

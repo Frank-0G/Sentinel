@@ -349,12 +349,11 @@ class AdminClient:
             elif ptype == ServerPacketType.SERVER_COMPANY_STATS:
                 if len(payload) >= 21:
                     cid = payload[0]
-                    v = struct.unpack_from('<5H', payload, 1) # trains, lorries, busses, planes, ships
-                    vehs = (v[0], v[1], v[2], v[3], v[4])
-                    infra = struct.unpack_from('<5H', payload, 11) # train_stations, lorry_stations, bus_stations, airports, harbours
+                    trains, lorries, busses, planes, ships = struct.unpack_from('<5H', payload, 1)
+                    train_stations, lorry_stations, bus_stations, airports, harbors = struct.unpack_from('<5H', payload, 11)
                     for p in self.plugins:
                         if hasattr(p, 'on_company_stats'):
-                            p.on_company_stats(cid, vehs, infra)
+                            p.on_company_stats(cid, trains, lorries + busses, ships, planes, train_stations, lorry_stations + bus_stations, airports, harbors)
 
             elif ptype == 122: # SERVER_CMD_NAMES
                 offset = 0
