@@ -576,7 +576,17 @@ class IRCBridge(IPlugin):
         try:
             parts = line.split(" :", 1)
             msg = parts[1].strip()
-            sender = parts[0].split("!")[0][1:]
+            
+            meta = parts[0].split()
+            if len(meta) < 3: return
+            
+            sender = meta[0].split("!")[0][1:]
+            msg_target = meta[2]
+            
+            # If message was sent to a channel, reply to that channel.
+            # Otherwise (PM), reply to the sender.
+            reply_target = msg_target if msg_target.startswith("#") else sender
+            
             mgr = self.get_manager()
             
             trigger_found = False; cmd_payload = ""
@@ -590,15 +600,12 @@ class IRCBridge(IPlugin):
                 admin_user = self.get_admin_username(irc_account)
                 is_admin = (admin_user is not None)
                 if not irc_account: self.whois_queue.append(sender)
-                success, reply = mgr.handle_command(cmd_payload.strip(), source="irc", is_admin=is_admin, admin_name=admin_user if admin_user else sender, context={'irc_target': sender})
-                if success and reply: self.send_msg(reply, target=sender)
+                success, reply = mgr.handle_command(cmd_payload.strip(), source="irc", is_admin=is_admin, admin_name=admin_user if admin_user else sender, context={'irc_target': reply_target})
+                if success and reply: self.send_msg(reply, target=reply_target)
             else:
                 # Chat Link Logic
-                meta_parts = parts[0].split()
-                if len(meta_parts) >= 3:
-                    target = meta_parts[2]
-                    # Check if target is a configured channel with chatlink enabled
-                    if target in self.channels and self.channels[target].get("chatlink", False):
+                # Check if msg_target is a configured channel with chatlink enabled
+                if msg_target in self.channels and self.channels[msg_target].get("chatlink", False):
                         # Relay to game
                         session = self.client.get_service("OpenttdSession")
                         if session:
