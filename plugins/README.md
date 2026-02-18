@@ -23,7 +23,10 @@ Plugins focused on server management and protecting the game environment.
 *   **`admin_login.py`**: Provides a secure login system. Admins can authenticate in-game using `!login <user> <pass>` or a token. Manages session validity.
 *   **`anti_flood.py`**: Monitors chat frequency and command usage to prevent flooding. Can automatically mute or kick players who spam.
 *   **`company_protection.py`**: Enforces password rules for companies. It can distinct between "protected" and "unprotected" companies and alert admins if a password is removed.
-*   **`auto_restart.py`**: Checks the server uptime and triggers a graceful restart (via the `rcon quit` command) after a configured duration (e.g., every 24 hours).
+*   **`auto_restart.py`**: Manages automatic server restarts with advanced logic:
+    *   **Dual Timeouts**: Supports separate timers for empty servers vs servers with abandoned companies.
+    *   **Spectator Safety**: Restarts are automatically blocked if any clients (including spectators) are online.
+    *   **Graceful Shutdown**: Interacts with the Sentinel launcher to ensure OpenTTD closes completely and releases ports before the controller restarts.
 *   **`auto_clean.py`**: Automatically resets or removes companies that have seemingly been abandoned or went bankrupt, keeping the server map fresh.
 
 ## 💬 Communication & Logging

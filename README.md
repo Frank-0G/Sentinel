@@ -10,6 +10,7 @@ Sentinel comes with a suite of built-in plugins covering a wide range of functio
 
 ### Core Administration
 *   **Sentinel Core**: The micro-kernel that manages the Admin Port connection and plugin lifecycle. Features **IPv4/IPv6 Dual-Stack support** and **Robust Reconnection** (automatic retries with extended timeouts).
+*   **Advanced Automation**: Intelligent server restarts with **Dual-Timeout** support (differentiates between empty and abandoned servers), **Spectator Safety**, and **Graceful Process Termination**.
 *   **Command Manager**: Handles in-game commands with a comprehensive permission system, including:
     *   Company management: `!reset`, `!emptycompany`, `!lockcompany`, `!unlockcompany`
     *   Advanced company reset with player handling: `!resetcompany`, `!resetcompanykick`, `!resetcompanyban`, `!resetcompanytimer`

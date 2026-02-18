@@ -97,6 +97,7 @@ class ServerLauncher:
                 self.process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self.process.kill()
+            self.process = None
             print("[Launcher] Server stopped.")
 
     def is_running(self):
@@ -118,6 +119,7 @@ class AdminClient:
         
         self.socket = None
         self.connected = False
+        self.launcher = None # Attached by main()
         self._stop_event = threading.Event()
         
         self.plugins = [] 
@@ -635,6 +637,7 @@ if __name__ == "__main__":
         client = AdminClient(config)
         client.print_banner()
         launcher = ServerLauncher(config)
+        client.launcher = launcher
         
         server_ready_event = threading.Event()
         def monitor_wrapper_output():

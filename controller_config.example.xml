@@ -52,8 +52,10 @@
   <trigger_file>triggers.json</trigger_file>
 
   <!-- SECTION: AUTOMATION -->
-  <!-- Time in minutes between automatic server restarts (0 to disable). -->
-  <auto_restart_minutes>0</auto_restart_minutes>
+  <!-- Time in minutes between automatic server restarts when EMPTY (no players, no companies) (0 to disable). -->
+  <auto_restart_minutes>60</auto_restart_minutes>
+  <!-- Time in minutes between automatic server restarts when ABANDONED (no players, but companies exist) (0 to disable). -->
+  <auto_restart_abandoned_minutes>480</auto_restart_abandoned_minutes>
 
   <!-- SECTION: DATABASE CHAT LOGS -->
   <!-- How many days to keep chat history in the database. -->

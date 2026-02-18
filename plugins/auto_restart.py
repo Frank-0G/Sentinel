@@ -9,14 +9,14 @@ class AutoRestart(IPlugin):
     def __init__(self, client):
         super().__init__(client)
         self.name = "AutoRestart"
-        self.version = "1.7-MANUAL-RESTART"
+        self.version = "1.8-DUAL-TIMEOUT"
         
         self.empty_since = 0
         self.restart_triggered = False
         
-        # Config (Default 60 minutes)
-        self.limit_minutes = self.client.config.get("auto_restart_minutes", 60)
-        self.limit_seconds = self.limit_minutes * 60
+        # Configs (0 to disable)
+        self.limit_empty_min = self.client.config.get("auto_restart_minutes", 60)
+        self.limit_abandoned_min = self.client.config.get("auto_restart_abandoned_minutes", 480)
 
     def get_data(self):
         for p in self.client.plugins:
@@ -34,7 +34,7 @@ class AutoRestart(IPlugin):
         return None
 
     def on_load(self):
-        self.client.log(f"[{self.name}] Loaded. Restart interval: {self.limit_minutes} minutes.")
+        self.client.log(f"[{self.name}] Loaded. Empty: {self.limit_empty_min}m | Abandoned: {self.limit_abandoned_min}m")
 
     def on_tick(self):
         if self.restart_triggered: return
@@ -42,30 +42,48 @@ class AutoRestart(IPlugin):
         data = self.get_data()
         if not data: return
 
-        # 1. Count Real Players (Exclude Client ID 1)
-        real_player_count = 0
-        for cid in data.clients:
-            if cid != 1:
-                real_player_count += 1
+        # 1. Count ALL Real Clients (Exclude Client ID 1)
+        # Spectators ARE counted in data.clients, so this covers the user's "1 spectator = no restart" rule.
+        real_client_count = len([cid for cid in data.clients if cid != 1])
 
-        # 2. Check Conditions
-        if len(data.companies) == 0 and real_player_count == 0:
-            if self.empty_since == 0:
-                self.empty_since = time.time()
-            else:
-                elapsed = time.time() - self.empty_since
-                if elapsed >= self.limit_seconds:
-                    self.trigger_auto_restart(elapsed)
-        else:
+        # 2. Determine State and Limit
+        has_companies = (len(data.companies) > 0)
+        
+        limit_min = 0
+        state_msg = ""
+        
+        if real_client_count > 0:
+            # Any player/spectator blocks the timer
             self.empty_since = 0
+            return
 
-    def trigger_auto_restart(self, elapsed_seconds):
+        if has_companies:
+            limit_min = self.limit_abandoned_min
+            state_msg = "abandoned companies"
+        else:
+            limit_min = self.limit_empty_min
+            state_msg = "no companies or players"
+
+        # 3. Check if condition is enabled
+        if limit_min <= 0:
+            self.empty_since = 0
+            return
+
+        # 4. Timer Logic
+        if self.empty_since == 0:
+            self.empty_since = time.time()
+        else:
+            elapsed = time.time() - self.empty_since
+            if elapsed >= (limit_min * 60):
+                self.trigger_auto_restart(elapsed, state_msg)
+
+    def trigger_auto_restart(self, elapsed_seconds, state_msg):
         # Format time string
         hours = math.floor(elapsed_seconds / 3600)
         mins = math.floor((elapsed_seconds % 3600) / 60)
         time_str = f"{hours} hour{'s' if hours!=1 else ''} {mins} minute{'s' if mins!=1 else ''}"
         
-        msg = f"Executing automatic server restart (no companies or players for {time_str})"
+        msg = f"Executing automatic server restart ({state_msg} for {time_str})"
         self.perform_restart_sequence(msg)
 
     def perform_restart_sequence(self, broadcast_msg):
@@ -90,9 +108,14 @@ class AutoRestart(IPlugin):
             time.sleep(5.0)
             if irc: irc.send_to_channel("OpenTTD server process terminated.", "announcements")
             if discord: discord.send_msg("OpenTTD server process terminated.")
-            self.client.send_rcon("quit")
             
-            time.sleep(2.0)
+            # Graceful Shutdown
+            if hasattr(self.client, 'launcher') and self.client.launcher:
+                self.client.launcher.stop()
+            else:
+                self.client.send_rcon("quit")
+                time.sleep(2.0)
+            
             self.client.log(f"[{self.name}] RESTARTING SENTINEL PROCESS...")
             
             try:
