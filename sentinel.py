@@ -209,6 +209,7 @@ class AdminClient:
                 if hasattr(p, 'log_entry'): p.log_entry(message)
         else:
             print(message)
+            sys.stdout.flush()
 
     def broadcast_wrapper_log(self, text):
         if "Generation Seed:" in text:
@@ -246,8 +247,12 @@ class AdminClient:
 
     # --- CENTRAL PACKET DISPATCHER ---
     def _dispatch_packet(self, ptype, payload):
-        # self.log(f"[DEBUG] Packet: {ptype} (len={len(payload)})")
-        
+        # Proactive Initial Sync Trigger
+        if not self._initial_sync_done:
+            # Trigger on Protocol, Welcome, or first Client/Company info
+            if ptype in [101, 103, 104, 109, 114]:
+                self._do_initial_sync()
+
         for p in self.plugins:
             try: p.on_event(ptype, payload)
             except: pass
@@ -438,12 +443,12 @@ class AdminClient:
 
             elif ptype == 103 or ptype == ServerPacketType.SERVER_PROTOCOL: # SERVER_PROTOCOL
                 # If we get protocol info, we can also try syncing here as a fallback
-                if not hasattr(self, '_initial_sync_done'):
+                if not self._initial_sync_done:
                      self._do_initial_sync()
 
             elif ptype == ServerPacketType.SERVER_WELCOME:  # Packet 104
                 try:
-                    if not hasattr(self, '_initial_sync_done'):
+                    if not self._initial_sync_done:
                         self._do_initial_sync()
                     
                     server_name, off = self.unpack_string(payload, 0)
@@ -510,7 +515,7 @@ class AdminClient:
 
     def _do_initial_sync(self):
         """Unified initialization sequence called once readiness is confirmed."""
-        if hasattr(self, '_initial_sync_done'): return
+        if self._initial_sync_done: return
         self._initial_sync_done = True
         
         self.log("[Network] Syncing game details...")
@@ -541,14 +546,13 @@ class AdminClient:
         self.send_rcon("getseed")
 
     def connect(self, host, port, password):
-        max_retries = 5; attempt = 0
+        max_retries = 20; attempt = 0
         while attempt < max_retries:
             try:
                 attempt += 1
                 self.log(f"[Network] Connecting to {host}:{port}...")
-                self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.settimeout(5.0)
-                self.socket.connect((host, port))
+                # use create_connection for dual-stack (IPv4/IPv6) support
+                self.socket = socket.create_connection((host, port), timeout=15.0)
                 self.socket.settimeout(None)
                 self.connected = True
                 self._stop_event.clear()
@@ -589,7 +593,9 @@ class AdminClient:
     
     def send_packet(self, pt, pl=b''):
         if not self.socket or not self.connected: return
-        try: self.socket.sendall(struct.pack('<HB', 3 + len(pl), pt) + pl)
+        try: 
+            # self.log(f"[DEBUG] Raw Send: Type={pt} Len={len(pl)}")
+            self.socket.sendall(struct.pack('<HB', 3 + len(pl), pt) + pl)
         except Exception as e: self.log(f"Send Error: {e}"); self.disconnect()
 
     def _receive_loop(self):
@@ -600,14 +606,17 @@ class AdminClient:
                     chunk = self.socket.recv(4096)
                     if not chunk: return self.disconnect()
                     buf += chunk
+                
                 plen, ptype = struct.unpack('<HB', buf[:3])
+                
                 while len(buf) < plen:
                     chunk = self.socket.recv(4096)
                     if not chunk: return self.disconnect()
                     buf += chunk
+                
                 self._dispatch_packet(ptype, buf[3:plen])
                 buf = buf[plen:]
-            except: 
+            except Exception as e: 
                 if not self._stop_event.is_set(): self.disconnect()
                 break
 
