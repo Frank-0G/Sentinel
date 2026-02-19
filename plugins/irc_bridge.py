@@ -90,18 +90,31 @@ class IRCBridge(IPlugin):
             "startedcompany": "* \x0311\x02#\x02\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has started company $companyid ($companycolor)",
             "leftgame": "* \x0311<---\x03 \x02$playername\x02 (#$playerid/$playerip/$companyid ($companycolor)/$playercountryshort) has left the game ($message)",
             "namechange": "* \x0311<x>\x03 \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has changed his/her name to $tplayername",
-            "companyrename": "* \x0311<x>\x03 Company $old_name (#$companyid) is now known as $companyname",
-            "gamerestarted": "----- The game has been (re)started -----",
+            "companyrename": "* \x0311<x>\x03 \x02$old_name\x02 (#$companyid) is now known as $companyname",
+            "gamerestarted": "* ----- The game has been (re)started -----",
             "companyclosed": "* \x034\x02X\x02\x03 $companyname ($companyid/$companycolor) has been closed ($message)",
             "companyunprotected": "* \x0311--\x03 Password of $companyname ($companyid/$companycolor) has been removed ($message)",
             "placedsign": "* \x0311\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has placed a sign: $message",
             "removedsign": "* \x0311\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has removed a sign: $message",
-            "vehiclecrashed": "* \x0311\x02!!\x03 $companyname ($companyid/$companycolor) had a crash ($message)",
-            "companymerge": "* \x0311\x02!!\x03 $companyname ($companyid/$companycolor) has been merged into $tcompanyname ($tcompanyid/$tcompanycolor)",
-            "companytrouble": "* \x037\x02!!\x03 $companyname ($companyid/$companycolor) is in trouble!",
+            "vehiclecrashed": "* \x037\x02!!\x03\x02 $companyname ($companyid/$companycolor) had a crash ($message).",
+            "companymerge": "* \x0311\x02!!\x03\x02 $tcompanyname ($tcompanyid/$tcompanycolor) was bought by $companyname ($companyid/$companycolor).",
+            "companytrouble": "* \x037\x02!!\x03\x02 $companyname ($companyid/$companycolor) is in trouble!",
             "mapsaved": "* \x0311\x02!\x02\x03 Game has been saved to $message.",
-            "maploaded": "* \x0311\x02!\x02\x03 Map loaded: $message.",
-            "sentinelstarted": "/me 🚀 \x02Sentinel Started and Active!\x02\n/me ----- The game has been (re)started -----"
+            "maploaded": "* \x0311\x02!\x02\x03 Saved game has been loaded from $message.",
+            "sentinelstarted": "/me 🚀 \x02Sentinel Started and Active!\x02\n/me ----- The game has been (re)started -----",
+            "info": "* \x0311\x02!!\x03\x02 $message",
+            "warning": "* \x037\x02!!\x03\x02 $message",
+            "error": "* \x034\x02!!\x03\x02 $message",
+            "votestartedrestartnew": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to restart the game with a new map.",
+            "votestartedrestartsame": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to restart the game with the same map.",
+            "votestartedkick": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to kick \x02$tplayername\x02 (#$tplayerid/$tcompanyid ($tcompanycolor)/$tplayercountryshort).",
+            "votestartedban": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to ban \x02$tplayername\x02 (#$tplayerid/$tcompanyid ($tcompanycolor)/$tplayercountryshort).",
+            "votefinishedsuccess": "* \x039\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) was accepted.",
+            "votefinishedfail": "* \x034\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) failed.",
+            "votefinishedcancel": "* \x0312\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) was cancelled.",
+            "statusmessage": "* \x0311***\x03 Server status: $message",
+            "goalreached": "* \x0311***\x03\x02 GOAL REACHED!\x02 $companyname ($companyid/$companycolor) ($message) has won this game!!!",
+            "cb_destruction": "* \x037\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)) caused destruction in $message, claimed by company $tcompanyid ($tcompanyname/$tcompanycolor)"
         }
 
     def load_config(self):
@@ -487,6 +500,47 @@ class IRCBridge(IPlugin):
         if etype == "game_saved": 
             msg = self.format_msg("mapsaved", message="Storage")
             self.send_to_channel("/me " + msg, "announcements")
+
+    def get_crash_reason_str(self, reason):
+        reasons = {
+            0: "train collision",
+            1: "aircraft crash",
+            2: "level crossing collision",
+            3: "destroyed by UFO"
+        }
+        return reasons.get(reason, f"reason {reason}")
+
+    def on_gamescript_event(self, event_type, data):
+        if event_type == "vehiclecrash":
+            cid = data.get("company", 255)
+            vid = data.get("vehicleid", "?")
+            site = data.get("crashsite", 0)
+            reason = data.get("crashreason", -1)
+            
+            reason_str = self.get_crash_reason_str(reason)
+            site_hex = hex(site) if isinstance(site, int) else site
+            msg_text = f"vehicle ID {vid}: {reason_str} at {site_hex}"
+            
+            msg = self.format_msg("vehiclecrashed", 
+                companyname=self.get_company_name(cid), 
+                companyid=cid+1, 
+                companycolor=self.get_company_color_name(cid), 
+                message=msg_text)
+            self.send_to_channel("/me " + msg, "announcements")
+            self.topic_update_pending = True
+            
+        elif event_type == "companymerge":
+            old_cid = data.get("oldcompany", 255)
+            new_cid = data.get("newcompany", 255)
+            msg = self.format_msg("companymerge", 
+                companyname=self.get_company_name(old_cid), 
+                companyid=old_cid+1, 
+                companycolor=self.get_company_color_name(old_cid),
+                tcompanyname=self.get_company_name(new_cid),
+                tcompanyid=new_cid+1,
+                tcompanycolor=self.get_company_color_name(new_cid))
+            self.send_to_channel("/me " + msg, "announcements")
+            self.topic_update_pending = True
 
     # --- SIGNS ---
     def on_command_name(self, cmd_id, cmd_name):
