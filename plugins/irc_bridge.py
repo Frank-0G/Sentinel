@@ -181,7 +181,11 @@ class IRCBridge(IPlugin):
     def send_raw(self, data):
         if self.sock:
             try: self.sock.send(f"{data}\r\n".encode("utf-8"))
-            except Exception as e: print(f"[IRCBridge] Send Error: {e}")
+            except Exception as e:
+                print(f"[IRCBridge] Send Error: {e}")
+                try: self.sock.close()
+                except: pass
+                self.sock = None
 
     def send_to_channel(self, msg, type_flag):
         if not self.sock: return
@@ -529,8 +533,11 @@ class IRCBridge(IPlugin):
                     self.topic_update_pending = True 
                     
                     while self.running:
+                        if not self.sock: raise Exception("Socket closed locally")
                         chunk = self.sock.recv(2048).decode("utf-8", errors="ignore")
-                        if not chunk: break
+                        if not chunk:
+                            print(f"[{self.name}] Disconnected by server.")
+                            raise Exception("Connection closed")
                         buffer += chunk
                         while "\r\n" in buffer:
                             line, buffer = buffer.split("\r\n", 1)
