@@ -34,7 +34,7 @@ class CompanyValue
     }
 
     function Run(ticks) {
-        if (ticks % 150 == 0) {
+        if (ticks % 75 == 0) {
             this.UpdateScoreboard();
         }
     }
