@@ -195,7 +195,7 @@ class GoalSystem(IPlugin):
                 
                 if action == "claimed":
                     cid = int(data.get("company", -1))
-                    if cid >= 0:
+                    if cid in self.company_data:
                         town_name = data.get("town", "Unknown")
                         town_id = int(data.get("townid", -1))
                         
@@ -235,7 +235,7 @@ class GoalSystem(IPlugin):
 
                 elif action == "townstats":
                     cid = int(data.get("company", -1))
-                    if cid >= 0:
+                    if cid in self.company_data:
                         # Store in a separate dict for sync
                         self.claim_stats[cid] = {
                             'cid': cid,
@@ -259,7 +259,7 @@ class GoalSystem(IPlugin):
 
             elif e == "multigoalsupdated":
                 cid = int(data.get("company", -1))
-                if cid >= 0:
+                if cid in self.company_data:
                     val = 0
                     
                     # Fix: Prioritize 'cvalue' if present, regardless of GMG (handles missing start packet)

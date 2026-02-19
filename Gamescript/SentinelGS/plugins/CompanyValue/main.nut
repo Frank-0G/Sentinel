@@ -109,7 +109,7 @@ class CompanyValue
                     // Let's force assignment.
                     local scope = GSCompanyMode(c_id);
                     if (scope) {
-                         current_val = GSCompany.GetBankBalance(GSCompany.COMPANY_SELF) - GSCompany.GetLoanAmount();
+                         current_val = GSCompany.GetQuarterlyCompanyValue(c_id, 0);
                     }
                 }
             } catch (e) { 
