@@ -254,7 +254,7 @@ class GoalSystem(IPlugin):
 
             elif e == "populationupdated": 
                 cid = int(data.get("company", -1))
-                if cid >= 0: 
+                if cid in self.company_data: 
                     self.company_data[cid]['pop'] = int(data.get("population", 0))
 
             elif e == "multigoalsupdated":
