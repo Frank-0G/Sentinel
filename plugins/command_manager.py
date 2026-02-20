@@ -857,15 +857,23 @@ class CommandManager(IPlugin):
         if len(args) < 2: reply.append("Usage: !move <id> <company>"); return
         t = self.resolve_target(args[0])
         if t: 
-            self.get_session().move_player(t, args[1])
+            try:
+                # User inputs 1-indexed company ID, but OpenTTD RCON cmd expects 0-indexed.
+                # E.g. User says "1", OpenTTD expects "0". Exceptions: 255 is spectator.
+                raw_input = int(args[1])
+                target_co_id = 255 if raw_input == 255 else raw_input - 1
+                if target_co_id < 0: target_co_id = 0
+            except ValueError:
+                target_co_id = args[1] # fallback if it's not a number somehow
+
+            self.get_session().move_player(t, str(target_co_id))
             data = self.get_data()
             target_name = data.clients[t]['name'] if data and t in data.clients else f"#{t}"
             try:
-                co_id = int(args[1])
-                co_name = f"Company {co_id+1}" if co_id != 255 else "Spectators"
-                if data and co_id != 255 and co_id in data.companies:
-                    co_name = f"{data.companies[co_id].get('name', 'Unnamed')} (#{co_id+1})"
-            except: co_name = args[1]
+                co_name = f"Company {target_co_id+1}" if target_co_id != 255 else "Spectators"
+                if data and target_co_id != 255 and target_co_id in data.companies:
+                    co_name = f"{data.companies[target_co_id].get('name', 'Unnamed')} (#{target_co_id+1})"
+            except: co_name = str(target_co_id)
             reply.append(f"OK, moving player #{t}")
             self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has moved player {target_name} to {co_name}", is_action=True)
         else: reply.append("Target not found.")
