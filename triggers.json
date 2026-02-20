@@ -412,6 +412,24 @@
         "discord": true
     },
     {
+        "name": "cancelshutdown",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Cancels a scheduled shutdown of the server.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "cancelrestartserver",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Cancels a scheduled restart of the Sentinel controller.",
+        "response": null,
+        "discord": true
+    },
+    {
         "name": "news",
         "admin": true,
         "irc": true,

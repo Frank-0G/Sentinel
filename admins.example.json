@@ -28,7 +28,9 @@
         "operator": [
             "rcon",
             "shutdown",
+            "cancelshutdown",
             "restartserver",
+            "cancelrestartserver",
             "addvip",
             "extendvip",
             "name",

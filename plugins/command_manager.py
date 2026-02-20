@@ -20,6 +20,7 @@ class CommandManager(IPlugin):
         self.alias_map = {}
         self.prefix = "!"
         self.shutdown_pending = False
+        self.restartserver_pending = False
         self.last_pending_announce = 0
         self.locked_companies = set()
         self.pending_resets = set()
@@ -48,7 +49,7 @@ class CommandManager(IPlugin):
             "voterestart", "votereset", "cancelvote", "votestatus", "alogin", "alogout",
             "resetme", "limits", "seed", "news", "screenshot",
             "resetcompany", "resetcompanyspec", "resetcompanykick", "resetcompanyban",
-            "resetcompanytimer", "cancelresetcompany",
+            "resetcompanytimer", "cancelresetcompany", "cancelshutdown", "cancelrestartserver",
             # Goal System
             "goal", "progress", "townstats", "claimed", "goalreached", "awarning"
         ]
@@ -72,9 +73,23 @@ class CommandManager(IPlugin):
             "unlockcompany": ["Usage: !unlockcompany <Company ID>", "Unlocks a previously locked company."],
             "pause": ["Usage: !pause", "Pauses the game."],
             "unpause": ["Usage: !unpause", "Unpauses the game."],
-            "shutdown": ["Usage: !shutdown [now]", "Shuts down the server."],
+            "shutdown": [
+                "Usage: !shutdown [now]",
+                "- now: immediately shuts the OpenTTD server down regardless of active companies (optional).",
+                "Completely exits the OpenTTD server and shuts Sentinel down. The server cannot be restarted anymore without console access.",
+                "If the optional 'now' parameter is not specified and the server has active companies the shutdown will be scheduled and automatically processed when the last company was closed.",
+                "A scheduled shutdown can still be cancelled using the !cancelshutdown command."
+            ],
+            "cancelshutdown": ["Usage: !cancelshutdown", "Cancels a shutdown of the server that was scheduled with !shutdown before."],
             "restart": ["Usage: !restart", "Restarts the game (map reset)."],
-            "restartserver": ["Usage: !restartserver", "Restarts the Sentinel controller."],
+            "restartserver": [
+                "Usage: !restartserver [now]",
+                "- now: immediately restarts the OpenTTD server regardless of active companies (optional).",
+                "Completely exits the OpenTTD server and spawns a new server process.",
+                "If the optional 'now' parameter is not specified and the server has active companies the restart will be scheduled and automatically processed when the last company was closed.",
+                "A scheduled restart can still be cancelled using the !cancelrestartserver command."
+            ],
+            "cancelrestartserver": ["Usage: !cancelrestartserver", "Cancels a restart of the server that was scheduled with !restartserver before."],
             "name": ["Usage: !name <NewName>", "Changes your in-game name."],
             "cv": ["Usage: !cv", "Shows the goal of the current game script."],
             "rules": ["Usage: !rules", "Shows the server rules."],
@@ -127,8 +142,10 @@ class CommandManager(IPlugin):
             "lockcompany": self.cmd_lockcompany,
             "unlockcompany": self.cmd_unlockcompany,
             "shutdown": self.cmd_shutdown,
+            "cancelshutdown": self.cmd_cancelshutdown,
             "restart": self.cmd_restart,
             "restartserver": self.cmd_restartserver,
+            "cancelrestartserver": self.cmd_cancelrestartserver,
             "reloadplugins": self.cmd_reloadplugins,
             "status": self.cmd_status,
             "server": self.cmd_server,
@@ -241,16 +258,25 @@ class CommandManager(IPlugin):
         if len(candidates) == 1: return candidates[0]
         return None
 
+    def get_active_player_count(self):
+        data = self.get_data()
+        if not data: return 0
+        return sum(1 for cid in data.clients if cid != 1)
+
     def on_tick(self):
-        if self.shutdown_pending:
-            data = self.get_data()
-            if data and len(data.companies) == 0:
-                self.perform_shutdown("Graceful shutdown: All companies closed.")
+        if self.shutdown_pending or self.restartserver_pending:
+            player_count = self.get_active_player_count()
+            if player_count == 0:
+                if self.shutdown_pending:
+                    self.perform_shutdown("Graceful shutdown: Server empty.")
+                elif self.restartserver_pending:
+                    self.perform_restartserver("Graceful restart: Server empty.")
             elif time.time() - self.last_pending_announce > 60:
                 self.last_pending_announce = time.time()
                 session = self.get_session()
                 if session:
-                    session.send_server_message("WARNING: Shutdown pending! Waiting for companies to close...")
+                    action = "Shutdown" if self.shutdown_pending else "Controller Restart"
+                    session.send_server_message(f"WARNING: {action} pending! Waiting for server to empty...")
 
     def perform_shutdown(self, reason):
         self.shutdown_pending = False
@@ -263,6 +289,29 @@ class CommandManager(IPlugin):
         def delayed_exit():
             time.sleep(3.0); os._exit(0)
         threading.Thread(target=delayed_exit, daemon=True).start()
+
+    def perform_restartserver(self, reason="Admin Controller Restart"):
+        self.restartserver_pending = False
+        self.client.log(f"[{self.name}] RESTARTING SENTINEL PROCESS... ({reason})")
+        session = self.get_session()
+        if session:
+            session.send_server_message("Sentinel Controller Restarting...")
+        
+        # Close socket cleanly
+        try:
+            if self.client.socket:
+                self.client.socket.close()
+        except: pass
+        
+        def delayed_restart():
+            time.sleep(2.0)
+            try:
+                import sys
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+            except Exception as e:
+                self.client.log(f"[{self.name}] Restart Failed: {e}")
+                os._exit(1)
+        threading.Thread(target=delayed_restart, daemon=True).start()
 
     def on_player_quit(self, cid): self.trigger_reset_check()
     def on_player_update(self, cid, name, company_id): self.trigger_reset_check()
@@ -832,9 +881,35 @@ class CommandManager(IPlugin):
         self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has requested to unpause the game.", is_action=True)
 
     def cmd_shutdown(self, cmd, args, reply, source, admin_name, context):
-        self.perform_shutdown("Admin")
-        reply.append("Shutting down.")
-        self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has requested to shutdown the server.", is_action=True)
+        is_now = args and args[0].lower() == "now"
+        if is_now or self.get_active_player_count() == 0:
+            msg = "Shutting down immediately." if is_now else "Server empty. Shutting down immediately."
+            reply.append(msg)
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') requested shutdown.", is_action=True)
+            self.perform_shutdown("Admin immediate shutdown")
+        else:
+            self.shutdown_pending = True
+            self.last_pending_announce = 0
+            
+            if context and 'prefix_used' in context:
+                prefix = context['prefix_used']
+            elif source == "discord":
+                server_id = str(self.client.config.get("server_id", "99"))
+                prefix = server_id if server_id else self.client.config.get("trigger_prefix", "!")
+            else:
+                prefix = self.client.config.get("trigger_prefix", "!")
+
+            reply.append("The server has companies, shutdown will be done when the last company is closed.")
+            reply.append(f"Use '{prefix}shutdown now' to shutdown immediately.")
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has scheduled a shutdown of the server after the current game has ended or all companies have been closed.", is_action=False)
+
+    def cmd_cancelshutdown(self, cmd, args, reply, source, admin_name, context):
+        if self.shutdown_pending:
+            self.shutdown_pending = False
+            reply.append("Scheduled shutdown cancelled.")
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has cancelled the scheduled shutdown.", is_action=True)
+        else:
+            reply.append("No shutdown is currently scheduled.")
 
     def cmd_restart(self, cmd, args, reply, source, admin_name, context):
         """Restart the game (map reset)."""
@@ -848,30 +923,35 @@ class CommandManager(IPlugin):
     
     def cmd_restartserver(self, cmd, args, reply, source, admin_name, context):
         """Restart the Sentinel controller."""
-        self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has requested to restart the server.", is_action=True)
-        reply.append("Restarting Sentinel controller...")
-        
-        # Schedule restart in a separate thread
-        def restart_sequence():
-            time.sleep(2.0)
-            self.client.log(f"[{self.name}] RESTARTING SENTINEL PROCESS...")
+        is_now = args and args[0].lower() == "now"
+        if is_now or self.get_active_player_count() == 0:
+            msg = "Restarting Sentinel controller immediately." if is_now else "Server empty. Restarting Sentinel controller immediately."
+            reply.append(msg)
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') requested controller restart.", is_action=True)
+            self.perform_restartserver("Admin immediate controller restart")
+        else:
+            self.restartserver_pending = True
+            self.last_pending_announce = 0
             
-            # Close socket cleanly
-            try:
-                if self.client.socket:
-                    self.client.socket.close()
-            except:
-                pass
-            
-            try:
-                # Self-restart using os.execv
-                import sys
-                os.execv(sys.executable, [sys.executable] + sys.argv)
-            except Exception as e:
-                self.client.log(f"[{self.name}] Restart Failed: {e}")
-                os._exit(1)
-        
-        threading.Thread(target=restart_sequence, daemon=True).start()
+            if context and 'prefix_used' in context:
+                prefix = context['prefix_used']
+            elif source == "discord":
+                server_id = str(self.client.config.get("server_id", "99"))
+                prefix = server_id if server_id else self.client.config.get("trigger_prefix", "!")
+            else:
+                prefix = self.client.config.get("trigger_prefix", "!")
+
+            reply.append("The server has companies, restart will be done when the last company is closed.")
+            reply.append(f"Use '{prefix}restartserver now' to restart immediately.")
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has scheduled a restart of the server after the current game has ended or all companies have been closed.", is_action=False)
+
+    def cmd_cancelrestartserver(self, cmd, args, reply, source, admin_name, context):
+        if self.restartserver_pending:
+            self.restartserver_pending = False
+            reply.append("Scheduled restart cancelled.")
+            self._announce(f"Admin {context.get('nick', '?')} (Account '{admin_name}') has cancelled the scheduled Sentinel controller restart.", is_action=True)
+        else:
+            reply.append("No Sentinel controller restart is currently scheduled.")
 
 
 
