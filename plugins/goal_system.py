@@ -331,6 +331,11 @@ class GoalSystem(IPlugin):
             # Map color int to string name if possible, for now use generic
             self.company_data[cid]['color'] = f"Color {color}"
 
+    def on_company_remove(self, company_id, reason):
+        if company_id in self.company_data:
+            # Recreate with default empty values so it stops reporting pop/val for the dead company
+            self.company_data[company_id] = {'val': 0, 'pop': 0, 'beegoal': 0, 'rating': 0, 'cargo': 0, 'cash': 0, 'income': 0}
+
     # --- LOGGING & ERROR HANDLING ---
     def on_wrapper_log(self, text): pass
 
@@ -603,7 +608,8 @@ class GoalSystem(IPlugin):
         
         for cid in range(15):
              is_active = False
-             if data_ctrl and cid in data_ctrl.companies: is_active = True
+             if data_ctrl:
+                 if cid in data_ctrl.companies: is_active = True
              else:
                  # Fallback: Check if we have data (cast to int to be safe)
                  pop = int(self.company_data[cid].get('pop', 0))
