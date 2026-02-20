@@ -111,7 +111,14 @@ class GoalSystem(IPlugin):
                     players.append(info.get('name', 'Unknown'))
         
         # Format players string: "Player1, Player2" or "Empty" (C# says "Empty" for player string if none)
-        if not players: player_str = "Empty"
+        is_ai = False
+        if data:
+            co_info = data.companies.get(cid)
+            if co_info and co_info.get('is_ai'):
+                is_ai = True
+                
+        if is_ai: player_str = "AI"
+        elif not players: player_str = "Empty"
         else: player_str = ", ".join(players)
         
         return c_name, c_color, player_str, duration_text
