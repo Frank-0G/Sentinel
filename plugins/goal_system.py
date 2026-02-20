@@ -469,6 +469,7 @@ class GoalSystem(IPlugin):
         return 0
 
     def check_winners(self):
+        if self.game_won: return
         for cid in range(15):
             progress = self.get_progress(cid)
             if progress >= 100:
