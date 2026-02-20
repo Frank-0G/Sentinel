@@ -647,11 +647,12 @@ class GoalSystem(IPlugin):
                      'pct': int(p), 
                      'name': name,
                      'color': col_str,
-                     'value_text': value_text
+                     'value_text': value_text,
+                     'abs_val': pop if self.is_city_builder else val
                  })
 
-        # Sort by percentage descending
-        ranks.sort(key=lambda x: x['pct'], reverse=True)
+        # Sort by percentage descending, then by absolute value desc
+        ranks.sort(key=lambda x: (x['pct'], x['abs_val']), reverse=True)
 
         # 3. Output Top 3
         count = 0
