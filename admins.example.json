@@ -1,10 +1,7 @@
 {
     "groups": {
         "scanner": [
-            "goalreached",
-            "status",
-            "me",
-            "help"
+            "goalreached"
         ],
         "moderator": [
             "kick",
@@ -17,13 +14,11 @@
             "reset",
             "resetcompany",
             "resetcompanytimer",
-            "cancelresetcompany",
-            "admin"
+            "cancelresetcompany"
         ],
         "full-admin": [
             "restart",
-            "ban",
-            "plugins"
+            "ban"
         ],
         "operator": [
             "rcon",
@@ -33,9 +28,6 @@
             "cancelrestartserver",
             "addvip",
             "extendvip",
-            "name",
-            "alogin",
-            "alogout",
             "reloadplugins",
             "force_update",
             "debug_company"
