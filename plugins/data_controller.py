@@ -66,12 +66,17 @@ class DataController(IPlugin):
         })
     
     def on_player_join(self, client_id, name, ip, company_id):
-        self.clients[client_id] = {
-            "name": name,
-            "ip": ip,
-            "company": company_id,
-            "joined": time.time(),  # Actual timestamp instead of 0
-        }
+        if client_id not in self.clients:
+            self.clients[client_id] = {
+                "name": name,
+                "ip": ip,
+                "company": company_id,
+                "joined": time.time(),
+            }
+        else:
+            self.clients[client_id]["name"] = name
+            self.clients[client_id]["ip"] = ip
+            self.clients[client_id]["company"] = company_id
 
     def on_player_update(self, client_id, name, company_id):
         if client_id in self.clients:
