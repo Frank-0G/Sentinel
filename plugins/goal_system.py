@@ -23,6 +23,8 @@ class GoalSystem(IPlugin):
         super().__init__(client)
         self.name = "GoalSystem"
         self.version = "4.0-PORT-FIX"
+        import uuid
+        self.iid = str(uuid.uuid4())[:8]
         
         # Configuration
         self.enabled = True
@@ -177,6 +179,7 @@ class GoalSystem(IPlugin):
         self.claim_stats.clear()
         self.town_demands.clear()
         self.last_db_sync = time.time()
+        self._win_lock = False
         
         # Reset Company Data but keep keys/structure
         for cid in self.company_data:
@@ -469,11 +472,14 @@ class GoalSystem(IPlugin):
         return 0
 
     def check_winners(self):
+        if getattr(self, '_win_lock', False): return
         if self.game_won: return
+        
         for cid in range(15):
             progress = self.get_progress(cid)
             if progress >= 100:
-                self.client.log(f"[{self.name}] Win detected for Company #{cid+1} (Progress: {progress}%)")
+                self._win_lock = True
+                self.client.log(f"[{self.name}-{self.iid}] Win detected for Company #{cid+1} (Progress: {progress}%) (game_won={self.game_won})")
                 self.trigger_win(cid, abort=False)
                 break
 
@@ -492,6 +498,18 @@ class GoalSystem(IPlugin):
             sess.send_server_message(msg)
             # C# immediately sends the "starts in X seconds" message too
             sess.send_server_message(f"New game starts in 30 seconds, hold on...")
+            
+            # Reset losing companies and move their players to spectators
+            data = self.client.get_service("DataController")
+            if data:
+                for client_id, cdata in list(data.clients.items()):
+                    if client_id == 1: continue # Server
+                    if cdata.get('company') not in (cid, 255):
+                        sess.move_player(client_id, 255)
+                        sess.send_private_message(client_id, "The game has ended. You have been moved to spectators.")
+                for comp_id in list(data.companies.keys()):
+                    if comp_id != cid:
+                        sess.reset_company(comp_id)
             
         self.restart_countdown = 30
 
