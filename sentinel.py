@@ -549,6 +549,9 @@ class AdminClient:
         
         # Fetch Seed via RCON
         self.send_rcon("getseed")
+        
+        for p in self.plugins:
+            if hasattr(p, 'on_connected'): p.on_connected()
 
     def connect(self, host, port, password):
         max_retries = 20
@@ -575,8 +578,6 @@ class AdminClient:
                 self.send_packet(AdminPacketType.ADMIN_JOIN, self._pack_string(password) + self._pack_string(self.name) + self._pack_string(self.version))
                 self.log(f"[Network] Handshake (ADMIN_JOIN) sent. Waiting for server response...")
                 
-                for p in self.plugins:
-                    if hasattr(p, 'on_connected'): p.on_connected()
                 return
             except Exception as e:
                 self.log(f"[Network] Connection Failed: {e}")
