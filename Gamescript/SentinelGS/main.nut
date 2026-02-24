@@ -171,7 +171,45 @@ class SentinelCore extends GSController
 
             if (type == GSEvent.ET_ADMIN_PORT) {
                 local data = GSEventAdminPort.Convert(ev).GetObject();
-                if (this.active_plugin != null) this.active_plugin.OnAdminEvent(data);
+                
+                // --- ANTICHEAT: RCON Interception ---
+                if (typeof data == "string" && data.find("check_crossing") == 0) {
+                    local parts = split(data, " ");
+                    if (parts.len() >= 4) {
+                        local client_id = parts[1].tointeger();
+                        local company_id = parts[2].tointeger();
+                        local tile = parts[3].tointeger();
+
+                        GSCompanyMode(company_id);
+
+                        local has_violation = false;
+                        
+                        // Check Road Ownership
+                        if (GSRoad.IsRoadTile(tile)) {
+                            local r_owner = GSRoad.GetRoadOwner(tile);
+                            if (r_owner != GSCompany.COMPANY_INVALID && r_owner != GSCompany.COMPANY_TOWN && r_owner != company_id) {
+                                has_violation = true;
+                                GSRoad.RemoveRoad(tile);
+                            }
+                        }
+
+                        // Check Rail Ownership
+                        if (GSRail.IsRailTile(tile)) {
+                            local r_owner = GSRail.GetRailOwner(tile);
+                            if (r_owner != GSCompany.COMPANY_INVALID && r_owner != GSCompany.COMPANY_TOWN && r_owner != company_id) {
+                                has_violation = true;
+                                GSRail.RemoveRail(tile);
+                            }
+                        }
+
+                        if (has_violation) {
+                            Sentinel.ChatPrivate(client_id, "NOT ALLOWED: You cannot build level crossings over infrastructure owned by another company! You must build a bridge instead.");
+                        }
+                    }
+                }
+                else if (this.active_plugin != null) {
+                    this.active_plugin.OnAdminEvent(data);
+                }
             }
 
             if (this.active_plugin != null) {
