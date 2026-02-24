@@ -208,8 +208,6 @@ class SentinelCore extends GSController
             if (y > max_y) max_y = y;
         }
 
-        GSLog.Info("[AntiCheat] check_crossing called! Bounding Box: (" + min_x + "," + min_y + ") to (" + max_x + "," + max_y + ") by Company " + comp_id);
-
         local crossing_demolished = false;
 
         for (local x = min_x; x <= max_x; x++) {
@@ -231,8 +229,7 @@ class SentinelCore extends GSController
                         local __mode = GSCompanyMode(comp_id);
                         
                         // Bulldoze ONLY the offending player's infrastructure
-                        local success = GSTile.DemolishTile(t_id);
-                        GSLog.Info("[AntiCheat] Demolish result: " + success);
+                        GSTile.DemolishTile(t_id);
                         
                         // Warn the player directly through the game's chat API
                         Sentinel.ChatPrivate(c_id, "NOT ALLOWED: You cannot build level crossings over infrastructure owned by another company! You must build a bridge instead.");

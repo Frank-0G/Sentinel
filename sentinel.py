@@ -433,10 +433,11 @@ class AdminClient:
                 try:
                     json_str, _ = self.unpack_string(payload, 0)
                     data = json.loads(json_str)
-                    if "event" in data:
+                    if "event" in data or "command" in data:
+                        evt_name = data.get("event") or data.get("command")
                         for p in self.plugins:
                             if hasattr(p, "on_gamescript_event"):
-                                p.on_gamescript_event(data["event"], data)
+                                p.on_gamescript_event(evt_name, data)
                 except Exception as e: 
                     self.log(f"[Gamescript] Error parsing Packet 124: {e}")
 

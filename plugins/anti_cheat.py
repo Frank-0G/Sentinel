@@ -71,5 +71,4 @@ class AntiCheat(IPlugin):
                 "tiles": tiles_strs
             })
             
-            print(f"[AntiCheat] Sending block to GameScript: {payload}")
             self.client.send_gamescript(payload)

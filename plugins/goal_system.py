@@ -448,8 +448,8 @@ class GoalSystem(IPlugin):
         count = self.bad_action_count.get(client_id, 0) + 1
         self.bad_action_count[client_id] = count
         
-        msg = f"Do not build in {town_name}! It belongs to Company #{claimed_by+1}!"
-        self.client.send_chat(1, 2, client_id, msg) # Private message
+        msg = f"Warning: That town is claimed by Company {claimed_by+1}."
+        self.client.send_chat(5, 2, client_id, msg) # Private message
         
         if count >= 3:
             # Move to spec
