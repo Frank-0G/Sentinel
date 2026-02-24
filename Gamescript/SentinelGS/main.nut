@@ -171,49 +171,74 @@ class SentinelCore extends GSController
 
             if (type == GSEvent.ET_ADMIN_PORT) {
                 local data = GSEventAdminPort.Convert(ev).GetObject();
-                
-                // --- ANTICHEAT: RCON Interception ---
-                if (typeof data == "string" && data.find("check_crossing") == 0) {
-                    local parts = split(data, " ");
-                    if (parts.len() >= 4) {
-                        local client_id = parts[1].tointeger();
-                        local company_id = parts[2].tointeger();
-                        local tile = parts[3].tointeger();
-
-                        GSCompanyMode(company_id);
-
-                        local has_violation = false;
-                        
-                        // Check Road Ownership
-                        if (GSRoad.IsRoadTile(tile)) {
-                            local r_owner = GSRoad.GetRoadOwner(tile);
-                            if (r_owner != GSCompany.COMPANY_INVALID && r_owner != GSCompany.COMPANY_TOWN && r_owner != company_id) {
-                                has_violation = true;
-                                GSRoad.RemoveRoad(tile);
-                            }
-                        }
-
-                        // Check Rail Ownership
-                        if (GSRail.IsRailTile(tile)) {
-                            local r_owner = GSRail.GetRailOwner(tile);
-                            if (r_owner != GSCompany.COMPANY_INVALID && r_owner != GSCompany.COMPANY_TOWN && r_owner != company_id) {
-                                has_violation = true;
-                                GSRail.RemoveRail(tile);
-                            }
-                        }
-
-                        if (has_violation) {
-                            Sentinel.ChatPrivate(client_id, "NOT ALLOWED: You cannot build level crossings over infrastructure owned by another company! You must build a bridge instead.");
-                        }
-                    }
-                }
-                else if (this.active_plugin != null) {
+                if (data != null && "event" in data && data.event == "check_crossing") {
+                    this.check_crossing(data.c_id, data.comp_id, data.tiles);
+                } else if (this.active_plugin != null) {
                     this.active_plugin.OnAdminEvent(data);
                 }
             }
 
             if (this.active_plugin != null) {
                 this.active_plugin.OnEvent(type, ev);
+            }
+        }
+    }
+
+    // --- ANTICHEAT: Native Crossing Check ---
+    // This is called automatically by OpenTTD when the Python plugin sends:
+    // "script SentinelGS check_crossing <client_id> <company_id> <tile>"
+    function check_crossing(c_id_str, comp_id_str, tiles_array) {
+        local c_id = c_id_str.tointeger();
+        local comp_id = comp_id_str.tointeger();
+
+        if (tiles_array.len() == 0) return;
+
+        local min_x = 999999;
+        local max_x = 0;
+        local min_y = 999999;
+        local max_y = 0;
+
+        foreach (t_id_str in tiles_array) {
+            local t_id = t_id_str.tointeger();
+            local x = GSMap.GetTileX(t_id);
+            local y = GSMap.GetTileY(t_id);
+            if (x < min_x) min_x = x;
+            if (x > max_x) max_x = x;
+            if (y < min_y) min_y = y;
+            if (y > max_y) max_y = y;
+        }
+
+        GSLog.Info("[AntiCheat] check_crossing called! Bounding Box: (" + min_x + "," + min_y + ") to (" + max_x + "," + max_y + ") by Company " + comp_id);
+
+        local crossing_demolished = false;
+
+        for (local x = min_x; x <= max_x; x++) {
+            for (local y = min_y; y <= max_y; y++) {
+                local t_id = GSMap.GetTileIndex(x, y);
+
+                local has_road = GSRoad.IsRoadTile(t_id);
+                local has_rail = GSRail.IsRailTile(t_id);
+
+                if (has_road && has_rail) {
+                    local tile_owner = GSTile.GetOwner(t_id);
+
+                    // 0 to 14 represent normal player companies in OpenTTD
+                    local is_player_tile = (tile_owner >= 0 && tile_owner <= 14);
+
+                    if (is_player_tile && (tile_owner != comp_id) && !crossing_demolished) {
+                        GSLog.Info("[AntiCheat] ILLEGAL CROSSING DETECTED! Demolishing tile " + t_id);
+                        // Change to the context of the offending player
+                        local __mode = GSCompanyMode(comp_id);
+                        
+                        // Bulldoze ONLY the offending player's infrastructure
+                        local success = GSTile.DemolishTile(t_id);
+                        GSLog.Info("[AntiCheat] Demolish result: " + success);
+                        
+                        // Warn the player directly through the game's chat API
+                        Sentinel.ChatPrivate(c_id, "NOT ALLOWED: You cannot build level crossings over infrastructure owned by another company! You must build a bridge instead.");
+                        crossing_demolished = true;
+                    }
+                }
             }
         }
     }

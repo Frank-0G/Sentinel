@@ -19,6 +19,8 @@ class AntiCheat(IPlugin):
 
         # Locate command name
         cmd_name = self.client.command_names.get(cmd_id, "")
+        print(f"[AntiCheat] DEBUG Raw Command ID {cmd_id} (Name: '{cmd_name}') from Client {client_id}")
+
         if not cmd_name: 
             return
 
@@ -57,5 +59,17 @@ class AntiCheat(IPlugin):
 
             # Send tiles to GameScript for verification natively
             # Since a command might encompass two endpoints, we tell GameScript to check all involved tiles
-            for t in tiles_to_check:
-                self.client.send_rcon(f"script SentinelGS check_crossing {client_id} {company_id} {t}")
+            import json
+            
+            # Convert to list of strings for GameScript
+            tiles_strs = [str(t) for t in tiles_to_check]
+            
+            payload = json.dumps({
+                "event": "check_crossing",
+                "c_id": str(client_id),
+                "comp_id": str(company_id),
+                "tiles": tiles_strs
+            })
+            
+            print(f"[AntiCheat] Sending block to GameScript: {payload}")
+            self.client.send_gamescript(payload)

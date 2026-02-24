@@ -426,7 +426,7 @@ class AdminClient:
                                     # Fallback to old signature
                                     p.on_do_command(cid, cmd_id, p1, p2, tile, text, 0)
                     except Exception as e:
-                        # self.log(f"Packet 127 Error: {e}")
+                        print(f"Packet 127 Error for cmd {cmd_id}: {e}")
                         pass
 
             elif ptype == 124: # GAMESCRIPT
@@ -503,6 +503,8 @@ class AdminClient:
                     try:
                         self.current_seed = output.split("Generation Seed:")[1].strip()
                     except: pass
+                    
+                print(f"[RCON REPLAY] {output}")
                 
                 for p in self.plugins: 
                     if hasattr(p, 'on_rcon_result'): p.on_rcon_result("Unknown", output)
@@ -607,6 +609,7 @@ class AdminClient:
     def send_poll(self, t, d=0): self.send_packet(AdminPacketType.ADMIN_POLL, struct.pack('<BI', t, d))
     def send_chat(self, a, dt, di, m): self.send_packet(AdminPacketType.ADMIN_CHAT, struct.pack('<BBI', a, dt, di) + self._pack_string(m))
     def send_rcon(self, c): self.send_packet(AdminPacketType.ADMIN_RCON, self._pack_string(c))
+    def send_gamescript(self, json_str): self.send_packet(AdminPacketType.ADMIN_GAMESCRIPT, self._pack_string(json_str))
     
     def send_packet(self, pt, pl=b''):
         if not self.socket or not self.connected: return
