@@ -653,7 +653,7 @@ function SList::Manage(companies){
     local date = GSDate.GetCurrentDate();
     local game_year = GSDate.GetYear(date);
     local game_month = GSDate.GetMonth(date);
-    local startyear = GSGameSettings.GetValue("starting_year");
+    local startyear = GSGameSettings.GetValue("game_creation.starting_year");
     local rem_years = game_time - (game_year - startyear) - 1;
     local rem_months = 12 - game_month;
     //GSLog.Info("Duration: " + game_time + "; Year:" + game_year + "; Month: " + game_month + "; Rem_years: " + rem_years + "; Rem_Months: " + rem_months);

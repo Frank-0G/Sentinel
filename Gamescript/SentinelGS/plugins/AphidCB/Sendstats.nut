@@ -57,8 +57,8 @@ function CityBuilder::SendGoalInfo()
     local target_pop = 0;
     
     // Try to read 'goal' setting from GS settings
-    if (GSGameSettings.GetValue("gamegoal") > 0) target_pop = GSGameSettings.GetValue("gamegoal");
-    else if (GSGameSettings.GetValue("goal") > 0) target_pop = GSGameSettings.GetValue("goal");
+    if (GSController.GetSetting("gamegoal") > 0) target_pop = GSController.GetSetting("gamegoal");
+    else if (GSController.GetSetting("goal") > 0) target_pop = GSController.GetSetting("goal");
     
     Sentinel.SendAdmin({ 
         event = "goaltypeinfo", 
