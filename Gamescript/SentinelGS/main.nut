@@ -110,14 +110,9 @@ class SentinelCore extends GSController
         // 1. Landscape Info (Legacy Event)
         Sentinel.SendAdmin({ event = "landscapeinfo", landscape = GSGame.GetLandscape() });
         
-        // 2. Goal Type Info (0 for default/master)
-        Sentinel.SendAdmin({ event = "goaltypeinfo", goalmastergame = 0 });
-
-        // 3. Town Statistics
-        Sentinel.PushTownStats();
-        
-        // 4. Company Population Updates
-        Sentinel.PushCompanyStats();
+        // Note: Goal Type Info, Town Statistics, and Company Population Updates 
+        // are now handled exclusively by the active GameScript plugins (CityBuilder, CompanyValue, etc)
+        // to prevent overwriting of actual plugin data with default generic data.
     }
 
     function HandleEvents() {

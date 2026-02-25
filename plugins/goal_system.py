@@ -247,6 +247,10 @@ class GoalSystem(IPlugin):
                     cid = int(data.get("company", -1))
                     if cid in self.company_data:
                         # Store in a separate dict for sync
+                        
+                        raw_statue = data.get("statue", False)
+                        is_statue = raw_statue if isinstance(raw_statue, bool) else str(raw_statue).lower() == "true"
+                        
                         self.claim_stats[cid] = {
                             'cid': cid,
                             'tid': int(data.get("townid", -1)),
@@ -254,7 +258,7 @@ class GoalSystem(IPlugin):
                             'pop': int(data.get("population", 0)),
                             'house_count': int(data.get("housecount", 0)),
                             'growth_rate': int(data.get("growthrate", 0)),
-                            'statue': data.get("statue", "False").lower() == "true",
+                            'statue': is_statue,
                             'location': data.get("location", "0x0")
                         }
 

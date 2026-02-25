@@ -76,6 +76,7 @@ class SentinelGS extends GSInfo
         this.AddSetting({name = "injection", description = "Enable Freeze", easy_value = 0, medium_value = 0, hard_value = 1, custom_value = 0, flags = CONFIG_INGAME, min_value = 0, max_value = 1});
         this.AddSetting({name = "paxcargo_istownind", description = "Pax is Town Ind", easy_value = 0, medium_value = 0, hard_value = 0, custom_value = 0, flags = CONFIG_INGAME | CONFIG_BOOLEAN});
         this.AddSetting({name = "lowcargo", description = "Reduced shrink", easy_value = 360, medium_value = 180, hard_value = 20, custom_value = 200, flags = CONFIG_INGAME, min_value = 0, max_value = 1000, step_size = 20});
+        this.AddSetting({name = "mgrpct", description = "Max growth promillage:", easy_value = 400, medium_value = 500, hard_value = 600, custom_value = 700, flags = CONFIG_INGAME, min_value = 100, max_value = 65535});
 
         // --- CARGO SETTINGS ---
         for(local i = 0; i < 32; i++){
