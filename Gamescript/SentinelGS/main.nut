@@ -23,7 +23,7 @@ class SentinelCore extends GSController
         this.PushMonthlyStats();
 
         // --- MODE SELECTION ---
-        local mode = GSGameSettings.GetValue("game_mode");
+        local mode = GSController.GetSetting("game_mode");
         // ... (rest of the mode selection logic) ...
         // I'll use a larger block to ensure context is correct
         Sentinel.Log("Read 'game_mode' setting: " + mode);
