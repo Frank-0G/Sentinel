@@ -19,7 +19,6 @@ class AntiCheat(IPlugin):
 
         # Locate command name
         cmd_name = self.client.command_names.get(cmd_id, "")
-        print(f"[AntiCheat] DEBUG Raw Command ID {cmd_id} (Name: '{cmd_name}') from Client {client_id}")
 
         if not cmd_name: 
             return
