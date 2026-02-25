@@ -115,11 +115,8 @@ class DataController(IPlugin):
         # Store founded year and calculate start_year for display
         if founded is not None:
             self.companies[company_id]["founded"] = founded
-            # Calculate actual year from days (founded is in days since epoch)
-            if founded > 36500:  # After year 2020 in new date system
-                self.companies[company_id]["start_year"] = founded // 365
-            else:  # Old date system (days since 1920)
-                self.companies[company_id]["start_year"] = 1920 + (founded // 365)
+            # Founded is the inauguration year in new versions of OpenTTD
+            self.companies[company_id]["start_year"] = founded
 
     def on_company_economy(self, company_id, money, loan, income, delivered, performance, value):
         if company_id not in self.companies:
