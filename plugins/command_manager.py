@@ -15,6 +15,8 @@ class CommandManager(IPlugin):
         super().__init__(client)
         self.name = "CommandManager"
         self.version = "6.29-GS-SUB-FIX" # Version bumped
+
+        self.openttd_version = self.client.game_cfg.get("version_string", "x.xx")
         
         self.triggers = {}
         self.alias_map = {}
@@ -25,7 +27,7 @@ class CommandManager(IPlugin):
         self.locked_companies = set()
         self.pending_resets = set()
         self.reset_timers = {}  # company_id -> {"end_time": float, "interval": int, "thread": threading.Thread, "cancelled": bool}
-        
+
         self.IRC_COLORS = {
             0: "02", 1: "10", 2: "13", 3: "08", 4: "04", 5: "12", 6: "03", 7: "03",
             8: "02", 9: "14", 10: "06", 11: "06", 12: "07", 13: "05", 14: "14", 15: "15"
@@ -1123,7 +1125,7 @@ class CommandManager(IPlugin):
         reply.append("Rules: Be nice.")
 
     def cmd_version(self, cmd, args, reply, source, admin_name, context):
-        reply.append(f"OpenTTD: v14.1 with Sentinel: v{self.version}")
+        reply.append(f"OpenTTD: v{self.openttd_version} with Sentinel: v{self.version}")
 
     def cmd_admin_help(self, cmd, args, reply, source, admin_name, context):
         reply.append("Admin Commands: !rcon, !say, !kick, !ban, !pause, !unpause, !reset, !shutdown, !move, !empty, !lockcompany, !unlockcompany, !plugins, !reloadplugins, !cancelvote, !news")
