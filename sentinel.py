@@ -197,6 +197,10 @@ class AdminClient:
             stn = parser["station"] if "station" in parser else {}
             self.game_cfg["station_spread"] = stn.get("station_spread", "12")
 
+            # VERSION
+            ver = parser["version"] if "version" in parser else {}
+            self.game_cfg["version_string"] = ver.get("version_string", "x.xx")
+
         except Exception as e:
             print(f"[Config] Error parsing OpenTTD config: {e}")
 
