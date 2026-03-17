@@ -197,9 +197,6 @@ class AdminClient:
             stn = parser["station"] if "station" in parser else {}
             self.game_cfg["station_spread"] = stn.get("station_spread", "12")
 
-            # VERSION
-            ver = parser["version"] if "version" in parser else {}
-            self.game_cfg["version_string"] = ver.get("version_string", "x.xx")
 
         except Exception as e:
             print(f"[Config] Error parsing OpenTTD config: {e}")
@@ -458,8 +455,10 @@ class AdminClient:
                     server_name, off = self.unpack_string(payload, 0)
                     version, off = self.unpack_string(payload, off)
                     
-                    # Store real server name from packet (overrides config file)
+                    # Store real server name and version from packet
                     self.game_cfg['server_name'] = server_name
+                    self.game_cfg['version_string'] = version
+
                     
                     if off + 1 <= len(payload):
                         dedicated = bool(payload[off])

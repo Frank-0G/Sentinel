@@ -1125,7 +1125,8 @@ class CommandManager(IPlugin):
         reply.append("Rules: Be nice.")
 
     def cmd_version(self, cmd, args, reply, source, admin_name, context):
-        reply.append(f"OpenTTD: v{self.openttd_version} with Sentinel: v{self.version}")
+        openttd_ver = self.client.game_cfg.get("version_string", self.openttd_version)
+        reply.append(f"OpenTTD: v{openttd_ver} with Sentinel: v{self.version}")
 
     def cmd_admin_help(self, cmd, args, reply, source, admin_name, context):
         reply.append("Admin Commands: !rcon, !say, !kick, !ban, !pause, !unpause, !reset, !shutdown, !move, !empty, !lockcompany, !unlockcompany, !plugins, !reloadplugins, !cancelvote, !news")
