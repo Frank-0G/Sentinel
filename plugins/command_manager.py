@@ -1040,24 +1040,39 @@ class CommandManager(IPlugin):
             name = d.get("name", "").strip()
             manager = d.get("manager", "").strip()
             if not name: name = f"{manager} & Co" if manager else "Unnamed"
+            
             try: color_id = int(d.get("color", 0))
             except: color_id = 0
+            
             if hasattr(data, "get_color_info"): color_name, _ = data.get_color_info(color_id)
             else: color_name = "Unknown"
+            
             display_color = color_name
             if source == "irc":
                 color_code = self.IRC_COLORS.get(color_id, "01")
                 display_color = f"\x03{color_code}{color_name}\x0f"
-            founded = d.get("founded_year", d.get("foundingYear", d.get("founded", 0)))
+            
+            founded = d.get("founded", 0)
             try: founded_i = int(founded) if founded is not None else 0
             except: founded_i = 0
             founded_str = str(founded_i) if founded_i > 0 else "Unknown"
-            veh = d.get("vehicles", (0, 0, 0, 0))
-            if not isinstance(veh, (list, tuple)): veh = (0, 0, 0, 0)
-            veh = list(veh) + [0, 0, 0, 0]
-            t, r, p, s = int(veh[0]), int(veh[1]), int(veh[2]), int(veh[3])
+            
+            # Use individual keys from DataController
+            t = int(d.get("trains", 0))
+            r = int(d.get("roadvehicles", 0))
+            p = int(d.get("aircraft", 0))
+            s = int(d.get("ships", 0))
+            
             passworded = bool(d.get("passworded", False))
-            reply.append(f"{company_id + 1} ({display_color}) '{name}' - Founded: {founded_str} - T/R/P/S: {t}/{r}/{p}/{s} - Password: {'yes' if passworded else 'no'}")
+            
+            # OpenTTD 15.0+ compatibility: Change 'Password' to 'Protected' (Invitation system)
+            version_str = self.client.game_cfg.get('version_string', '')
+            is_v15 = version_str.startswith('15.')
+            
+            label = "Protected" if is_v15 else "Password"
+            status = "yes" if passworded else "no"
+            
+            reply.append(f"{company_id + 1} ({display_color}) '{name}' - Founded: {founded_str} - T/R/P/S: {t}/{r}/{p}/{s} - {label}: {status}")
 
     def cmd_say(self, cmd, args, reply, source, admin_name, context): 
         if args: self.get_session().send_chat_message(f"[Admin: {admin_name}] {' '.join(args)}")

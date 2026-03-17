@@ -341,7 +341,9 @@ class AdminClient:
                     man_name, off = self.unpack_string(payload, off)
                     tail = payload[off:]
                     if len(tail) >= 2:
-                        color = tail[0]; passworded = bool(tail[1])
+                        color = tail[0]
+                        # In OT 15.0+, this byte indicates 'Protected' (Invitation system)
+                        passworded = bool(tail[1])
                         founded = None; is_ai = None
                         if len(tail) >= 7:
                             try:
@@ -349,8 +351,12 @@ class AdminClient:
                                 is_ai = bool(tail[6])
                             except: pass
                         
-                        # DEBUG: Trace company info
-                        # self.log(f"[DEBUG] Company Info: CID={cid}, Name='{cname}', Manager='{man_name}', Color={color}, PW={passworded}, Founded={founded}, AI={is_ai}")
+                        # OpenTTD 15.0+ extra fields (Bankruptcy Quarters, Share Owners)
+                        # We don't store them in DataController yet, but we parse correctly to avoid offset issues
+                        # if we ever needed to continue parsing.
+                        
+                        # DEBUG: Trace company info for verification
+                        # self.log(f"[DEBUG] Company Info: CID={cid}, Name='{cname}', PW/Prot={passworded}, Founded={founded}, AI={is_ai}")
 
                         for p in self.plugins:
                             if hasattr(p, 'on_company_info'):
@@ -366,16 +372,22 @@ class AdminClient:
                     perf = struct.unpack_from('<H', payload, 35)[0]
                     for p in self.plugins:
                         if hasattr(p, 'on_company_economy'):
-                            p.on_company_economy(cid, money, loan, income, delivered, perf, value)
+                            try: p.on_company_economy(cid, money, loan, income, delivered, perf, value)
+                            except Exception as e: self.log(f"Error in {p.name}.on_company_economy: {e}")
 
             elif ptype == ServerPacketType.SERVER_COMPANY_STATS:
                 if len(payload) >= 21:
                     cid = payload[0]
+                    # OpenTTD sends 5 vehicle types: Trains, Lorries, Busses, Planes, Ships
                     trains, lorries, busses, planes, ships = struct.unpack_from('<5H', payload, 1)
+                    # OpenTTD sends 5 station types: Train stations, Lorry stations, Bus stations, Airports, Harbors
                     train_stations, lorry_stations, bus_stations, airports, harbors = struct.unpack_from('<5H', payload, 11)
                     for p in self.plugins:
                         if hasattr(p, 'on_company_stats'):
-                            p.on_company_stats(cid, trains, lorries + busses, ships, planes, train_stations, lorry_stations + bus_stations, airports, harbors)
+                            # DataController expects: trains, rv (lorries+busses), ships, aircraft
+                            # Mapping: rv = lorries + busses | aircraft = planes | ships = ships
+                            try: p.on_company_stats(cid, trains, lorries + busses, ships, planes, train_stations, lorry_stations + bus_stations, airports, harbors)
+                            except Exception as e: self.log(f"Error in {p.name}.on_company_stats: {e}")
 
             elif ptype == 122: # SERVER_CMD_NAMES
                 offset = 0

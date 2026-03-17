@@ -99,7 +99,8 @@ class DataController(IPlugin):
             self.companies[company_id] = {
                 "money": 0, "loan": 0, "income": 0, "delivered": 0, 
                 "performance": 0, "value": 0,
-                "vehicles": 0, "stations": 0, "airports": 0, "harbors": 0
+                "vehicles": 0, "stations": 0, "airports": 0, "harbors": 0,
+                "trains": 0, "roadvehicles": 0, "aircraft": 0, "ships": 0
             }
         
         self.companies[company_id].update({
