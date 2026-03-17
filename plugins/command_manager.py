@@ -282,38 +282,25 @@ class CommandManager(IPlugin):
 
     def perform_shutdown(self, reason):
         self.shutdown_pending = False
-        self.client.shutdown_intentional = True
         self.client.log(f"[{self.name}] {reason}")
         session = self.get_session()
         if session:
             session.send_server_message("Server Shutting Down...")
             session.execute_raw("quit")
-        def delayed_exit():
-            time.sleep(3.0); os._exit(0)
-        threading.Thread(target=delayed_exit, daemon=True).start()
+        
+        # Signal Sentinel to stop everything
+        self.client.stop_requested = True
 
     def perform_restartserver(self, reason="Admin Controller Restart"):
         self.restartserver_pending = False
-        self.client.log(f"[{self.name}] RESTARTING SENTINEL PROCESS... ({reason})")
+        self.client.log(f"[{self.name}] Requesting Game Restart... ({reason})")
         session = self.get_session()
         if session:
-            session.send_server_message("Sentinel Controller Restarting...")
+            session.send_server_message("OpenTTD Server Restarting (Sentinel stays active)...")
+            session.execute_raw("quit")
         
-        # Close socket cleanly
-        try:
-            if self.client.socket:
-                self.client.socket.close()
-        except: pass
-        
-        def delayed_restart():
-            time.sleep(2.0)
-            try:
-                import sys
-                os.execv(sys.executable, [sys.executable] + sys.argv)
-            except Exception as e:
-                self.client.log(f"[{self.name}] Restart Failed: {e}")
-                os._exit(1)
-        threading.Thread(target=delayed_restart, daemon=True).start()
+        # Signal Sentinel to restart ONLY the game process
+        self.client.restart_requested = True
 
     def on_player_quit(self, cid): self.trigger_reset_check()
     def on_player_update(self, cid, name, company_id): self.trigger_reset_check()
@@ -1053,24 +1040,39 @@ class CommandManager(IPlugin):
             name = d.get("name", "").strip()
             manager = d.get("manager", "").strip()
             if not name: name = f"{manager} & Co" if manager else "Unnamed"
+            
             try: color_id = int(d.get("color", 0))
             except: color_id = 0
+            
             if hasattr(data, "get_color_info"): color_name, _ = data.get_color_info(color_id)
             else: color_name = "Unknown"
+            
             display_color = color_name
             if source == "irc":
                 color_code = self.IRC_COLORS.get(color_id, "01")
                 display_color = f"\x03{color_code}{color_name}\x0f"
-            founded = d.get("founded_year", d.get("foundingYear", d.get("founded", 0)))
+            
+            founded = d.get("founded", 0)
             try: founded_i = int(founded) if founded is not None else 0
             except: founded_i = 0
             founded_str = str(founded_i) if founded_i > 0 else "Unknown"
-            veh = d.get("vehicles", (0, 0, 0, 0))
-            if not isinstance(veh, (list, tuple)): veh = (0, 0, 0, 0)
-            veh = list(veh) + [0, 0, 0, 0]
-            t, r, p, s = int(veh[0]), int(veh[1]), int(veh[2]), int(veh[3])
+            
+            # Use individual keys from DataController
+            t = int(d.get("trains", 0))
+            r = int(d.get("roadvehicles", 0))
+            p = int(d.get("aircraft", 0))
+            s = int(d.get("ships", 0))
+            
             passworded = bool(d.get("passworded", False))
-            reply.append(f"{company_id + 1} ({display_color}) '{name}' - Founded: {founded_str} - T/R/P/S: {t}/{r}/{p}/{s} - Password: {'yes' if passworded else 'no'}")
+            
+            # OpenTTD 15.0+ compatibility: Change 'Password' to 'Protected' (Invitation system)
+            version_str = self.client.game_cfg.get('version_string', '')
+            is_v15 = version_str.startswith('15.')
+            
+            label = "Protected" if is_v15 else "Password"
+            status = "yes" if passworded else "no"
+            
+            reply.append(f"{company_id + 1} ({display_color}) '{name}' - Founded: {founded_str} - T/R/P/S: {t}/{r}/{p}/{s} - {label}: {status}")
 
     def cmd_say(self, cmd, args, reply, source, admin_name, context): 
         if args: self.get_session().send_chat_message(f"[Admin: {admin_name}] {' '.join(args)}")

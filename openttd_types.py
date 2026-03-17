@@ -9,6 +9,9 @@ class AdminPacketType(IntEnum):
     ADMIN_RCON = 5
     ADMIN_GAMESCRIPT = 6
     ADMIN_PING = 7
+    ADMIN_EXTERNAL_CHAT = 8
+    ADMIN_JOIN_SECURE = 9
+    ADMIN_AUTH_RESPONSE = 10
 
 class ServerPacketType(IntEnum):
     # EXTRACTED FROM SOURCE CODE
@@ -43,6 +46,7 @@ class ServerPacketType(IntEnum):
     SERVER_CLIENT_QUIT_EXT = 126
     SERVER_CMD_LOGGING = 127     # Main Build Event
     SERVER_NEWGAME_EXT = 128
+    SERVER_AUTH_REQUEST = 129
     SERVER_RCON_END = 125 # Duplicate value allowed, but different name required? No, value alias is fine.
     # SERVER_RCON_END = 125 
     # SERVER_PONG = 126 

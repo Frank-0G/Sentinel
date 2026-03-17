@@ -223,7 +223,10 @@ class IRCBridge(IPlugin):
         lines = msg.split("\n")
         for line in lines:
             if line.strip():
-                self.send_raw(f"PRIVMSG {target} :{line}")
+                if line.startswith("/me "):
+                    self.send_raw(f"PRIVMSG {target} :\x01ACTION {line[4:]}\x01")
+                else:
+                    self.send_raw(f"PRIVMSG {target} :{line}")
                 time.sleep(0.5)
     
     def send_notice(self, target, msg):

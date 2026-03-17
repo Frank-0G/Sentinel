@@ -103,31 +103,23 @@ class AutoRestart(IPlugin):
         # 2. In-Game Warning
         self.client.send_rcon("say \"*** Server restarting in 5 seconds...\"")
 
-        # 3. Quit & Restart Wrapper
+        # 3. Quit & Restart Game
         def kill_sequence():
             time.sleep(5.0)
             if irc: irc.send_to_channel("OpenTTD server process terminated.", "announcements")
             if discord: discord.send_msg("OpenTTD server process terminated.")
             
-            # Graceful Shutdown
+            # Graceful Shutdown of OpenTTD
             if hasattr(self.client, 'launcher') and self.client.launcher:
                 self.client.launcher.stop()
             else:
                 self.client.send_rcon("quit")
                 time.sleep(2.0)
             
-            self.client.log(f"[{self.name}] RESTARTING SENTINEL PROCESS...")
+            self.client.log(f"[{self.name}] Requesting Game Restart (Sentinel stays active)...")
             
-            try:
-                if self.client.socket: self.client.socket.close()
-            except: pass
-
-            try:
-                # Self-Restart
-                os.execv(sys.executable, [sys.executable] + sys.argv)
-            except Exception as e:
-                self.client.log(f"[{self.name}] Restart Failed: {e}")
-                os._exit(1)
+            # Signal Sentinel to restart ONLY the game process
+            self.client.restart_requested = True
 
         threading.Thread(target=kill_sequence, daemon=True).start()
 
