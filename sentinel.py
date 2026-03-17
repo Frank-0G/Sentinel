@@ -289,8 +289,13 @@ class AdminClient:
                         if ptype == ServerPacketType.SERVER_CLIENT_INFO:
                             ip, off = self.unpack_string(payload, 4)
                             name, off = self.unpack_string(payload, off)
-                            lang, off = self.unpack_string(payload, off)
-                            if off + 4 <= len(payload): off += 4 # Skip join date
+                            # language is uint8
+                            lang = payload[off]
+                            off += 1
+                            if off + 4 <= len(payload):
+                                # join date is uint32
+                                join_date = struct.unpack('<I', payload[off:off+4])[0]
+                                off += 4
                             if off < len(payload): company_id = payload[off]
                         else:
                             name, off = self.unpack_string(payload, 4)
