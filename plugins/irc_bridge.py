@@ -27,6 +27,8 @@ class IRCBridge(IPlugin):
         self.server = self.config.get("irc_server", "irc.oftc.net")
         self.port = self.config.get("irc_port", 6667)
         self.nickname = self.config.get("irc_nickname", "TTD_Bot")
+        self.username = self.config.get("irc_username", "TTD_Bot")
+        self.nickserv_password = self.config.get("irc_nickserv_password", "")
         self.server_id = str(self.config.get("server_id", "99"))
         self.prefix_char = self.config.get("trigger_prefix", "!")
         
@@ -568,6 +570,7 @@ class IRCBridge(IPlugin):
 
     def irc_loop(self):
         try:
+            nickserv_identified = False
             time.sleep(1.0)
             while self.running:
                 try:
@@ -581,7 +584,7 @@ class IRCBridge(IPlugin):
                     else:
                         self.sock = raw_sock
                     self.sock.connect((self.server, self.port))
-                    self.send_raw(f"USER {self.nickname} 0 * :{self.nickname}")
+                    self.send_raw(f"USER {self.username} 0 * :{self.username}")
                     self.send_raw(f"NICK {self.nickname}")
                     buffer = ""; joined = False; current_nick = self.nickname
                     self.topic_update_pending = True 
@@ -601,6 +604,11 @@ class IRCBridge(IPlugin):
                             parts = line.split()
                             if len(parts) > 1:
                                 if (" 001 " in line or " 376 " in line) and not joined:
+                                    if hasattr(self,'nickserv_password') and self.nickserv_password and not nickserv_identified:
+                                        self.send_raw(f"PRIVMSG NickServ :IDENTIFY {self.username} {self.nickserv_password}")
+                                        self.client.log(f"[{self.name}] IRC Identify message has been sent.")
+                                        nickserv_identified = True
+                                        time.sleep(1)
                                     for chan in self.channels:
                                         self.send_raw(f"JOIN {chan}")
                                     # Send startup message
