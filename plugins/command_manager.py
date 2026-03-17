@@ -282,38 +282,25 @@ class CommandManager(IPlugin):
 
     def perform_shutdown(self, reason):
         self.shutdown_pending = False
-        self.client.shutdown_intentional = True
         self.client.log(f"[{self.name}] {reason}")
         session = self.get_session()
         if session:
             session.send_server_message("Server Shutting Down...")
             session.execute_raw("quit")
-        def delayed_exit():
-            time.sleep(3.0); os._exit(0)
-        threading.Thread(target=delayed_exit, daemon=True).start()
+        
+        # Signal Sentinel to stop everything
+        self.client.stop_requested = True
 
     def perform_restartserver(self, reason="Admin Controller Restart"):
         self.restartserver_pending = False
-        self.client.log(f"[{self.name}] RESTARTING SENTINEL PROCESS... ({reason})")
+        self.client.log(f"[{self.name}] Requesting Game Restart... ({reason})")
         session = self.get_session()
         if session:
-            session.send_server_message("Sentinel Controller Restarting...")
+            session.send_server_message("OpenTTD Server Restarting (Sentinel stays active)...")
+            session.execute_raw("quit")
         
-        # Close socket cleanly
-        try:
-            if self.client.socket:
-                self.client.socket.close()
-        except: pass
-        
-        def delayed_restart():
-            time.sleep(2.0)
-            try:
-                import sys
-                os.execv(sys.executable, [sys.executable] + sys.argv)
-            except Exception as e:
-                self.client.log(f"[{self.name}] Restart Failed: {e}")
-                os._exit(1)
-        threading.Thread(target=delayed_restart, daemon=True).start()
+        # Signal Sentinel to restart ONLY the game process
+        self.client.restart_requested = True
 
     def on_player_quit(self, cid): self.trigger_reset_check()
     def on_player_update(self, cid, name, company_id): self.trigger_reset_check()

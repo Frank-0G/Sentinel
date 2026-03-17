@@ -127,18 +127,39 @@ class AdminClient:
         
         self.command_names = {} 
         self._initial_sync_done = False
+        
+        # Lifecycle state
+        self.stop_requested = False
+        self.restart_requested = False
 
     def print_banner(self):
         print("\033[2J\033[H")
         print(r"""
    _____ ______ _   _ _______ _____ _   _ ______ _      
-  / ____|  ____| \ | |__   __|_   _| \ | |  ____| |     
+  / ____|  ____| \ | |__   __|_   _| \ | |  ____| | |     
  | (___ | |__  |  \| |  | |    | | |  \| | |__  | |     
   \___ \|  __| | . ` |  | |    | | | . ` |  __| | |     
   ____) | |____| |\  |  | |   _| |_| |\  | |____| |____ 
  |_____/|______|_| \_|  |_|  |_____|_| \_|______|______|
         OpenTTD Administration System | v""" + self.version + """
         """)
+
+    def shutdown_everything(self):
+        self.stop_requested = True
+        # Assuming a disconnect method exists elsewhere or will be added
+        # self.disconnect() 
+        self.unload_plugins()
+        if self.launcher:
+             self.launcher.stop()
+
+    def unload_plugins(self):
+        self.log("[System] Unloading plugins...")
+        for p in self.plugins:
+            try:
+                p.on_unload()
+            except Exception as e:
+                self.log(f"[System] Error unloading plugin {p.name}: {e}")
+        self.plugins = [] # Clear the list after unloading
 
     def load_openttd_config(self):
         cfg_path = self.config.get("config_file", "")
@@ -603,12 +624,21 @@ class AdminClient:
             except: pass
             self.connected = False
             self._stop_event.set()
-            if self.socket: self.socket.close()
+            if self.socket:
+                self.socket.close()
+                self.socket = None
             for p in self.plugins: 
-                try: p.on_unload()
-                except: pass
-                if hasattr(p, 'on_disconnected'): p.on_disconnected()
-            self.log("Disconnected.")
+                if hasattr(p, 'on_disconnected'): 
+                    try: p.on_disconnected()
+                    except: pass
+            self.log("Disconnected from game server.")
+
+    def unload_plugins(self):
+        self.log("[System] Unloading all plugins...")
+        for p in self.plugins:
+            try: p.on_unload()
+            except: pass
+        self.plugins = []
 
     def send_update_frequency(self, t, f): self.send_packet(AdminPacketType.ADMIN_UPDATE_FREQUENCY, struct.pack('<HH', t, f))
     def send_poll(self, t, d=0): self.send_packet(AdminPacketType.ADMIN_POLL, struct.pack('<BI', t, d))
@@ -659,39 +689,102 @@ if __name__ == "__main__":
         config = parse_xml_config(CONFIG_FILE)
         client = AdminClient(config)
         client.print_banner()
-        launcher = ServerLauncher(config)
-        client.launcher = launcher
         
-        server_ready_event = threading.Event()
-        def monitor_wrapper_output():
-            try:
-                if launcher.process:
-                    for line in iter(launcher.process.stdout.readline, ''):
-                        if line: 
-                            client.broadcast_wrapper_log(line)
-                            if ("Map generated, starting game" in line or "Map generation percentage complete: 100" in line) and not server_ready_event.is_set(): 
-                                server_ready_event.set()
-            except: pass
-        
-        if not launcher.start(): sys.exit(1)
-        threading.Thread(target=monitor_wrapper_output, daemon=True).start()
-        print("[Launcher] OpenTTD Server is Starting, Please wait...")
-        if not config.get("wrapper_logs", True):
-             print("[Launcher] TIP: If you want to see what is happening, please enable the 'Wrapper Logs' in the settings.")
-        server_ready_event.wait(timeout=config.get("launch_wait", 60))
-        
+        # Load plugins ONCE per process lifetime
         client.load_plugins(PLUGINS_DIR)
-        client.connect(config.get("admin_host", "127.0.0.1"), config.get("admin_port", 3979), config.get("admin_password", ""))
         
-        while client.connected and launcher.is_running():
-            cmd = input()
-            if cmd == "quit": break
-            client.send_rcon(cmd)
+        # Persistent Loop
+        while not client.stop_requested:
+            client.restart_requested = False
+            client._initial_sync_done = False # Reset sync for new connection
+            
+            launcher = ServerLauncher(config)
+            client.launcher = launcher
+            
+            server_ready_event = threading.Event()
+            def monitor_wrapper_output():
+                try:
+                    if launcher.process:
+                        for line in iter(launcher.process.stdout.readline, ''):
+                            if line: 
+                                client.broadcast_wrapper_log(line)
+                                if ("Map generated, starting game" in line or "Map generation percentage complete: 100" in line) and not server_ready_event.is_set(): 
+                                    server_ready_event.set()
+                except: pass
+            
+            if not launcher.start():
+                print("[Launcher] Critical Error: Failed to start OpenTTD. Retrying in 10s...")
+                time.sleep(10)
+                continue
+
+            threading.Thread(target=monitor_wrapper_output, daemon=True).start()
+            print("[Launcher] OpenTTD Server is Starting, Please wait...")
+            
+            if not config.get("wrapper_logs", True):
+                 print("[Launcher] TIP: If you want to see what is happening, please enable the 'Wrapper Logs' in the settings.")
+            
+            # Wait for server to be ready before connecting
+            server_ready_event.wait(timeout=config.get("launch_wait", 60))
+            
+            # Connect
+            try:
+                client.connect(config.get("admin_host", "127.0.0.1"), config.get("admin_port", 3979), config.get("admin_password", ""))
+            except Exception as e:
+                print(f"[Network] Initial connection failed: {e}. Retrying loop...")
+                launcher.stop()
+                time.sleep(5)
+                continue
+
+            # In-game console input (optional, runs in background to not block)
+            def console_input():
+                while client.connected and not client.stop_requested and not client.restart_requested:
+                    try:
+                        cmd = input()
+                        if cmd == "quit": 
+                            client.stop_requested = True
+                            break
+                        if cmd == "restart":
+                            client.restart_requested = True
+                            break
+                        client.send_rcon(cmd)
+                    except EOFError: break
+            
+            input_thread = threading.Thread(target=console_input, daemon=True)
+            input_thread.start()
+
+            # Monitor Lifecycle
+            while client.connected and launcher.is_running() and not client.stop_requested and not client.restart_requested:
+                time.sleep(1.0)
+            
+            # Connection or process lost/requested stop
+            print("[Launcher] Session ending...")
+            if client.restart_requested:
+                print("[Launcher] Game-only restart requested.")
+                launcher.stop()
+                client.disconnect()
+            elif client.stop_requested:
+                print("[Launcher] Shutdown requested.")
+                launcher.stop()
+                client.disconnect()
+                break
+            else:
+                # Unexpected termination
+                print("[Launcher] OpenTTD process or connection lost unexpectedly.")
+                launcher.stop()
+                client.disconnect()
+                print("[Launcher] Restarting in 5 seconds...")
+                time.sleep(5)
+
+        print("[System] Sentinel Exiting.")
+        client.unload_plugins()
     
     except SystemExit as e: sys.exit(e.code)
     except Exception as e:
         with open("CRASH_REPORT.log", "w") as f: f.write(f"{e}\n{traceback.format_exc()}")
+        print(f"CRITICAL ERROR: {e}")
         sys.exit(1)
     finally:
-        try: client.disconnect(); launcher.stop()
+        try: 
+            if 'client' in locals(): client.disconnect()
+            if 'launcher' in locals(): launcher.stop()
         except: pass
