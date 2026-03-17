@@ -525,12 +525,58 @@ class GoalSystem(IPlugin):
             except Exception as e:
                 self.client.log(f"[{self.name}] Error notifying Community plugin: {e}")
 
-    # --- COMMANDS ---
     def cmd_goal(self, cmd, args, reply, source, context):
         self.announce_scoreboard(reply, context=context, source=source)
 
+    def cmd_progress(self, cmd, args, reply, source, context):
+        if not self.enabled:
+            reply.append("GoalSystem is currently disabled.")
+            return
+
+        # Find the maximum progress among all active companies
+        max_progress = 0
+        for cid in range(15):
+            progress = self.get_progress(cid)
+            if progress > max_progress:
+                max_progress = progress
+        
+        display_pct = min(max_progress, 100)
+        bar_length = int(display_pct / 2) # 50 character bar
+        
+        if source == "irc":
+            # IRC color codes (03XX)
+            C_IRC = "\x03"
+            C_HEAD = f"{C_IRC}06"    # Purple
+            C_BRACKET = f"{C_IRC}02" # Dark Blue
+            C_BAR = f"{C_IRC}04"     # Red
+            C_TEXT = f"{C_IRC}01"    # Black
+            
+            bar_filled = "/" * bar_length
+            bar_empty = " " * (50 - bar_length)
+            
+            msg = f"/me {C_HEAD}Goal progress: {C_BRACKET}[{C_BAR}{bar_filled}{bar_empty}{C_BRACKET}]{C_TEXT} - {int(display_pct)}%"
+            reply.append(msg)
+        elif source == "discord":
+            # Discord ANSI coloring in code blocks
+            # Magenta: [35m, Blue: [34m, Red: [31m, Reset: [0m
+            C_ESC = "\u001b"
+            C_HEAD = f"{C_ESC}[35m"
+            C_BRACKET = f"{C_ESC}[34m"
+            C_BAR = f"{C_ESC}[31m"
+            C_RESET = f"{C_ESC}[0m"
+            
+            bar_filled = "/" * bar_length
+            bar_empty = " " * (50 - bar_length)
+            
+            # Wrap in ansi code block
+            msg = f"```ansi\n{C_HEAD}Goal progress: {C_BRACKET}[{C_BAR}{bar_filled}{bar_empty}{C_BRACKET}]{C_RESET} - {int(display_pct)}%\n```"
+            reply.append(msg)
+        else:
+            # Game / Other
+            bar = "[" + ("/" * bar_length) + ("-" * (50 - bar_length)) + "]"
+            reply.append(f"Goal progress: {bar} - {int(display_pct)}%")
+
     def cmd_townstats(self, cmd, args, reply, source, context):
-        cid = -1
         if args:
             try: cid = int(args[0]) - 1
             except: reply.append("Invalid ID"); return
