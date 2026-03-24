@@ -2,7 +2,15 @@
 
 Sentinel is a powerful, modular, event-driven Python controller designed for OpenTTD servers. It interfaces with the OpenTTD Admin Port to provide advanced administration capabilities, automated tasks, database integration, and community feature synchronization.
 
+This project is a joint development initiative of the **BTPro OpenTTD Community** (https://openttd.btpro.nl) and the **N-Ice OpenTTD Community** (http://www.n-ice.org/openttd/). We invite everyone to make pull requests to this repository to improve Sentinel further together! Please check the [AntiGravity Development Manual](ANTIGRAVITY_DEV_MANUAL.md) for more information.
+
 It features a robust **Plugin Architecture**, allowing developers to easily extend functionality or disable unneeded features.
+
+## 🎁 Support Development
+
+If you find Sentinel useful and would like to support its continued development, consider making a donation:
+
+[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GFRA27HF7A3VS)
 
 ## 🚀 Features
 
@@ -127,6 +135,7 @@ class MyPlugin(IPlugin):
 
     def on_load(self):
         self.client.log("MyPlugin Loaded!")
+```
 
 ## 🎮 In-Game Commands
 
@@ -174,4 +183,5 @@ The Discord bot supports several commands. You can use these in the configured c
 *   `!ban <id> [reason]`: Ban a player (requires admin).
 *   `!force_update`: (Admin) Force company data refresh.
 *   `!debug_company <id>`: (Admin) Inspect company data.
-```
+
+
