@@ -65,8 +65,8 @@ Sentinel comes with a suite of built-in plugins covering a wide range of functio
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/Frank-0G/OpenTTD_Controller.git
-    cd OpenTTD_Controller/Sentinel
+    git clone https://github.com/Frank-0G/Sentinel.git
+    cd Sentinel
     ```
 
 2.  **Install dependencies:**
