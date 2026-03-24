@@ -11,14 +11,13 @@ SentinelGS is a high-performance, kernel-based GameScript for OpenTTD. It serves
 4. (Optional) Click **Configure** to adjust settings before starting the game.
 
 ### For Dedicated Servers
-Since most dedicated servers do not have a GUI, you must configure the script in your `openttd.cfg` file.
+Since most dedicated servers do not have a GUI, you must configure the script in your `openttd.cfg` file using the single-line parameter format.
 
 1. Locate your `openttd.cfg` (usually in the OpenTTD installation directory or `~/.openttd/`).
-2. Find the `[game_scripts]` section and add/update:
+2. Find the `[game_scripts]` section and add the script name followed by its parameters:
    ```ini
    [game_scripts]
-   # ...
-   game_script = SentinelGS
+   SentinelGS = game_mode=1,log_level=0,rtd.congestion.difficulty=2,rtd.town.periodical_expansion.rate=3
    ```
 
 ---
@@ -39,9 +38,9 @@ A cargo-driven growth mode based on classic CityBuilder rules. Companies compete
 
 ## ⚙️ Configuration
 
-Settings are managed via the standard OpenTTD Script Settings. Below are the keys to use in `openttd.cfg` under the `[script_settings]` section (suffixed by `:SNTL`).
+Settings are managed via the standard OpenTTD Script Settings. Below are the available parameters and their effects.
 
-| Setting Key | Description | Values |
+| Parameter | Description | Values |
 | :--- | :--- | :--- |
 | `log_level` | Debugging output level | `0`: Silent, `1`: Normal |
 | `game_mode` | Active game plugin | `0`: Company Value, `1`: CityBuilder |
@@ -52,13 +51,10 @@ Settings are managed via the standard OpenTTD Script Settings. Below are the key
 | `rtd.town.periodical_expansion.rate` | Passive growth rate | `0` (Never) to `4` (Often) |
 | `rtd.cargogoal.compatibility`| NewGRF Support | `0`: Default, `1`: FIRS |
 
-**Example `openttd.cfg` snippet:**
+**Example `openttd.cfg` entry:**
 ```ini
-[script_settings]
-# SentinelGS settings (ShortName: SNTL)
-log_level:SNTL = 1
-game_mode:SNTL = 1
-maxpopulation:SNTL = 500
+[game_scripts]
+SentinelGS = game_mode=1,log_level=1,maxpopulation=500
 ```
 
 ---
