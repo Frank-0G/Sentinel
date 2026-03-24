@@ -1,0 +1,65 @@
+{
+    "groups": {
+        "scanner": [
+            "goalreached",
+            "gsalive"
+        ],
+        "moderator": [
+            "kick",
+            "move",
+            "pause",
+            "unpause",
+            "emptycompany",
+            "lockcompany",
+            "unlockcompany",
+            "reset",
+            "resetcompany",
+            "resetcompanytimer",
+            "cancelresetcompany"
+        ],
+        "full-admin": [
+            "restart",
+            "ban"
+        ],
+        "operator": [
+            "rcon",
+            "shutdown",
+            "cancelshutdown",
+            "restartserver",
+            "cancelrestartserver",
+            "addvip",
+            "extendvip",
+            "reloadplugins",
+            "force_update",
+            "debug_company"
+        ]
+    },
+    "inheritance": {
+        "moderator": [
+            "scanner"
+        ],
+        "full-admin": [
+            "moderator"
+        ],
+        "operator": [
+            "full-admin"
+        ]
+    },
+    "users": {
+        "frank": "operator",
+        "john_mod": "moderator",
+        "guest_scanner": "scanner"
+    },
+    "irc_auth": {
+        "frank": "Frank_IRC",
+        "john_mod": "John_IRC_Account"
+    },
+    "discord_ids": {
+        "267050129985503246": "frank",
+        "123456789012345678": "john_mod"
+    },
+    "passwords": {
+        "frank": "super_secure_password_123",
+        "john_mod": "moderator_pass_456"
+    }
+}

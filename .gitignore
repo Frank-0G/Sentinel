@@ -1,0 +1,7 @@
+admins.json
+.DS_Store
+plugins/community.py
+reference/
+controller_config.xml
+test_xml.py
+test_loop.py

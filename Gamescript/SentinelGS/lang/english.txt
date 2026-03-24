@@ -1,0 +1,46 @@
+STR_NEW_HQ				:{COMPANY} has claimed {TOWN}
+STR_PLACE_HQ			:Place your HQ in a town to claim it, cities cannot be claimed!
+STR_CITY			:.:: City ::.
+STR_HQCITY			:{COMPANY}'s Town
+STR_HQAREA_TOP			:/\ {COMPANY}'s Area /\
+STR_HQAREA_RIGHT			:> {COMPANY}'s Area
+STR_HQAREA_BOTTOM			:\/ {COMPANY}'s Area \/
+STR_HQAREA_LEFT			:{COMPANY}'s Area <
+STR_GOAL_START               :{BLACK}Welcome to the BTPro Playground!{}{}Please note that there are rules on the BTPro Servers.{}{}Type  {WHITE}!rules{BLACK}  to read all our houserules or visit our website:{}{}{WHITE}http://openttd.btpro.nl{BLACK}{}{}Enjoy your stay and play fair!
+STR_ADMIN	:{BIG_FONT}{PRESIDENT_NAME},{}{RED}an ADMIN is trying to contact you!{}{}{BLACK}Please read the chat and Press <ENTER> to send a reply.
+STR_GOAL_START_CITYBUILDER             :Welcome to{}{}{WHITE}BTPro OpenTTD Servers{}{}{BLACK}You have been hired as a public servant to increase town development in the town of your choice.{}{}Please build your {ORANGE}HQ{BLACK} in a town under {ORANGE}{NUM}{BLACK} Inhabitants.{}{}You have been granted:{}{}{ORANGE}exclusive transport rights {BLACK}in and around the town you choose.{}{}Your goal? Build a  {ORANGE}TOWN{BLACK} until reach the server goal. (type {ORANGE}!goal{BLACK} in chat){}{}{BLACK}Need help? Type  {WHITE}!help  {BLACK}in the chat for available commands!
+STR_TOWN_CARGOS_NEEDED_CB_BACKUP           :{GREEN}{NUM}   {LTBLUE}{CARGO_LIST} {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{COMMA} {BLACK}pop
+STR_TOWN_CARGOS_NEEDED_CB           :{GREEN}{STRING}   {LTBLUE}{CARGO_LIST} {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{NUM} {BLACK}pop
+STR_TOWN_CARGOS_NEEDED_CB_A           :{LTBLUE}{CARGO_LIST} {BLACK} after population above {GREEN}{NUM} {BLACK}Inhabitants
+STR_TOWN_CARGOS_NEEDED_CB_B           :{GREEN}{NUM}  {LTBLUE}{CARGO_LIST}  {BLACK}per 1000 pop {ORANGE}* {BLACK}From {GREEN}{NUM} {BLACK}population
+STR_HQCITY_CONGESTED			:{COMPANY}'s Town ({ORANGE}Congested{WHITE})
+STR_LIMITATIONS_LIMS_AIRPORTS     					:Airports: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_BUSSES        					:Busses: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_BUSSTATIONS  					:Bus Stations: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_DIS            				:{WHITE}<< Disabled >>{BLACK}
+STR_LIMITATIONS_LIMS_RAILDEPO      					:Rail Depots: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_RAILSTATIONS  					:Rail Stations: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_ROADDEPO      					:Road Depots: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_TITLE          				:{RED}Other Limitations:{BLACK}
+STR_LIMITATIONS_LIMS_TRUCKS        					:Trucks: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_TRUCKSTATIONS 					:Truck Stations: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_WATERDEPO     					:Ship Depots: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIMS_WATERDOCKS   					:Docks: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_LOAN          					:Loan: {GREEN}{NUM} {BLACK}GBP
+STR_LIMITATIONS_LIM_PLANES         					:Planes: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_RVS            					:Road Vehicles: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_SHIPS         					:Ships: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_ST             					:Stations: {GREEN}{NUM} {BLACK}tiles
+STR_LIMITATIONS_LIM_TITLE          					:{RED}Limits:{BLACK}
+STR_LIMITATIONS_LIM_TRAINS         					:Trains: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_LIM_YEAR          					:Starting Year: {GREEN}{NUM} {BLACK}
+STR_LIMITATIONS_RULES               				:{BLACK}ALWAYS check server rules by typing {WHITE}!rules{BLACK} on chat!{BLACK}
+STR_NEWS_TOWN_CONGESTED_GROW_REDUCED     :The traffic congestion in {TOWN} is too high. Until it is resolved, town growth rate is significantly reduced.
+STR_NEWS_TOWN_CONGESTED_GROW_STOPPED     :The traffic congestion in {TOWN} is too high. Nobody will move into the town until the situation is improved.
+STR_REDUCE_TOWN_CONGESTION_GOAL          :Reduce the congestion in {TOWN}
+STR_SIGN_CITY_CONGESTED		    		 :.:: City ::. ({ORANGE}Congested{WHITE})
+STR_SIGN_TOWN_CONGESTED		    		 :({ORANGE}Congested{WHITE})
+STR_STORY_TITLE                   :{WHITE}City Builder Info
+STR_STORY_TITLE_LIM               :{WHITE}Game Limits / Limitations
+STR_STORY_TITLE_REQ               :{WHITE}City Builder Requirements
+STR_TOWN_CLAIMED_RES              :{BLACK}Town will require: {GRAY}<>

@@ -1,0 +1,653 @@
+[
+    {
+        "name": "goal",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows the current scoreboard and goal progress.",
+        "aliases": [
+            "g",
+            "cv"
+        ],
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "restarttimer",
+        "admin": false,
+        "irc": true,
+        "in_game": false,
+        "description": "Checks the remaining time before an automatic server restart.",
+        "aliases": [
+            "timer",
+            "rt"
+        ],
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "progress",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Displays a visual progress bar of the leading company.",
+        "aliases": [
+            "prog"
+        ],
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "townstats",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Displays CityBuilder town requirements for a specific company.",
+        "aliases": [
+            "ts",
+            "town"
+        ],
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "claimed",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Lists all currently claimed towns and their owners.",
+        "aliases": [
+            "claims"
+        ],
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "goalreached",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Forces the current game to end and declares the leader as winner.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "awarning",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Issues a warning message to a specific company.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "help",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows help information.",
+        "aliases": [
+            "commands"
+        ],
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "rules",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows server rules.",
+        "response": "Rules: 1. Be nice. 2. No blocking. 3. Have fun!",
+        "discord": true
+    },
+    {
+        "name": "status",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows server status (players, companies, year).",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "server",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Shows server name.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "players",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Lists connected players.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "companies",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Lists active companies.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "vote",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Cast a YES vote.",
+        "aliases": [
+            "yes",
+            "no"
+        ],
+        "response": null,
+        "discord": false
+    },
+    {
+        "name": "votekick",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Start a vote to kick a player.",
+        "response": null,
+        "discord": false
+    },
+    {
+        "name": "voteban",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Start a vote to ban a player.",
+        "response": null,
+        "discord": false
+    },
+    {
+        "name": "voterestart",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Start a vote to restart the map.",
+        "response": null,
+        "discord": false
+    },
+    {
+        "name": "votereset",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Start a vote to reset a company.",
+        "response": null,
+        "discord": false
+    },
+    {
+        "name": "resetme",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Flag your own company for reset.",
+        "response": null,
+        "discord": false
+    },
+    {
+        "name": "limits",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Show server limits.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "seed",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "description": "Show map seed.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "screenshot",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Take a screenshot of a location.",
+        "response": null,
+        "discord": false
+    },
+    {
+        "name": "alogin",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "description": "Login as admin.",
+        "response": null,
+        "discord": false
+    },
+    {
+        "name": "say",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Speak as server.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "rcon",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Execute console command.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "kick",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Kick a player.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "ban",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Ban a player.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "move",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Move a player to a company.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "reset",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Reset a company immediately.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company. Fails if the company still has players.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompanyspec",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company. Any players on the company are moved to spectators to make sure the reset does not fail.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompanykick",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company. Any players on the company are kicked to make sure the reset does not fail.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompanyban",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company. Any players on the company are banned to make sure the reset does not fail.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "resetcompanytimer",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Resets (closes) a company after a given time is over. Any players on the company are moved to spectators to make sure the reset does not fail.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "cancelresetcompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Stops the timer for a company reset. If no company ID is specified all active reset timers for all companies will be stopped.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "emptycompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Empty a company (move players to spec).",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "lockcompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Lock a company with password.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "unlockcompany",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Remove password from a company.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "pause",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Pause the game.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "unpause",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Unpause the game.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "shutdown",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Shutdown the server.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "restart",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Restart the game (map reset).",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "restartserver",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Restart the Sentinel controller.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "cancelshutdown",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Cancels a scheduled shutdown of the server.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "cancelrestartserver",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Cancels a scheduled restart of the Sentinel controller.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "news",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Post a news item.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "cancelvote",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Cancel any active vote.",
+        "response": null,
+        "discord": true
+    },
+    {
+        "name": "admin",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "plugins",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "reloadplugins",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "version",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "votestatus",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "login",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "discord": false,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "logout",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "discord": false,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "alogout",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "me",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "discord": false,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "vipstatus",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "sponsor",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "addvip",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "extendvip",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "vipmembership",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "whois",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "rank",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "name",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "discord": false,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "saveme",
+        "admin": false,
+        "irc": false,
+        "in_game": true,
+        "discord": false,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "savedcompanies",
+        "admin": false,
+        "irc": true,
+        "in_game": true,
+        "discord": true,
+        "description": "Native command (auto-generated)",
+        "aliases": [],
+        "response": null
+    },
+    {
+        "name": "gsalive",
+        "admin": true,
+        "irc": true,
+        "in_game": true,
+        "description": "Checks if the GameScript is still active and responding.",
+        "aliases": [
+            "ga",
+            "gscheck"
+        ],
+        "response": null,
+        "discord": true
+    }
+]

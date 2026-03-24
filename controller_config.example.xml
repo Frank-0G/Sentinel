@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+
+  <!-- SECTION: SERVER IDENTITY -->
+  <!-- A unique number for this server. Used in the database and IRC (e.g., ttd-srv99). -->
+  <server_id>1</server_id>
+
+  <!-- SECTION: ADMIN PORT CONNECTION -->
+  <!-- The IP address where OpenTTD is running (usually localhost/127.0.0.1). -->
+  <admin_host>127.0.0.1</admin_host>
+  <!-- The Admin Port defined in your openttd.cfg (network.admin_port). -->
+  <admin_port>3977</admin_port>
+  <!-- The Admin Password defined in your openttd.cfg (network.admin_password). -->
+  <admin_password>YourAdminPasswordHere</admin_password>
+
+  <!-- SECTION: SCREENSHOT SETTINGS -->
+  <!-- Local folder path where the screenshot file will be saved. -->
+  <screenshot_path>/var/www/html/screenshots</screenshot_path>
+  <!-- Public URL that points to the folder above (used to generate the link). -->
+  <screenshot_url>https://example.com/screenshots</screenshot_url>
+
+  <!-- SECTION: LAUNCHER SETTINGS -->
+  <!-- Full path to the OpenTTD executable binary. -->
+  <executable>/usr/games/openttd</executable>
+  <!-- Full path to the specific openttd.cfg for this server. -->
+  <config_file>/home/openttd/.openttd/openttd.cfg</config_file>
+  <!-- Command line arguments passed to OpenTTD (e.g., -D for dedicated, debug levels). -->
+  <extra_args>-D</extra_args>
+  <!-- How many seconds Sentinel waits for the server to start before connecting. -->
+  <launch_wait>15</launch_wait>
+
+  <!-- SECTION: IRC BOT SETTINGS -->
+  <!-- Set to true to enable the IRC Bridge. -->
+  <irc_enabled>false</irc_enabled>
+  <irc_server>irc.oftc.net</irc_server>
+  <irc_port>6667</irc_port>
+  <!-- Set to true to use SSL (usually port 6697). -->
+  <irc_ssl>false</irc_ssl>
+  <irc_nickname>TTD_Bot</irc_nickname>
+  <!-- NickServ authentication toggle. If disabled, username and password fields are ignored. -->
+  <irc_nickserv_enabled>false</irc_nickserv_enabled>
+  <!-- Username used for ident/authentication. Defaults to nickname if disabled. -->
+  <irc_nickserv_username>TTD_Bot</irc_nickserv_username>
+  <!-- Password for NickServ IDENTIFY. -->
+  <irc_nickserv_password>YourPasswordHere</irc_nickserv_password>
+  <irc_channel>#openttd</irc_channel>
+  <!-- Example for multiple channels (optional, replaces irc_channel if present). 
+  <irc_channels>
+    <channel_name_1>
+      <announcements>true</announcements>
+      <gameactions>true</gameactions>
+      <gamechat>true</gamechat>
+      <chatlink>false</chatlink>
+      <statustopic>true</statustopic>
+    </channel_name_1>
+  </irc_channels>
+  -->
+
+  <!-- SECTION: DISCORD BOT SETTINGS -->
+  <!-- Set to true to enable the Discord Bridge. Requires 'discord.py' (pip install discord.py). -->
+  <discord_enabled>false</discord_enabled>
+  <!-- Your Discord Bot Token. -->
+  <discord_token>YOUR_TOKEN_HERE</discord_token>
+  <!-- Modern multi-channel configuration. List one or more channels. -->
+  <discord_channels>
+    <channel>
+      <id>123456789012345678</id>
+      <name>Main Channel</name>
+      <!-- If true, chat from game is sent to Discord, and chat from Discord is sent to game. -->
+      <chat_link>true</chat_link>
+    </channel>
+  </discord_channels>
+
+  <!-- SECTION: COMMAND SETTINGS -->
+  <!-- The character used to trigger commands in game (e.g., !help). -->
+  <trigger_prefix>!</trigger_prefix>
+  <!-- The JSON file that defines commands, permissions, and responses. -->
+  <trigger_file>triggers.json</trigger_file>
+
+  <!-- SECTION: AUTOMATION -->
+  <!-- Set to false to disable "[WRAPPER]" logs on the console. -->
+  <wrapper_logs>true</wrapper_logs>
+  <!-- Set to false to disable automated "[DEBUG CMD] Actor: 1" logs. -->
+  <log_automated_commands>false</log_automated_commands>
+  <!-- Time in minutes between automatic server restarts when EMPTY (no players, no companies) (0 to disable). -->
+  <auto_restart_minutes>60</auto_restart_minutes>
+  <!-- Time in minutes between automatic server restarts when ABANDONED (no players, but companies exist) (0 to disable). -->
+  <auto_restart_abandoned_minutes>480</auto_restart_abandoned_minutes>
+
+  <!-- SECTION: DATABASE CHAT LOGS -->
+  <!-- How many days to keep chat history in the database. -->
+  <chat_log_retention_days>365</chat_log_retention_days>
+  <chat_db_config>
+    <host>localhost</host>
+    <user>db_user</user>
+    <password>db_password</password>
+    <database>openttd_chat</database>
+  </chat_db_config>
+
+  <!-- SECTION: DATABASE MAIN -->
+  <!-- Database for player stats, user accounts, and economy data. -->
+  <mysql_config>
+    <host>localhost</host>
+    <user>db_user</user>
+    <password>db_password</password>
+    <database>openttd</database>
+    <port>3306</port>
+    <autocommit>true</autocommit>
+  </mysql_config>
+
+  <!-- SECTION: STATISTICS RECORDER -->
+  <!-- The MySQL table where company statistics are stored. -->
+  <statistics_table>openttd_company_stats</statistics_table>
+
+  <!-- SECTION: WELCOME MESSAGES -->
+  <welcome_message>
+    <!-- Broadcast to everyone when a player joins. {name} and {country} are variables. -->
+    <public>Welcome to {name} from {country}.</public>
+
+    <!-- Sent privately to the joining player only (List of strings means multiple lines). -->
+    <private>
+      <line>Welcome to the server. Type !help for commands.</line>
+      <line>Register at https://example.com</line>
+    </private>
+  </welcome_message>
+
+  <!-- SECTION: GOAL SYSTEM -->
+  <!-- Configuration for the GoalSystem plugin (CityBuilder/Value goals and town protection). -->
+  <goal>
+    <!-- Target Company Value for Money-based goal (0 to disable). -->
+    <winlimit>100000000</winlimit>
+    <!-- Target Population for CityBuilder goal (0 to disable). -->
+    <population>2000</population>
+    <!-- Time in seconds between scoreboard announcements. -->
+    <interval>600</interval>
+    <!-- Radius of protection around claimed towns (in tiles). -->
+    <protectionrange>20</protectionrange>
+    <!-- Victory Count (Legacy setting, mostly unused). -->
+    <victorycount>10000</victorycount>
+  </goal>
+
+</config>

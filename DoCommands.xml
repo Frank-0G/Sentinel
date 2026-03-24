@@ -1,0 +1,1024 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<DoCommandsFile xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<DoCommands>
+		<!-- The name of a DoCommand is case sensitive and is referenced by plug-ins and internally by xShunter itself, so the name must be correctly set here. -->
+		<DoCommand Name="CmdExample"> <!-- example_cmd.cpp (It is good practice to note the name of the OpenTTD source code file containing information about this DoCommand here for reference.) -->
+			<!-- The list of parameters belonging to the DoCommand. This is the parameters OpenTTD sends via Admin Interface when sending log information about this DoCommand being executed.
+			     The following is a list of all parameter types that exist with information about the binary format on the network packet in the name (normally names should be short and not contain any spaces).
+			     This is not only cosmetic/informational, it defines how a parameter is parsed from the network packet, i.e. how many bytes are parsed for this parameter before the next parameter is expected. A wrong type can mess up the parsing for the whole DoCommand. -->
+			<Params>
+				<Param Name="Example bool" Type="boolean" /> <!-- Boolean value ("bool" is an alias for this), 1 byte is parsed from the network packet for this data type. -->
+				<Param Name="Example sbyte" Type="int8" /> <!-- Signed byte integer ("sbyte" is an alias for this), 1 byte is parsed from the network packet for this data type. -->
+				<Param Name="Example byte" Type="uint8" /> <!-- Unsigned byte integer ("byte" is an alias for this), 1 byte is parsed from the network packet for this data type. -->
+				<Param Name="Example short" Type="int16" /> <!-- Signed short integer ("short" is an alias for this), 2 bytes are parsed from the network packet for this data type. -->
+				<Param Name="Example ushort" Type="uint16" /> <!-- Unsigned short integer ("ushort" is an alias for this), 2 bytes are parsed from the network packet for this data type. -->
+				<Param Name="Example int" Type="int32" /> <!-- Signed integer ("int" is an alias for this), 4 bytes are parsed from the network packet for this data type. -->
+				<Param Name="Example uint" Type="uint32" /> <!-- Unsigned integer ("uint" is an alias for this), 4 bytes are parsed from the network packet for this data type. -->
+				<Param Name="Example long" Type="int64" /> <!-- Signed long integer ("long" is an alias for this), 8 bytes are parsed from the network packet for this data type. -->
+				<Param Name="Example ulong" Type="uint64" /> <!-- Unsigned long integer ("ulong" is an alias for this), 8 bytes are parsed from the network packet for this data type. -->
+				<Param Name="Example string" Type="string" /> <!-- For strings all bytes are parsed until the end of the text is signaled by a zero byte character. -->
+				<!-- <Param Name="" Type="" /> -->
+				<!-- Version: v2.230503 --> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdAddSharedVehicleGroup"> <!-- group_cmd.cpp -->
+			<Params>
+				<Param Name="GroupID" Type="ushort" /> <!-- id_g -->
+				<Param Name="VehicleType" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdAddVehicleGroup"> <!-- group_cmd.cpp -->
+			<Params>
+				<Param Name="GroupID" Type="ushort" /> <!-- group_id -->
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="AddShared" Type="bool" /> <!-- add_shared -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdAlterGroup"> <!-- group_cmd.cpp -->
+			<Params>
+				<Param Name="AlterGroupMode" Type="byte" /> <!-- mode -->
+				<Param Name="GroupID" Type="ushort" /> <!-- group_id -->
+				<Param Name="ParentGroupID" Type="ushort" /> <!-- parent_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdAutofillTimetable"> <!-- timetable_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh -->
+				<Param Name="Autofill" Type="bool" />
+				<Param Name="PreserveWaitTime" Type="bool" /> <!-- preserve_wait_time -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdAutoreplaceVehicle"> <!-- autoreplace_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildAircraft"> <!-- aircraft_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Engine" Type="struct" /> 
+				<Param Name="Vehicle" Type="struct" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildAirport"> <!-- station_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="AirportType" Type="byte" /> <!-- airport_type -->
+				<Param Name="Layout" Type="byte" />
+				<Param Name="StationID" Type="ushort" /> <!-- station_to_join -->
+				<Param Name="AllowAdjacent" Type="bool" /> <!-- allow_adjacent -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildBuoy"> <!-- waypoint_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildBridge"> <!-- tunnelbridge_cmd.cpp -->
+			<Params>
+				<Param Name="EndTile" Type="uint" /> <!-- tile_end -->
+				<Param Name="StartTile" Type="uint" /> <!-- tile_start -->
+				<Param Name="TransportType" Type="byte" />  <!-- transport_type -->
+				<Param Name="BridgeType" Type="uint" />  <!-- bridge_type -->
+				<Param Name="RoadRailType" Type="byte" />  <!-- road_rail_type -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildCanal"> <!-- water_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" /> 
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="WaterClass" Type="byte" /> <!-- wc -->
+				<Param Name="Diagonal" Type="bool"/> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildDock"> <!-- station_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="StationID" Type="ushort" /> <!-- station_to_join -->
+				<Param Name="Adjacent" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildIndustry"> <!-- industry_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="IndustryType" Type="byte" />
+				<Param Name="FirstLayout" Type="uint" /> <!-- first_layout -->
+				<Param Name="Fund" Type="bool" /> 
+				<Param Name="Seed" Type="uint" /> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildLock"> <!-- water_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" /> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildLongRoad"> <!-- road_cmd.cpp -->
+			<Params>
+				<Param Name="EndTile" Type="uint" /> <!-- end_tile -->
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="RoadType" Type="byte" />
+				<Param Name="Axis" Type="byte" />
+				<Param Name="ToggleDRD" Type="byte" /> <!-- toggle_drd -->
+				<Param Name="StartHalf" Type="bool" /> <!-- start_half -->
+				<Param Name="EndHalf" Type="bool" /> <!-- end_half -->
+				<Param Name="IsAi" Type="bool" /> <!-- is_ai -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildObject"> <!-- object_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" /> 
+				<Param Name="ObjectType" Type="ushort" />
+				<Param Name="View" Type="byte" /> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildObjectArea"> <!-- object_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" /> 
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="ObjectType" Type="ushort"/>
+				<Param Name="View" Type="byte" /> 
+				<Param Name="Diagonal" Type="bool"/> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildCompanyHq"> <!-- company_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildRailroadTrack"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="EndTile" Type="uint" /> <!-- end_tile -->
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="RailType" Type="byte" />
+				<Param Name="Track" Type="byte" /> 
+				<Param Name="AutoRemoveSignals" Type="bool" /> <!-- auto_remove_signals -->
+				<Param Name="FailOnObstacle" Type="bool" /> <!-- fail_on_obstacle -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildRailStation"> <!-- station_cmd.cpp -->
+			<Params>
+				<Param Name="TileOrg" Type="uint" /> <!-- tile_org -->
+				<Param Name="RailType" Type="byte" />
+				<Param Name="Axis" Type="byte" />
+				<Param Name="NumbersOfTracks" Type="byte" /> <!-- numtracks -->
+				<Param Name="PlatformLength" Type="byte" /> <!-- plat_len -->
+				<Param Name="StationClassID" Type="byte" /> <!-- spec_class -->
+				<Param Name="SpecIndex" Type="byte" /> <!-- spec_index -->
+				<Param Name="StationID" Type="ushort" /> <!-- station_to_join -->
+				<Param Name="Adjacent" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildRailVehicle"> <!-- train_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" /> 
+				<Param Name="Engine" Type="struct" /> <!-- *e -->
+				<Param Name="FreeCars" Type="bool" /> <!-- free_cars -->
+				<Param Name="Vehicle" Type="struct" /> <!-- **ret -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildRailWaypoint"> <!-- waypoint_cmd.cpp -->
+			<Params>
+				<Param Name="StartTile" Type="uint" /> <!--start_tile -->
+				<Param Name="Axis" Type="byte" />
+				<Param Name="Width" Type="byte" /> 
+				<Param Name="Height" Type="byte" />
+				<Param Name="SpecClass" Type="byte" /> <!-- spec_class -->
+				<Param Name="SpecIndex" Type="byte" /> <!-- spec_index -->
+				<Param Name="StationID" Type="ushort" /> <!-- station_to_join -->
+				<Param Name="Adjacent" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildRoad"> <!-- road_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="RoadBits" Type="byte" />
+				<Param Name="RoadType" Type="byte" />
+				<Param Name="ToggleDRD" Type="byte" /> <!-- toggle_drd -->
+				<Param Name="TownID" Type="ushort" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildRoadDepot"> <!-- road_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="RoadType" Type="byte" />
+				<Param Name="DiagDirection" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildRoadStop"> <!-- station_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Width" Type="byte" />
+				<Param Name="Length" Type="byte" />
+				<Param Name="RoadStopType" Type="byte" />
+				<Param Name="IsDriveThrough" Type="bool" /> <!-- is_drive_through -->
+				<Param Name="DiagDirection" Type="byte" />
+				<Param Name="RoadType" Type="byte" />
+				<Param Name="StationID" Type="ushort" /> <!-- station_to_join -->
+				<Param Name="Adjacent" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildRoadVehicle"> <!-- roadveh_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Engine" Type="struct" />
+				<Param Name="Vehicle" Type="struct" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildShip"> <!-- ship_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Engine" Type="struct" />
+				<Param Name="Vehicle" Type="struct" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildShipDepot"> <!-- water_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" /> 
+				<Param Name="Axis" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildSignalTrack"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="EndTile" Type="uint" /> <!-- end_tile -->
+				<Param Name="Track" Type="byte" /> 
+				<Param Name="SignalType" Type="byte" />
+				<Param Name="SignalVariant" Type="byte" />
+				<Param Name="Mode" Type="bool" />
+				<Param Name="Autofill" Type="bool" />
+				<Param Name="MinimiseGaps" Type="bool" /> <!-- minimise_gaps -->
+				<Param Name="SignalDensity" Type="bool" /> <!-- signal_density -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildSingleRail"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="RailType" Type="byte" />
+				<Param Name="Track" Type="byte" /> 
+				<Param Name="AutoRemoveSignals" Type="bool" /> <!-- auto_remove_signals -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildSingleSignal"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Track" Type="byte" /> 
+				<Param Name="SignalType" Type="byte" />
+				<Param Name="SignalVariant" Type="byte" />
+				<Param Name="ConvertSignal" Type="bool" /> <!-- convert_signal -->
+				<Param Name="SkipExistingSignal" Type="bool" /> <!-- skip_existing_signal -->
+				<Param Name="CtrlPressed" Type="bool" /> <!-- ctrl_pressed -->
+				<Param Name="CycleStart" Type="byte" /> <!-- cycle_start -->
+				<Param Name="CycleStop" Type="byte" /> <!-- cycle_stop -->
+				<Param Name="SignalDirection" Type="byte" /> <!-- num_dir_cycle -->
+				<Param Name="SignalsCopy" Type="byte" /> <!-- signals_copy -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildTrainDepot"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="RailType" Type="byte" />
+				<Param Name="DiagDirection" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildTunnel"> <!-- tunnelbridge_cmd.cpp -->
+			<Params>
+				<Param Name="StartTile" Type="uint" /> <!-- tile_start -->
+				<Param Name="TransportType" Type="byte" />  <!-- transport_type -->
+				<Param Name="RoadRailType" Type="byte" />  <!-- road_rail_type -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuildVehicle"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="EngineID" Type="ushort" />
+				<Param Name="UseFreeVehicles" Type="bool" /> <!-- use_free_vehicles -->
+				<Param Name="CargoID" Type="byte" /> <!-- new_cid -->
+				<Param Name="ClientID" Type="uint" /> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBulkChangeTimetable"> <!-- timetable_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh -->
+				<Param Name="ModifyTimetableFlags" Type="byte" /> <!-- mtf -->
+				<Param Name="Data" Type="ushort" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdBuyCompany"> <!-- econonmy.cpp -->
+			<Params>
+				<Param Name="CompanyID" Type="byte" /> <!-- target_company -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdBuyShareInCompany"> <!-- econonmy.cpp -->
+			<Params>
+				<Param Name="CompanyID" Type="byte" /> <!-- target_company -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdChangeBankBalance"> <!-- misc_cmd.cpp -->
+            <Params>
+                <Param Name="Tile" Type="uint" />
+                <Param Name="Delta" Type="long" />
+				<Param Name="CompanyID" Type="byte" />
+				<Param Name="ExpensesType" Type="byte" /> <!-- expenses_type -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdChangeCompanySetting"> <!-- settings.cpp -->
+            <Params>
+                <Param Name="SettingName" Type="string" />
+                <Param Name="Value" Type="int" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdChangeServiceInt"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="ServInt" Type="ushort" /> <!-- serv_int -->
+				<Param Name="IsCustom" Type="bool"/> <!-- is_custom -->
+				<Param Name="IsPercent" Type="bool"/> <!-- is_percent -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdChangeSetting"> <!-- settings.cpp -->
+            <Params>
+                <Param Name="SettingName" Type="string" />
+                <Param Name="Value" Type="int" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdChangeTimetable"> <!-- timetable_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh -->
+				<Param Name="VehicleOrderID" Type="byte" /> <!-- order_number -->
+				<Param Name="ModifyTimetableFlags" Type="byte" /> <!-- mtf -->
+				<Param Name="Data" Type="ushort" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdClearArea"> <!-- landscape_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="Diagonal" Type="bool"/> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdClearOrderBackup"> <!-- order_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="ClientID" Type="uint" /> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCloneOrder"> <!-- order_cmd.cpp -->
+            <Params>
+                <Param Name="CloneOptions" Type="byte" /> <!-- action -->
+				<Param Name="DestVehicleID" Type="uint" /> <!-- veh_dest -->
+				<Param Name="SrcVehicleID" Type="uint" /> <!-- veh_src -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdCloneVehicle"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="ShareOrders" Type="bool" /> <!-- share_orders -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdConvertRail"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="StartTile" Type="uint" /> <!-- area_start -->
+				<Param Name="RailType" Type="byte" />
+				<Param Name="Diagonal" Type="bool"/>
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdConvertRoad"> <!-- road_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="StartTile" Type="uint" /> <!-- area_start -->
+				<Param Name="RoadType" Type="byte" /> <!-- to_type -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCompanyCtrl"> <!-- company_cmd.cpp -->
+			<Params>
+				<Param Name="CompanyCtrlAction" Type="byte" />
+				<Param Name="CompanyID" Type="byte" /> <!-- company_id -->
+				<Param Name="RemoveReason" Type="byte" /> <!-- reason -->
+				<Param Name="ClientID" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCreateGoal"> <!-- goal.cpp -->
+			<Params>
+				<Param Name="CompanyID" Type="byte" />
+				<Param Name="GoalType" Type="byte" />
+				<Param Name="GoalTypeID" Type="uint" /> <!-- dest -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCreateGroup"> <!-- group_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleType" Type="byte" /> <!-- vt -->
+				<Param Name="ParentGroupID" Type="ushort" /> <!-- parent_group -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCreateLeagueTable"> <!-- league_cmd.cpp -->
+			<Params>
+				<Param Name="Title" Type="string" />
+				<Param Name="Header" Type="string" />
+				<Param Name="Footer" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCreateLeagueTableElement"> <!-- league_cmd.cpp -->
+			<Params>
+				<Param Name="TableID" Type="byte" />
+				<Param Name="Rating" Type="long" />
+				<Param Name="CompanyID" Type="byte" />
+				<Param Name="Text" Type="string" />
+				<Param Name="Score" Type="string" />
+				<Param Name="LinkType" Type="byte" />
+				<Param Name="LinkTargetID" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCreateStoryPage"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="CompanyID" Type="byte" />
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCreateStoryPageElement"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="PageID" Type="ushort" /> <!-- page_id -->
+				<Param Name="PageElementType" Type="byte" />
+				<Param Name="Reference" Type="uint" />
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCreateSubsidy"> <!-- subsidy.cpp -->
+			<Params>
+				<Param Name="CargoID" Type="byte" /> <!-- cid -->
+				<Param Name="SrcType" Type="byte" /> <!-- src_type -->
+				<Param Name="SrcID" Type="ushort" /> <!-- src -->
+				<Param Name="DestType" Type="byte" /> <!-- dst_type -->
+				<Param Name="DestID" Type="ushort" /> <!-- dst -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdCustomNewsItem"> <!-- news_gui.cpp -->
+			<Params>
+				<Param Name="NewsType" Type="byte" /> <!-- type -->
+				<Param Name="ReferenceType" Type="byte" /> <!-- reftype1 -->
+				<Param Name="CompanyID" Type="byte" />
+				<Param Name="Reference" Type="uint" />
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdDecreaseLoan"> <!-- misc_cmd.cpp -->
+            <Params>
+                <Param Name="LoanCommand" Type="byte" />
+                <Param Name="Amount" Type="long" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdDeleteGroup"> <!-- group_cmd.cpp -->
+			<Params>
+				<Param Name="GroupID" Type="ushort" /> <!-- group_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdDeleteOrder"> <!-- order_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="VehicleOrderID" Type="byte" /> <!-- sel_ord -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdDeleteTown"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="TownID" Type="ushort" /> <!-- town_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdDepotMassAutoReplace"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="VehicleType" Type="byte" /> <!-- vehicle_type -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdDepotSellAllVehicle"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="VehicleType" Type="byte" /> <!-- vehicle_type -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdDoTownAction"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="TownID" Type="ushort" /> <!-- town_id -->
+				<Param Name="Action" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdEngineCtrl"> <!-- engine.cpp -->
+			<Params>
+				<Param Name="EngineID" Type="ushort" /> <!-- engine_id -->
+				<Param Name="CompanyID" Type="byte" />
+				<Param Name="Allow" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdExpandTown"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="TownID" Type="ushort" /> <!-- town_id -->
+				<Param Name="GrowAmount" Type="uint" /> <!-- grow_amount -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdForceTrainProceed"> <!-- train_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdFoundTown"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="TownSize" Type="byte" /> <!-- size -->
+				<Param Name="City" Type="bool" />
+				<Param Name="TownLayout" Type="byte" /> <!-- layout -->
+				<Param Name="RandomLocation" Type="bool" /> <!-- random_location -->
+				<Param Name="TownNameParts" Type="uint" />
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdGiveMoney"> <!-- company_cmd.cpp -->
+			<Params>
+				<Param Name="Money" Type="uint" />
+				<Param Name="DestCompany" Type="byte" /> <!-- dest_company -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdGoalQuestion"> <!-- goal.cpp -->
+			<Params>
+				<Param Name="UniqueID" Type="ushort" />
+				<Param Name="Target" Type="ushort" />
+				<Param Name="IsClient" Type="bool" /> <!-- is_client -->
+				<Param Name="ButtonMask" Type="uint" /> <!-- button_mask -->
+				<Param Name="QuestionType" Type="byte" /> <!-- type -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdGoalQuestionAnswer"> <!-- goal.cpp -->
+			<Params>
+				<Param Name="UniqueID" Type="ushort" />
+				<Param Name="Button" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdIncreaseLoan"> <!-- misc_cmd.cpp -->
+            <Params>
+                <Param Name="LoanCommand" Type="byte" />
+                <Param Name="Amount" Type="long" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdIndustryCtrl"> <!-- industry_cmd.cpp -->
+            <Params>
+                <Param Name="IndustryID" Type="ushort" /> <!-- ind_id -->
+                <Param Name="IndustryAction" Type="byte" /> <!-- action -->
+				<Param Name="IndustryControlFlags" Type="byte" /> <!-- ctlflags -->
+				<Param Name="CompanyID" Type="byte" /> <!-- owner -->
+				<Param Name="Text" Type="string" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdInsertOrder"> <!-- order_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh -->
+				<Param Name="VehicleOrderID" Type="byte" /> <!-- sel_ord -->
+				<Param Name="Order" Type="uint" /> <!-- packet data !! -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdLandscapeClear"> <!-- landscape_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdLevelLand"> <!-- terraform_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="Diagonal" Type="bool" /> 
+				<Param Name="LevelMode" Type="byte" /> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdMassStartStopVehicle"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />Cmd
+				<Param Name="DoStart" Type="bool" /> <!-- do_start -->
+				<Param Name="VehicleListWindow" Type="bool" /> <!-- vehicle_list_window -->
+				<Param Name="VehicleListID" Type="uint" /> <!-- Packed Data! -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdModifyOrder"> <!-- order_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh -->
+				<Param Name="VehicleOrderID" Type="byte" /> <!-- sel_ord -->
+				<Param Name="ModifyOrderFlags" Type="byte" /> <!-- mof -->
+				<Param Name="Data" Type="ushort" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdMoneyCheat"> <!-- misc_cmd.cpp -->
+            <Params>
+                <Param Name="Amount" Type="long" />
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdMoveOrder"> <!-- order_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh -->
+				<Param Name="MovingOrderID" Type="byte" /> <!-- moving_order -->
+				<Param Name="TargetOrderID" Type="byte" /> <!-- target_order -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdMoveRailVehicle"> <!-- train_cmd.cpp -->
+            <Params>
+                <Param Name="SrcVehicleID" Type="uint" /> <!-- src_veh -->
+				<Param Name="DestVehicleID" Type="uint" /> <!-- dest_veh -->
+				<Param Name="MoveChain" Type="bool" /> <!-- move_chain -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdOpenCloseAirport"> <!-- station_cmd.cpp -->
+			<Params>
+				<Param Name="StationID" Type="ushort" /> <!-- station_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdOrderRefit"> <!-- order_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh -->
+				<Param Name="VehicleOrderID" Type="byte" /> <!-- order_number -->
+				<Param Name="CargoID" Type="byte" /> <!-- cargo -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdPause"> <!-- misc_cmd.cpp -->
+            <Params>
+                <Param Name="PauseMode" Type="byte" />
+                <Param Name="IsPause" Type="bool" /> <!-- pause -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdPlaceSign"> <!-- signs_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdPlantTree"> <!-- tree_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="TreeToPlant" Type="byte"/> 
+				<Param Name="Diagonal" Type="bool"/> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRefitVehicle"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="CargoID" Type="byte" /> <!--- new_cid -->
+				<Param Name="NewSubtype" Type="byte" /> <!-- new_subtype -->
+				<Param Name="AutoRefit" Type="bool" /> <!-- auto_refit -->
+				<Param Name="OnlyThis" Type="bool" /> <!-- only_this -->
+				<Param Name="NumbersOfVehicles" Type="byte" /> <!-- num_vehicles -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveAllVehiclesGroup"> <!-- group_cmd.cpp -->
+			<Params>
+				<Param Name="GroupID" Type="ushort" /> <!-- group_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveFromRailStation"> <!-- station_cmd.cpp -->
+			<Params>
+				<Param Name="StartTile" Type="uint" /> <!-- start -->
+				<Param Name="EndTile" Type="uint" /> <!-- end -->
+				<Param Name="KeepRail" Type="bool" /> <!-- keep_rail -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveFromWaypoint"> <!-- waypoint_cmd.cpp -->
+			<Params>
+				<Param Name="StartTile" Type="uint" /> <!-- start -->
+				<Param Name="EndTile" Type="uint" /> <!-- end -->
+				<Param Name="KeepRail" Type="bool" /> <!-- keep_rail -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveGoal"> <!-- goal_cmd.cpp -->
+			<Params>
+				<Param Name="GoalID" Type="ushort" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveLeagueTableElement"> <!-- league_cmd.cpp -->
+			<Params>
+				<Param Name="LeagueTableElementID" Type="ushort" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveLongRoad"> <!-- road_cmd.cpp -->
+			<Params>
+				<Param Name="EndTile" Type="uint" /> <!-- end_tile -->
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="RoadType" Type="byte" />
+				<Param Name="Axis" Type="byte" />
+				<Param Name="StartHalf" Type="bool" /> <!-- start_half -->
+				<Param Name="EndHalf" Type="bool" /> <!-- end_half -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveRailroadTrack"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="EndTile" Type="uint" /> <!-- end_tile -->
+				<Param Name="StartTile" Type="uint" /> <!-- start_tile -->
+				<Param Name="Track" Type="byte" /> 
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveRoadStop"> <!-- station_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Width" Type="byte" />
+				<Param Name="Height" Type="byte" />
+				<Param Name="RoadStopType" Type="byte" /> <!-- stop_type -->
+				<Param Name="RemoveRoad" Type="bool" /> <!-- remove_road -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveSignalTrack"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="EndTile" Type="uint" /> <!-- end_tile -->
+				<Param Name="Track" Type="byte" />
+				<Param Name="Autofill" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveSingleRail"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Track" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveSingleSignal"> <!-- rail_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Track" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRemoveStoryPage"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="PageID" Type="ushort" /> <!-- page_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdReverseTrainDirection"> <!-- train_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="ReverseSingleVeh" Type="bool" /> <!-- reverse_single_veh -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenameCompany"> <!-- company_cmd.cpp -->
+			<Params>
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenameDepot"> <!-- depot_cmd.cpp -->
+			<Params>
+				<Param Name="DepotID" Type="ushort" /> <!-- depot_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenameEngine"> <!-- engine.cpp -->
+			<Params>
+				<Param Name="EngineID" Type="ushort" /> <!-- engine_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenamePresident"> <!-- company_cmd.cpp -->
+			<Params>
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenameSign"> <!-- signs_cmd.cpp -->
+			<Params>
+				<Param Name="SignID" Type="ushort" /> <!-- sign_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenameStation"> <!-- station_cmd.cpp -->
+			<Params>
+				<Param Name="StationID" Type="ushort" /> <!-- station_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenameTown"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="TownID" Type="ushort" /> <!-- town_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenameVehicle"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdRenameWaypoint"> <!-- waypoint_cmd.cpp -->
+			<Params>
+				<Param Name="WaypointID" Type="ushort" /> <!-- waypoint_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdScrollViewport"> <!-- viewport.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="ScrollTarget" Type="byte" /> <!-- target -->
+				<Param Name="Reference" Type="uint" /> <!-- ref -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSellShareInCompany"> <!-- econonmy.cpp -->
+			<Params>
+				<Param Name="CompanyID" Type="byte" /> <!-- target_company -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSellRailVehicle"> <!-- train_cmd.cpp -->
+			<Params>
+				<Param Name="Vehicle" Type="struct" /> <!-- *t -->
+				<Param Name="SellChain" Type="bool" /> <!-- sell_chain -->
+				<Param Name="BackupOrder" Type="bool" /> <!-- backup_order -->
+				<Param Name="ClientID" Type="uint" /> <!-- user -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSellVehicle"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- v_id -->
+				<Param Name="SellChain" Type="bool" /> <!-- sell_chain -->
+				<Param Name="BackupOrder" Type="bool" /> <!-- backup_order -->
+				<Param Name="ClientID" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSendVehicleToDepot"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="DepotCmd" Type="byte" /> <!-- depot_cmd -->
+				<Param Name="VehicleListID" Type="uint" /> <!-- &vli -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetAutoReplace"> <!-- autoreplace_cmd.cpp -->
+			<Params>
+				<Param Name="GroupID" Type="ushort" /> <!-- id_g -->
+				<Param Name="OldEngineType" Type="ushort" /> <!-- old_engine_type -->
+				<Param Name="NewEngineType" Type="ushort" /> <!-- new_engine_type -->
+				<Param Name="WhenOld" Type="bool" />  <!-- when_old -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetCompanyColour"> <!-- company_cmd.cpp -->
+			<Params>
+				<Param Name="LiveryScheme" Type="byte" />
+				<Param Name="Primary" Type="bool" />
+				<Param Name="Colour" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetCompanyManagerFace"> <!-- company_cmd.cpp -->
+			<Params>
+				<Param Name="CompanyManagerFace" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetGoalCompleted"> <!-- goal_cmd.cpp -->
+			<Params>
+				<Param Name="GoalID" Type="ushort" />
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetGoalProgress"> <!-- goal_cmd.cpp -->
+			<Params>
+				<Param Name="GoalID" Type="ushort" />
+				<Param Name="Completed" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetGoalText"> <!-- goal_cmd.cpp -->
+			<Params>
+				<Param Name="GoalID" Type="ushort" />
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetGroupFlag"> <!-- group_cmd.cpp -->
+			<Params>
+				<Param Name="GroupID" Type="ushort" /> <!-- group_id -->
+				<Param Name="GroupFlag" Type="byte" /> <!-- flag -->
+				<Param Name="GroupValue" Type="bool" />
+				<Param Name="Recursive" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetGroupLivery"> <!-- group_cmd.cpp -->
+			<Params>
+				<Param Name="GroupID" Type="ushort" /> <!-- group_id -->
+				<Param Name="Primary" Type="bool" />
+				<Param Name="Colour" Type="byte" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetStoryPageDate"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="PageID" Type="ushort" /> <!-- page_id -->
+				<Param Name="Date" Type="int" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetStoryPageTitle"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="PageID" Type="ushort" /> <!-- page_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSetTimetableStart"> <!-- timetable_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="TimetableAll" Type="bool" /> <!-- timetable_all -->
+				<Param Name="Date" Type="int" /> <!-- start_date -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdSetVehicleOnTime"> <!-- timetable_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdSetVehicleVisibility"> <!-- engine.cpp -->
+			<Params>
+				<Param Name="EngineID" Type="ushort" /> <!-- engine_id -->
+				<Param Name="Hide" Type="bool" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdShowStoryPage"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="PageID" Type="ushort" /> <!-- page_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdShowStoryPageElement"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="PageElementID" Type="ushort" /> <!-- page_element_id -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdSkipToOrder"> <!-- order_cmd.cpp -->
+            <Params>
+                <Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="VehicleOrderID" Type="byte" /> <!-- sel_ord -->
+            </Params>
+        </DoCommand>
+		<DoCommand Name="CmdStartStopVehicle"> <!-- vehicle_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" /> <!-- veh_id -->
+				<Param Name="EvaluateStartstopCB" Type="bool" /> <!-- evaluate_startstop_cb -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdStoryPageButton"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="PageElementID" Type="ushort" /> <!-- page_element_id -->
+				<Param Name="VehicleID" Type="uint" /> <!-- reference -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdTerraformLand"> <!-- terraform_cmd.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="Slope" Type="byte" /> 
+				<Param Name="DirUp" Type="bool" />  <!-- dir_up -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdTownCargoGoal"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="TownID" Type="ushort" /> <!-- town_id -->
+				<Param Name="TownEffect" Type="byte" /> <!-- te -->
+				<Param Name="Goal" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdTownGrowthRate"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="TownID" Type="ushort" /> <!-- town_id -->
+				<Param Name="GrowthRate" Type="ushort" /> <!-- growth_rate -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdTownRating"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="TownID" Type="ushort" /> <!-- town_id -->
+				<Param Name="CompanyID" Type="byte" /> <!-- company_id -->
+				<Param Name="TownRating" Type="short" /> <!-- rating -->
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdTownSetText"> <!-- town_cmd.cpp -->
+			<Params>
+				<Param Name="TownID" Type="ushort" /> <!-- town_id -->
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdTurnRoadVehicle"> <!-- roadveh_cmd.cpp -->
+			<Params>
+				<Param Name="VehicleID" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdUpdateLeagueTableElementData"> <!-- league_cmd.cpp -->
+			<Params>
+				<Param Name="TableElementID" Type="ushort" />
+				<Param Name="CompanyID" Type="byte" />
+				<Param Name="Text" Type="string" />
+				<Param Name="LinkType" Type="byte" />
+				<Param Name="LinkTargetID" Type="uint" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdUpdateLeagueTableElementScore"> <!-- league_cmd.cpp -->
+			<Params>
+				<Param Name="TableElementID" Type="ushort" />
+				<Param Name="Rating" Type="long" />
+				<Param Name="Score" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdUpdateStoryPageElement"> <!-- Story.cpp -->
+			<Params>
+				<Param Name="Tile" Type="uint" />
+				<Param Name="PageElementID" Type="ushort" /> <!-- page_element_id -->
+				<Param Name="Reference" Type="uint" />
+				<Param Name="Text" Type="string" />
+			</Params>
+		</DoCommand>
+		<DoCommand Name="CmdWantEnginePreview"> <!-- engine.cpp -->
+			<Params>
+				<Param Name="EngineID" Type="ushort" /> <!-- engine_id -->
+			</Params>
+		</DoCommand>
+	</DoCommands>
+</DoCommandsFile>
