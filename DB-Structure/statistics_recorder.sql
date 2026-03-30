@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `openttd_company_stats` (
     `timestamp` BIGINT NOT NULL,
     `datetime` DATETIME NOT NULL,
     `company_id` INT NOT NULL,
+    `company_name` VARCHAR DEFAULT ``,
     
     -- High Level Performance
     `performance_rating` INT DEFAULT 0,

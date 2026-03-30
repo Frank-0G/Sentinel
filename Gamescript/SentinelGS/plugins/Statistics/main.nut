@@ -74,11 +74,12 @@ class Statistics
                     infra_rail = 0, infra_road = 0, infra_tram = 0, 
                     infra_signals = 0, infra_canals = 0, infra_station = 0, 
                     infra_airport = 0, infra_dock = 0,
-                    tot_age = 0, tot_rating = 0 
+                    tot_age = 0, tot_rating = 0, company_name = ""
                 };
                 
                 local scope = GSCompanyMode(this.co_id);
-                
+
+                this.curr_results.company_name = GSCompany.GetName(this.co_id);
                 this.curr_results.bank_balance = GSCompany.GetBankBalance(this.co_id);
                 this.curr_results.loan = GSCompany.GetLoanAmount(); 
                 this.curr_results.income = GSCompany.GetQuarterlyIncome(this.co_id, 0);

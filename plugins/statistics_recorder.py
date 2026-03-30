@@ -94,7 +94,7 @@ class StatisticsRecorder(IPlugin):
                 
                 query = f"""
                 INSERT INTO {self.table_name}
-                (server_id, timestamp, datetime, company_id, 
+                (server_id, company_name, timestamp, datetime, company_id, 
                  performance_rating, income, bank_balance, loan, cargo_delivered,
                  v_count, avg_veh_age, stopped_vehs, stopped_val, 
                  crashed_vehs, crashed_val, loss_vehs, loss_val, old_vehs, old_val,
@@ -102,11 +102,13 @@ class StatisticsRecorder(IPlugin):
                  station_count, serviced_station_count,
                  infra_rail, infra_road, infra_tram, infra_signals,
                  infra_canals, infra_station, infra_airport, infra_dock) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 
                 params = (
-                    self.server_id, ts, dt, co_id,
+                    self.server_id,
+		    s.get('company_name','Unnamed'), 
+		    ts, dt, co_id,
                     s.get('performance_rating', 0), s.get('income', 0), 
                     s.get('bank_balance', 0), s.get('loan', 0), s.get('delivered', 0),
                     s.get('v_count', 0), s.get('avg_veh_age', 0),
