@@ -717,7 +717,7 @@ class DiscordBridge(IPlugin):
              del self.pending_start_events[cid]
         self._dispatch_discord(self.update_status())
 
-    def on_new_game(self):
+    def on_newgame(self):
         self.client_cache.clear()
         self.company_cache.clear()
         self.placed_signs.clear()

@@ -427,7 +427,7 @@ class IRCBridge(IPlugin):
         if cid in self.pending_started_companies: self.pending_started_companies.remove(cid)
         self.topic_update_pending = True
 
-    def on_new_game(self):
+    def on_newgame(self):
         self.recent_companies = {} # Reset
         if time.time() - self.last_new_game < 20: return
         self.last_new_game = time.time()
