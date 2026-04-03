@@ -162,7 +162,7 @@ class DataController(IPlugin):
         else:
             self.server_info["year"] = 1920 + (game_date // 365)
 
-    def on_new_game(self):
+    def on_newgame(self):
         self.clients.clear()
         self.companies.clear()
         self.last_poll = time.time()  # Reset polling timer

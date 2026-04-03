@@ -176,7 +176,7 @@ class GoalSystem(IPlugin):
         if now % 60 == 0:
             self.bad_action_count = {k: v-1 for k, v in self.bad_action_count.items() if v > 1}
             
-    def on_new_game(self):
+    def on_newgame(self):
         self.client.log(f"[{self.name}] New Game Detected! Resetting Goal System state.")
         self.town_demands.clear()
         self.last_db_sync = time.time()
