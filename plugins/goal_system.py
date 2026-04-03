@@ -704,8 +704,8 @@ class GoalSystem(IPlugin):
              header = f"--- First company with a score of {target_val:,} wins the game. ---"
         else:
              target_val = self.targets.get('value', 0)
-             # Pure CV Goal logic: "EUR company value"
-             header = f"--- First company with {target_val:,} EUR company value wins the game. ---"
+             # Pure CV Goal logic: "GBP company value"
+             header = f"--- First company with {target_val:,} GBP company value wins the game. ---"
              
         if force_reply is not None: force_reply.append(header)
         else: self.client.send_chat(3, 0, 0, header) # Broadcast
@@ -737,8 +737,8 @@ class GoalSystem(IPlugin):
                      u = unit_singular if pop == 1 else unit_plural
                      value_text = f"{pop:,} {u}"
                  else:
-                     # e.g. "100,000 EUR company value"
-                     value_text = f"{val:,} EUR company value"
+                     # e.g. "100,000 GBP company value"
+                     value_text = f"{val:,} GBP company value"
                  
                  name = self.company_data[cid].get('name', f"Company #{cid+1}")
                  
