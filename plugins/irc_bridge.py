@@ -50,17 +50,9 @@ class IRCBridge(IPlugin):
             16: "No Server", 17: "No Permission", 18: "Wrong IP", 19: "Incompatible Content"
         }
         
-        if "irc_channels" in self.config:
-            self.channels = self.config["irc_channels"]
-        elif "irc_channel" in self.config:
-            chan = self.config["irc_channel"]
-            self.channels = {
-                chan: {"announcements": True, "gameactions": True, "gamechat": True, "chatlink": False, "statustopic": True}
-            }
-        else:
-            self.channels = {
-                "#openttd_controller": {"announcements": True, "gameactions": True, "gamechat": True, "chatlink": False, "statustopic": True}
-            }
+        # Multi-channel support logic
+        self.channels = {}
+        self.load_channels()
         
         self.sock = None
         self.running = False
@@ -149,6 +141,54 @@ class IRCBridge(IPlugin):
                         self.irc_auth_map[irc_acc.lower()] = admin
         except Exception as e:
             print(f"[{self.name}] Config Load Error: {e}")
+
+    def load_channels(self):
+        """Standardizes channel configuration for multiple formats."""
+        self.channels = {}
+        
+        # 1. Structured block: <irc_channels><channel><name>#channel</name>...</channel></irc_channels>
+        ch_config = self.config.get("irc_channels", [])
+        ch_list = []
+        if isinstance(ch_config, dict):
+            if "channel" in ch_config:
+                ch_data = ch_config["channel"]
+                ch_list = ch_data if isinstance(ch_data, list) else [ch_data]
+            else:
+                ch_list = [ch_config]
+        elif isinstance(ch_config, list):
+            ch_list = ch_config
+
+        for ch in ch_list:
+            if isinstance(ch, dict):
+                name = ch.get("name")
+                if name:
+                    self.channels[name] = {
+                        "announcements": ch.get("announcements", True),
+                        "gameactions": ch.get("gameactions", True),
+                        "gamechat": ch.get("gamechat", True),
+                        "chatlink": ch.get("chatlink", False),
+                        "statustopic": ch.get("statustopic", True)
+                    }
+
+        # 2. Multiple tags: <irc_channel>#chan1</irc_channel><irc_channel>#chan2</irc_channel>
+        # Or comma-separated: <irc_channel>#chan1,#chan2</irc_channel>
+        raw_chan = self.config.get("irc_channel")
+        if raw_chan:
+            chan_items = raw_chan if isinstance(raw_chan, list) else [raw_chan]
+            for item in chan_items:
+                if isinstance(item, str):
+                    for sub_chan in item.split(","):
+                        name = sub_chan.strip()
+                        if name and name not in self.channels:
+                            self.channels[name] = {
+                                "announcements": True, "gameactions": True, "gamechat": True, "chatlink": False, "statustopic": True
+                            }
+
+        # 3. Default fallback
+        if not self.channels:
+            self.channels = {
+                "#openttd_controller": {"announcements": True, "gameactions": True, "gamechat": True, "chatlink": False, "statustopic": True}
+            }
 
     def _xml_to_dict(self, node):
         if len(node) > 0:

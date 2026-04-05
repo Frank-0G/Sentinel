@@ -6,3 +6,8 @@ controller_config.xml
 test_xml.py
 test_loop.py
 /Website/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class

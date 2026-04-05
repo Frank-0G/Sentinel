@@ -43,18 +43,27 @@
   <irc_nickserv_username>TTD_Bot</irc_nickserv_username>
   <!-- Password for NickServ IDENTIFY. -->
   <irc_nickserv_password>YourPasswordHere</irc_nickserv_password>
-  <irc_channel>#openttd</irc_channel>
-  <!-- Example for multiple channels (optional, replaces irc_channel if present). 
+  <!-- Modern multi-channel configuration. List one or more channels. -->
+  <!-- Note: If only 1 channel is needed, you can remove the example block for the second channel below. -->
   <irc_channels>
-    <channel_name_1>
+    <channel>
+      <name>#openttd</name>
       <announcements>true</announcements>
       <gameactions>true</gameactions>
       <gamechat>true</gamechat>
       <chatlink>false</chatlink>
       <statustopic>true</statustopic>
-    </channel_name_1>
+    </channel>
+    <!-- Example of a second channel -->
+    <channel>
+      <name>#openttd-admin</name>
+      <announcements>true</announcements>
+      <gameactions>false</gameactions>
+      <gamechat>false</gamechat>
+      <chatlink>false</chatlink>
+      <statustopic>false</statustopic>
+    </channel>
   </irc_channels>
-  -->
 
   <!-- SECTION: DISCORD BOT SETTINGS -->
   <!-- Set to true to enable the Discord Bridge. Requires 'discord.py' (pip install discord.py). -->
