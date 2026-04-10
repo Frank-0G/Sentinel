@@ -4,7 +4,7 @@ class SentinelGS extends GSInfo
     function GetName()          { return "SentinelGS"; }
     function GetDescription()   { return "Modular GameScript Controller for OpenTTD."; }
     function GetVersion()       { return 1; }
-    function GetDate()          { return "2026-02-02"; }
+    function GetDate()          { return "2026-04-10"; }
     function CreateInstance()   { return "SentinelCore"; }
     function GetShortName()     { return "SNTL"; }
     function GetAPIVersion()    { return "15"; }
@@ -33,6 +33,15 @@ class SentinelGS extends GSInfo
             _0 = "Mode 0: Company Value", _1 = "Mode 1: CityBuilder Classic"
         });
 
+		// --- COMPANY VALUE SETTINGS ---
+        this.AddCategory("companyvalue", "--- Company Value Settings ---");
+
+         this.AddSetting({
+            name = "goal_value", description = "Target Company Value (per 1000)",
+            easy_value = 250, medium_value = 500, hard_value = 1000, custom_value = 250,
+            flags = CONFIG_INGAME, min_value = 0, max_value = 10000000, step_size = 100
+        });
+		
         // --- CITYBUILDER SETTINGS ---
         this.AddCategory("cargogoals", "--- CityBuilder Settings ---");
 

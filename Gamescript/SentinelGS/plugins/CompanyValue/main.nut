@@ -21,10 +21,10 @@ class CompanyValue
         this.api.Log("Plugin: Company Value Mode Active.");
         this.SendGoalInfo();
         
-        local val = GSGameSettings.GetValue("goal_value");
-        if (val > 0) this.goal_value = val * 1000000; 
-        
-        this.api.Log("Target Net Wealth: " + this.FormatMoney(this.goal_value));
+        local val = GSController.GetSetting("goal_value");
+        if (val > 0) this.goal_value = val * 1000; // Convert from k to actual value
+
+        this.api.Log("Plugin CompanyValue: Target Company Value is " + this.FormatMoney(this.goal_value));
         
         GSGameSettings.SetValue("economy.town_growth_rate", 1); 
         GSGameSettings.SetValue("economy.fund_buildings", 1);   
@@ -110,7 +110,7 @@ class CompanyValue
                     // Let's force assignment.
                     local scope = GSCompanyMode(c_id);
                     if (scope) {
-                         current_val = GSCompany.GetQuarterlyCompanyValue(c_id, 0);
+                         current_val = GSCompany.GetQuarterlyCompanyValue(c_id, 1); // Get value for last quarter (1 = previous quarter)
                     }
                 }
             } catch (e) { 
@@ -122,18 +122,19 @@ class CompanyValue
             // this.api.Log("UpdateScoreboard: Co " + c_id + " Val " + this.FormatMoney(current_val));
             // END DEBUG
 
-            if (!this.has_winner && current_val >= this.goal_value) {
-                this.TriggerWin(c_id, current_val);
-            }
+            //if (!this.has_winner && current_val >= this.goal_value) {
+            //    this.TriggerWin(c_id, current_val);
+            //}
 
             // Check if value changed and send update to controller
-            if (!(c_id in this.last_values) || this.last_values[c_id] != current_val) {
+            if (!(c_id in this.last_values) || (this.last_values[c_id] != current_val)) {
                 this.last_values[c_id] <- current_val;
                 this.api.SendToController({
                     event = "multigoalsupdated",
                     company = c_id,
                     cvalue = current_val
                 });
+			this.api.Log("Plugin CompanyValue: Company " + c_id + " value updated: " + this.FormatMoney(current_val));
             }
 
             local progress = (current_val * 100) / this.goal_value;
@@ -189,10 +190,10 @@ class CompanyValue
         if (amount < 0) { abs_amt = -amount; sign = "-"; }
         
         if (abs_amt >= 1000000) {
-            return sign + "$" + (abs_amt / 1000000) + "M";
+            return sign + "GBP " + (abs_amt / 1000000) + "M";
         } else if (abs_amt >= 1000) {
-            return sign + "$" + (abs_amt / 1000) + "k";
+            return sign + "GBP " + (abs_amt / 1000) + "k";
         }
-        return sign + "$" + abs_amt;
+        return sign + "GBP " + abs_amt;
     }
 }
