@@ -1,4 +1,4 @@
-class SentinelGS extends GSInfo 
+class SentinelGS extends GSInfo
 {
     function GetAuthor()        { return "Sentinel Team"; }
     function GetName()          { return "SentinelGS"; }
@@ -10,14 +10,14 @@ class SentinelGS extends GSInfo
     function GetAPIVersion()    { return "15"; }
     function GetUrl()           { return ""; }
 
-    function GetSettings() 
+    function GetSettings()
     {
         // --- GENERAL ---
         this.AddCategory("general", "--- General ---", false);
-        
+
         this.AddSetting({
-            name = "log_level", description = "Log Level", 
-            easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, 
+            name = "log_level", description = "Log Level",
+            easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1,
             flags = CONFIG_INGAME, min_value = 0, max_value = 1
         });
         this.AddLabels("log_level", {_0 = "No logs", _1 = "All logs"});
@@ -26,22 +26,59 @@ class SentinelGS extends GSInfo
         this.AddSetting({
             name = "game_mode", description = "Game Mode Selection",
             easy_value = 0, medium_value = 1, hard_value = 2, custom_value = 0,
-            flags = CONFIG_INGAME, min_value = 0, max_value = 1
-        });
-        
-        this.AddLabels("game_mode", {
-            _0 = "Mode 0: Company Value", _1 = "Mode 1: CityBuilder Classic"
+            flags = CONFIG_INGAME, min_value = 0, max_value = 9
         });
 
-		// --- COMPANY VALUE SETTINGS ---
+        this.AddLabels("game_mode", {
+            _0 = "Mode 0: Company Value", _1 = "Mode 1: CityBuilder Classic", _9 = "Mode 9: Company Value GS4"
+        });
+
+        // --- COMPANY VALUE SETTINGS (for CompanyValueGS4 too) ---
         this.AddCategory("companyvalue", "--- Company Value Settings ---");
 
-         this.AddSetting({
-            name = "goal_value", description = "Target Company Value (per 1000)",
-            easy_value = 250, medium_value = 500, hard_value = 1000, custom_value = 250,
-            flags = CONFIG_INGAME, min_value = 0, max_value = 10000000, step_size = 100
+        AddSetting({
+            name = "goal_mode", description = "Goal mode", min_value = 0, max_value = 1,
+            easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, step_size = 1,
+            flags = CONFIG_NONE
         });
-		
+        AddLabels("goal_mode", {
+            _0 = "Only rank companies by their values",
+            _1 = "Reach target company value below"
+        });
+
+        AddSetting({
+            name = "goal_value", description = "Target company value (in thousand £)",
+            min_value = 250, max_value = 999999999,
+            easy_value = 500, medium_value = 2500, hard_value = 5000,
+            custom_value = 250,
+            step_size = 250,
+            flags = CONFIG_INGAME
+        });
+
+        AddSetting({
+            name = "end_year",
+            description = "Target end year (must be as same as in openttd.cfg)",
+            min_value = 1950,
+            max_value = 2300,
+            easy_value = 1950,
+            medium_value = 1950,
+            hard_value = 1950,
+            custom_value = 1950,
+            flags = CONFIG_INGAME
+        });
+
+        AddSetting({
+            name = "restart",
+            description = "Target for restart (must be as same as in openttd.cfg)",
+            min_value = 1950,
+            max_value = 2300,
+            easy_value = 1950,
+            medium_value = 1950,
+            hard_value = 1950,
+            custom_value = 1950,
+            flags = CONFIG_INGAME
+        });
+
         // --- CITYBUILDER SETTINGS ---
         this.AddCategory("cargogoals", "--- CityBuilder Settings ---");
 
@@ -109,7 +146,7 @@ class SentinelGS extends GSInfo
         this.AddLabels("shouldLimitations", {_0 = "Off", _1 = "On"});
     }
 
-    function AddCategory(code, title, spacer = true) 
+    function AddCategory(code, title, spacer = true)
     {
         local catname = "rtd.category." + code;
         if (spacer) {

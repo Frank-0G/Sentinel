@@ -3,7 +3,7 @@ require("Sentinel.nut");
 class SentinelCore extends GSController
 {
     // FIX: Defined missing 'api' variable to prevent crash
-    api = null; 
+    api = null;
     active_plugin = null;
     stats_plugin = null;
     ticks = 0;
@@ -35,11 +35,11 @@ class SentinelCore extends GSController
         Sentinel.Log("Read 'game_mode' setting: " + mode);
 
         // Fallback for broken/missing config
-        if (mode <= -1) { 
+        if (mode <= -1) {
             Sentinel.Log("Warning: Config missing or corrupt (-1). Defaulting to Mode 2 (Aphid).");
-            mode = 0; 
+            mode = 0;
         }
-        
+
         Sentinel.Log("Initializing Game Mode ID: " + mode);
 
         try {
@@ -50,7 +50,11 @@ class SentinelCore extends GSController
             else if (mode == 1) {
                 require("plugins/ClassicCB/wrapper.nut");
                 this.active_plugin = Sentinel_ClassicCB(null);
-            } 
+            }
+            else if (mode == 9) {
+                require("plugins/CompanyValueGS4/wrapper.nut");
+                this.active_plugin = Sentinel_CompanyValueGS4(null);
+            }
             else {
                 Sentinel.Log("Mode " + mode + " is Company Value (Default)");
                 require("plugins/CompanyValue/wrapper.nut");
@@ -66,7 +70,7 @@ class SentinelCore extends GSController
             require("plugins/Statistics/wrapper.nut");
             this.stats_plugin = Sentinel_Statistics(null);
             this.stats_plugin.Start();
-            
+
         } catch(e) {
             Sentinel.Error("CRITICAL INIT FAILURE: " + e);
         }
@@ -77,7 +81,7 @@ class SentinelCore extends GSController
     function RunLoop() {
         while(true) {
             this.HandleEvents();
-            
+
             local now = GSDate.GetCurrentDate();
             if (GSDate.GetMonth(now) != this.month) {
                 this.month = GSDate.GetMonth(now);
@@ -85,7 +89,7 @@ class SentinelCore extends GSController
             }
 
             if (this.active_plugin != null) {
-                try { 
+                try {
                     this.active_plugin.Run(this.ticks);
                 } catch(e) {
                     Sentinel.Error("Runtime Error: " + e);
@@ -97,7 +101,7 @@ class SentinelCore extends GSController
                     this.stats_plugin.Run(this.ticks);
                 } catch(e) { }
             }
-            
+
             this.Sleep(1);
             this.ticks++;
 
@@ -114,11 +118,11 @@ class SentinelCore extends GSController
 
     function PushMonthlyStats() {
         Sentinel.Log("Processing Monthly Statistics Reporting...");
-        
+
         // 1. Landscape Info (Legacy Event)
         Sentinel.SendAdmin({ event = "landscapeinfo", landscape = GSGame.GetLandscape() });
-        
-        // Note: Goal Type Info, Town Statistics, and Company Population Updates 
+
+        // Note: Goal Type Info, Town Statistics, and Company Population Updates
         // are now handled exclusively by the active GameScript plugins (CityBuilder, CompanyValue, etc)
         // to prevent overwriting of actual plugin data with default generic data.
     }
@@ -133,24 +137,24 @@ class SentinelCore extends GSController
                 case GSEvent.ET_VEHICLE_CRASHED:
                     local crash = GSEventVehicleCrashed.Convert(ev);
                     local v_id = crash.GetVehicleID();
-                    Sentinel.SendAdmin({ 
-                        event = "vehiclecrash", 
-                        vehicleid = v_id, 
-                        company = GSVehicle.GetOwner(v_id), 
-                        crashsite = crash.GetCrashSite(), 
-                        crashreason = crash.GetCrashReason() 
+                    Sentinel.SendAdmin({
+                        event = "vehiclecrash",
+                        vehicleid = v_id,
+                        company = GSVehicle.GetOwner(v_id),
+                        crashsite = crash.GetCrashSite(),
+                        crashreason = crash.GetCrashReason()
                     });
                     break;
-                    
+
                 case GSEvent.ET_COMPANY_MERGER:
                     local merger = GSEventCompanyMerger.Convert(ev);
-                    Sentinel.SendAdmin({ 
-                        event = "companymerge", 
-                        oldcompany = merger.GetOldCompanyID(), 
-                        newcompany = merger.GetNewCompanyID() 
+                    Sentinel.SendAdmin({
+                        event = "companymerge",
+                        oldcompany = merger.GetOldCompanyID(),
+                        newcompany = merger.GetNewCompanyID()
                     });
                     break;
-                    
+
                 case GSEvent.ET_COMPANY_BANKRUPT:
                     local bankrupt = GSEventCompanyBankrupt.Convert(ev);
                     Sentinel.SendAdmin({ event = "companybankrupt", company = bankrupt.GetCompanyID() });
@@ -163,11 +167,11 @@ class SentinelCore extends GSController
 
                 case GSEvent.ET_GOAL_QUESTION_ANSWER:
                     local qa = GSEventGoalQuestionAnswer.Convert(ev);
-                    Sentinel.SendAdmin({ 
-                        event = "goalquestionanswer", 
-                        id = qa.GetUniqueID(), 
-                        company = qa.GetCompany(), 
-                        button = qa.GetButton() 
+                    Sentinel.SendAdmin({
+                        event = "goalquestionanswer",
+                        id = qa.GetUniqueID(),
+                        company = qa.GetCompany(),
+                        button = qa.GetButton()
                     });
                     break;
             }
@@ -200,7 +204,7 @@ class SentinelCore extends GSController
         GSController.Sleep(1); // Wait 1 tick for map update
         local c_id = c_id_str.tointeger();
         local comp_id = comp_id_str.tointeger();
-        
+
         if (tiles_array.len() == 0) return;
 
         local min_x = 999999;
@@ -233,24 +237,24 @@ class SentinelCore extends GSController
                 if ((has_road || has_tram) && has_rail) {
                     local rail_owner = 255;
                     local road_owner = 255;
-                    
+
                     // In GS API 1.6, GSTile.GetOwner returns the rail owner on level crossings.
                     // We must check neighbors to find the road owner.
                     rail_owner = GSTile.GetOwner(t_id);
-                    
+
                     local neighbors = [
                         GSMap.GetTileIndex(x + 1, y), GSMap.GetTileIndex(x - 1, y),
                         GSMap.GetTileIndex(x, y + 1), GSMap.GetTileIndex(x, y - 1)
                     ];
-                    
+
                     foreach (nt_id in neighbors) {
                         if (!GSMap.IsValidTile(nt_id)) continue;
                         if (GSRoad.IsRoadTile(nt_id) && !GSRail.IsRailTile(nt_id)) {
                             road_owner = GSTile.GetOwner(nt_id);
-                            if (road_owner != 255) break; 
+                            if (road_owner != 255) break;
                         }
                     }
-                    
+
                     // Fallback: If still 255, it might be a tram
                     if (road_owner == 255 && has_tram) {
                         foreach (nt_id in neighbors) {
@@ -281,13 +285,13 @@ class SentinelCore extends GSController
                     if (violation) {
                          if (!crossing_demolished) {
                             Sentinel.Log("[AntiCheat] !!! VIOLATION DETECTED !!! Tile " + t_id + " - " + to_remove + " built by Company " + comp_id + " over infrastructure of Company " + original_owner);
-                            
+
                             local __mode = GSCompanyMode(comp_id);
-                            
+
                             // Targeted removal - dynamic parameter check
                             local res = false;
                             if (to_remove == "rail") {
-                                // For rail-over-road, the road IS the overlay. 
+                                // For rail-over-road, the road IS the overlay.
                                 // To remove the rail base, we MUST remove the road overlay first.
                                 // If the builder doesn't own the road, we act as the road owner to clear it.
                                 if (road_owner != 255 && road_owner != comp_id) {
@@ -295,32 +299,32 @@ class SentinelCore extends GSController
                                         local __tmp_mode = GSCompanyMode(road_owner);
                                         GSTile.DemolishTile(t_id); // Removes road
                                     }
-                                    
+
                                     // Now remove the violating rail as the builder
                                     {
                                         local __tmp_mode = GSCompanyMode(comp_id);
                                         res = GSTile.DemolishTile(t_id); // Removes rail
                                     }
-                                    
+
                                     // Now RESTORE the road as the original owner
                                     if (road_owner != 255) {
                                         local __tmp_mode = GSCompanyMode(road_owner);
                                         // Give them a small budget to cover restoration costs
                                         GSCompany.ChangeBankBalance(road_owner, 2000, GSCompany.EXPENSES_OTHER, t_id);
-                                        
+
                                         // Attempt to rebuild road based on neighbors
                                         local road_neighbors = [];
                                         foreach (nt_id in neighbors) {
                                             if (GSMap.IsValidTile(nt_id) && GSRoad.IsRoadTile(nt_id)) road_neighbors.push(nt_id);
                                         }
-                                        
+
                                         if (road_neighbors.len() >= 1) {
                                             // Sleep 1 tick to ensure tile state is updated
                                             GSController.Sleep(1);
-                                            
+
                                             local r_type = has_tram ? GSRoad.ROADTYPE_TRAM : GSRoad.ROADTYPE_ROAD;
                                             GSRoad.SetCurrentRoadType(r_type);
-                                            
+
                                             // Rebuild by connecting to each neighbor to ensure the tile is filled
                                             foreach (nt_id in road_neighbors) {
                                                 GSRoad.BuildRoad(t_id, nt_id);
@@ -343,7 +347,7 @@ class SentinelCore extends GSController
                                     res = GSTile.DemolishTile(t_id); // This usually works as the overlay owner
                                 }
                             }
-                            
+
                             Sentinel.ChatPrivate(c_id, "ILLEGAL CROSSING: You cannot build over another company's infrastructure! Build a bridge or tunnel instead.");
                             crossing_demolished = true;
                         }

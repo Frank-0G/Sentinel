@@ -44,3 +44,15 @@ STR_STORY_TITLE                   :{WHITE}City Builder Info
 STR_STORY_TITLE_LIM               :{WHITE}Game Limits / Limitations
 STR_STORY_TITLE_REQ               :{WHITE}City Builder Requirements
 STR_TOWN_CLAIMED_RES              :{BLACK}Town will require: {GRAY}<>
+
+### CompanyValueGS4
+STR_COMPANY_GOAL        : {BLACK} First company with {CURRENCY_SHORT} company value {BLACK}wins the game.
+STR_GOAL_PROGRESS       : {GREEN}{CURRENCY_SHORT}{BLACK} ({COMMA}%)
+STR_GOAL_REACHED        : {BLACK}{COMMA} days{BLACK} after inauguration, {}{} {COMPANY}{COMPANY_NUM} was first to reach a {}{} company value of {CURRENCY_SHORT}. {}{}Thank you for playing here. {}{} The server restarts soon.
+STR_RANK_COMPANY_NUM    : {BLACK}#{NUM}: {COMPANY}{COMPANY_NUM}
+STR_EMPTY               : {WHITE}
+STR_RANK                : {BLACK}  Be the first until the game will end in {YELLOW}{NUM}{BLACK}.
+STR_SERVER_INFO         : {YELLOW} This is the last game year.
+STR_RESTART             : {BLACK} Restart of server in few seconds ...
+STR_WINNER              : {WHITE} The winner is {YELLOW}{COMPANY}{WHITE} ! You can play until restart in {YELLOW}{NUM}{WHITE}.
+STR_POINTS              : {YELLOW}{NUM}{BLACK} pts.

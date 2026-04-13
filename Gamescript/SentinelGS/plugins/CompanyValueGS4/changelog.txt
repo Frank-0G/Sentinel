@@ -1,0 +1,24 @@
+Company Value GS
+================
+
+v4
+- Added Script Communication Protocol support.
+
+v3
+- Added a feature to Goal mode: displays how many days the winner company
+  needed to reach the target company value since the day of its
+  inauguration.
+- In the unlikely event that multiple companies reach the target value
+  simultaneously, then the one with the highest value wins. If their
+  values are identical, then the newest wins.
+- Changed the amount of debug messages to be displayed on the various
+  preset levels, and shifted all the near real time logs to Insane preset.
+
+v2
+- Fixed a bug that was causing the ranking order to be displayed in an
+  unordered manner, when switching from Goal mode to Ranking mode.
+- Unpausing the game is done immediately now, and not after company goal
+  clean up, which improves responsiveness.
+
+v1
+- Uploaded to BaNaNaS.

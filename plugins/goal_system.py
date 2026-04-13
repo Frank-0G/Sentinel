@@ -36,14 +36,14 @@ class GoalSystem(IPlugin):
         self.protection_range = 20
         
         # Game State
-        self.goal_master_game = 0 # 0=None, 1=CityBuilder
+        self.goal_master_game = 0 # 0=None, 1=CityBuilder, 9=ScriptGoal
         self.is_city_builder = False
-        self.targets = {'value': 0, 'pop': 0}
+        self.targets = {'value': 0, 'pop': 0, 'mode':""}
         self.map_width = 0
         self.map_height = 0
         
         # Data Stores
-        self.company_data = {i: {'pop': 0, 'val': 0, 'name': f"Company #{i+1}", 'color': "Unknown"} for i in range(15)}
+        self.company_data = {i: {'pop': 0, 'val': 0, 'name': f"Company #{i+1}", 'color': "Unknown", 'progress': 0} for i in range(15)}
         self.claimed_towns = {} # {cid: {'town': str, 'townid': int, 'center': (x,y), 'bbox': (minx,miny,maxx,maxy)}}
         self.claim_stats = {} # {cid: {stats_dict}}
         self.town_demands = {} # {tid: [demand_dicts]}
@@ -134,8 +134,9 @@ class GoalSystem(IPlugin):
     def on_tick(self):
         if not self.enabled: return
         now = time.time()
-        
-        if not self.game_won and (now - self.last_announce > self.announce_interval):
+
+        # ToDo: Add support for ScriptGoal
+        if not self.game_won and (now - self.last_announce > self.announce_interval) and self.goal_master_game != 9:
             self.last_announce = now
             self.announce_scoreboard()
 
@@ -143,9 +144,11 @@ class GoalSystem(IPlugin):
             self.last_db_sync = now
             self.sync_cb_data_to_db()
 
-        if not self.game_won:
+        # Disable check for ScriptGoal
+        if not self.game_won and self.goal_master_game != 9:
             self.check_winners()
 
+        # Restart game    
         if self.game_won and self.restart_countdown > 0:
             self.restart_countdown -= 1
             
@@ -186,6 +189,7 @@ class GoalSystem(IPlugin):
         for cid in self.company_data:
             self.company_data[cid]['pop'] = 0
             self.company_data[cid]['val'] = 0
+            self.company_data[cid]['progress'] = 0
             # Name/Color might stay or update later via packets, strictly speaking new game resets them too usually,
             # but we can leave them until updated by packet.
             # safe to reset name to default if needed, but 'Company #X' is fallback logic anyway.
@@ -200,6 +204,28 @@ class GoalSystem(IPlugin):
                 self.goal_master_game = int(data.get("goalmastergame", 0))
                 if "target_pop" in data: self.targets['pop'] = int(data["target_pop"])
                 self.is_city_builder = (self.goal_master_game == 1)
+
+                # for ScriptGoal
+                if self.goal_master_game == 9:
+                    self.targets['value'] = int(data.get("target_value", 0))
+                    self.targets['mode'] = data.get("target_mode", "companyvalue")
+
+            # for ScriptGoal
+            elif e == "companyprogress":
+                if self.goal_master_game != 9: 
+                    return
+            
+                cid = int(data.get("company", -1))
+                if cid in self.company_data:
+                    self.company_data[cid]['val'] = int(data.get("value", 0))
+                    self.company_data[cid]['progress'] = int(data.get("progress", 0))
+
+            # for ScriptGoal
+            elif e == "winner":
+                if self.goal_master_game != 9:
+                    return
+                cid = int(data.get("company", -1))
+                self.trigger_win(cid, abort=False)
                 
             elif e == "citybuilder": 
                 action = data.get("action", "").lower()
@@ -565,7 +591,70 @@ class GoalSystem(IPlugin):
                 self.client.log(f"[{self.name}] Error notifying Community plugin: {e}")
 
     def cmd_goal(self, cmd, args, reply, source, context):
-        self.announce_scoreboard(reply, context=context, source=source)
+        if self.goal_master_game != 9: 
+            self.announce_scoreboard(reply, context=context, source=source)
+        else:
+            # Color Map
+            colors = [
+                "Dark Blue", "Pale Green", "Pink", "Yellow", "Red", "Light Blue", "Green", "Dark Green",
+                "Blue", "Cream", "Mauve", "Purple", "Orange", "Brown", "Grey", "White"
+            ]
+
+            target_val = self.targets['value'] * 2
+            if(self.targets['mode'] == "companyvalue"):
+                mode = "company value"
+            else: 
+                reply.append(f"No target mode set.")
+                return
+            formatted_val = f"{target_val:,}".replace(",", ".")
+            reply.append(f"--- First company with {formatted_val} EUR {mode} wins the game. ---")
+            
+            #get data
+            data_ctrl = self.client.get_service("DataController")
+            ranks = []
+            for cid in range(15):
+                is_active = False
+                if data_ctrl:
+                    if cid in data_ctrl.companies:
+                        is_active = True
+                if is_active:
+                    name = self.company_data[cid]['name']
+                    progress = self.company_data[cid]['progress']
+                
+                    # Resolve Color
+                    col_str = "Unknown"
+                    try:
+                        raw_col = str(self.company_data[cid].get('color', "Color 0"))
+                        if raw_col.startswith("Color "):
+                            col_parts = raw_col.split(" ")
+                            if len(col_parts) > 1:
+                                col_idx = int(col_parts[1])
+                                if 0 <= col_idx < len(colors): col_str = colors[col_idx]
+                                else: col_str = raw_col
+                            else: col_str = raw_col
+                        else: col_str = raw_col
+                    except: col_str = "Unknown"
+
+                    ranks.append({
+                    'progress': progress,
+                    'id': cid+1, 
+                    'name': name,
+                    'color': col_str
+                    })
+
+            # skip if no active companies
+            if not ranks:
+                reply.append("No active companies found.")
+                return  
+
+            #sort ranks
+            ranks.sort(key=lambda x: x['progress'], reverse=True)
+            
+            #announce ranks
+            rank_id = 1
+            for rank in ranks:
+                reply.append(f"({rank['progress']}%) Rank #{rank_id} is {rank['name']} ({rank['id']}/{rank['color']})")
+                rank_id += 1
 
     def cmd_progress(self, cmd, args, reply, source, context):
         if not self.enabled:
@@ -575,7 +664,12 @@ class GoalSystem(IPlugin):
         # Find the maximum progress among all active companies
         max_progress = 0
         for cid in range(15):
-            progress = self.get_progress(cid)
+            # for ScriptGoal
+            if self.goal_master_game == 9:
+                progress = self.company_data[cid]['progress']
+            # for NormalGoal
+            else:
+                progress = self.get_progress(cid)
             if progress > max_progress:
                 max_progress = progress
         
@@ -593,7 +687,8 @@ class GoalSystem(IPlugin):
             bar_filled = "/" * bar_length
             bar_empty = " " * (50 - bar_length)
             
-            msg = f"/me {C_HEAD}Goal progress: {C_BRACKET}[{C_BAR}{bar_filled}{bar_empty}{C_BRACKET}]{C_TEXT} - {int(display_pct)}%"
+            #msg = f"/me {C_HEAD}Goal progress: {C_BRACKET}[{C_BAR}{bar_filled}{bar_empty}{C_BRACKET}]{C_TEXT} - {int(display_pct)}%"
+            msg = f"/me Goal progress: [{bar_filled}{bar_empty}] - {int(display_pct)}%"
             reply.append(msg)
         elif source == "discord":
             # Discord ANSI coloring in code blocks
@@ -608,7 +703,8 @@ class GoalSystem(IPlugin):
             bar_empty = " " * (50 - bar_length)
             
             # Wrap in ansi code block
-            msg = f"```ansi\n{C_HEAD}Goal progress: {C_BRACKET}[{C_BAR}{bar_filled}{bar_empty}{C_BRACKET}]{C_RESET} - {int(display_pct)}%\n```"
+            #msg = f"```ansi\n{C_HEAD}Goal progress: {C_BRACKET}[{C_BAR}{bar_filled}{bar_empty}{C_BRACKET}]{C_RESET} - {int(display_pct)}%\n```"
+            msg = f"```ansi\nGoal progress: [{bar_filled}{bar_empty}] - {int(display_pct)}%\n```"
             reply.append(msg)
         else:
             # Game / Other
