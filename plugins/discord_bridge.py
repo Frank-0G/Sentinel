@@ -684,19 +684,18 @@ class DiscordBridge(IPlugin):
 
         self._dispatch_discord(self.update_status())
 
-    def on_player_quit(self, cid):
+    def on_player_quit(self, cid, reason="leaving"):
         if cid == 1: return
         if cid in self.client_cache:
             old = self.client_cache[cid]
             ccolor = self.get_company_color_name(old['company'])
-            msg = self.format_msg("leftgame", playername=old['name'], playerid=cid, companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=old['iso'], playerip=old.get('ip', '?'), message="leaving")
+            msg = self.format_msg("leftgame", playername=old['name'], playerid=cid, companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=old['iso'], playerip=old.get('ip', '?'), message=reason)
             self._dispatch_discord(self._send_msg(msg))
             del self.client_cache[cid]
         self._dispatch_discord(self.update_status())
 
-    def on_player_error(self, cid, err):
+    def on_player_error(self, cid, err_str):
         if cid == 1: return
-        err_str = f"Error {err}" 
         if cid in self.client_cache:
             old = self.client_cache[cid]
             ccolor = self.get_company_color_name(old['company'])

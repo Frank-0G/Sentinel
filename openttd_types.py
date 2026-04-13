@@ -126,3 +126,64 @@ class NetworkErrorCode(IntEnum):
     NETWORK_ERROR_TIMEOUT_COMPUTER = 17
     NETWORK_ERROR_TIMEOUT_MAP = 18
     NETWORK_ERROR_TIMEOUT_JOIN = 19
+    NETWORK_ERROR_INVALID_CLIENT_NAME = 20
+    NETWORK_ERROR_NOT_ON_ALLOW_LIST = 21
+    NETWORK_ERROR_NO_AUTH_METHOD = 22
+
+class NetworkQuitReason(IntEnum):
+    NETWORK_QUIT_INVALID = 0
+    NETWORK_QUIT_RECONNECT = 1
+    NETWORK_QUIT_TIMEOUT = 2
+    NETWORK_QUIT_KICKED = 3
+    NETWORK_QUIT_DESYNC = 4
+    NETWORK_QUIT_BROKEN_DATA = 5
+    NETWORK_QUIT_GAMESCRIPT = 6
+    NETWORK_QUIT_LOST_CONNECTION = 7
+    NETWORK_QUIT_SAVEGAME = 8
+    NETWORK_QUIT_SERVER_QUIT = 9
+    NETWORK_QUIT_RESTART = 10
+    NETWORK_QUIT_TOO_MANY_COMMANDS = 11
+    NETWORK_QUIT_REFUSED = 12
+
+NETWORK_ERROR_TEXT = {
+    0: "general error",
+    1: "desync error",
+    2: "could not load map",
+    3: "connection lost",
+    4: "protocol error",
+    5: "NewGRF mismatch",
+    6: "not authorized",
+    7: "received invalid or unexpected packet",
+    8: "wrong revision",
+    9: "name already in use",
+    10: "wrong password",
+    11: "wrong company in DoCommand",
+    12: "kicked by server",
+    13: "was trying to use a cheat",
+    14: "server full",
+    15: "was sending too many commands",
+    16: "received no password in time",
+    17: "general timeout",
+    18: "downloading map took too long",
+    19: "processing map took too long",
+    20: "invalid client name",
+    21: "not on allow list",
+    22: "no common authentication method"
+}
+
+NETWORK_QUIT_TEXT = {
+    0: "unknown",
+    1: "reconnecting",
+    2: "timeout",
+    3: "kicked",
+    4: "desync",
+    5: "broken data",
+    6: "GameScript",
+    7: "connection lost",
+    8: "saving game",
+    9: "server shutdown",
+    10: "server restart",
+    11: "sending too many commands",
+    12: "connection refused",
+    255: "leaving" # Custom value for normal quit if not provided by protocol
+}

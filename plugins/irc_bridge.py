@@ -40,16 +40,6 @@ class IRCBridge(IPlugin):
         
         self.use_ssl = self._get_conf("irc_ssl", self.port == 6697)
 
-        # FIXED: Added Error 12
-        self.NETWORK_ERROR_MAP = {
-            0: "General Error", 1: "Desync", 2: "Savegame Failed", 3: "Connection Lost",
-            4: "Illegal Packet", 5: "NewGRF Mismatch", 6: "Not Expected", 7: "Wrong Revision",
-            8: "Name in Use", 9: "Wrong Password", 10: "Player Mismatch", 
-            11: "Kicked", 12: "Kicked", 
-            13: "Server Full", 14: "Too Many Commands", 15: "Timeout",
-            16: "No Server", 17: "No Permission", 18: "Wrong IP", 19: "Incompatible Content"
-        }
-        
         # Multi-channel support logic
         self.channels = {}
         self.load_channels()
@@ -435,20 +425,19 @@ class IRCBridge(IPlugin):
                 self.send_company_started(cid, company_id)
                 self.pending_started_companies.remove(company_id)
 
-    def on_player_quit(self, cid):
+    def on_player_quit(self, cid, reason="leaving"):
         if cid == 1: return
         self.topic_update_pending = True
         if cid in self.client_cache:
             old = self.client_cache[cid]
             ccolor = self.get_company_color_name(old['company'])
-            msg = self.format_msg("leftgame", playername=old['name'], playerid=cid, playerip=old['ip'], companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=old['iso'], message="leaving")
+            msg = self.format_msg("leftgame", playername=old['name'], playerid=cid, playerip=old['ip'], companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=old['iso'], message=reason)
             self.send_to_channel("/me " + msg, "gameactions")
             del self.client_cache[cid]
 
-    def on_player_error(self, cid, err):
+    def on_player_error(self, cid, err_str):
         if cid == 1: return
         self.topic_update_pending = True
-        err_str = self.NETWORK_ERROR_MAP.get(err, f"Error {err}")
         if cid in self.client_cache:
             old = self.client_cache[cid]
             ccolor = self.get_company_color_name(old['company'])

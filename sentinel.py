@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 
 # --- IMPORT TYPES ---
 try:
-    from openttd_types import AdminPacketType, ServerPacketType, AdminUpdateType, AdminUpdateFrequency, NetworkAction
+    from openttd_types import AdminPacketType, ServerPacketType, AdminUpdateType, AdminUpdateFrequency, NetworkAction, NETWORK_ERROR_TEXT, NETWORK_QUIT_TEXT
 except ImportError:
     print("Error: 'openttd_types.py' not found.")
     sys.exit(1)
@@ -313,18 +313,25 @@ class AdminClient:
                         pass
 
             elif ptype == ServerPacketType.SERVER_CLIENT_QUIT:
-                if len(payload) >= 4:
+                if len(payload) >= 5:
+                    cid = struct.unpack('<I', payload[0:4])[0]
+                    reason_code = payload[4]
+                    reason_str = NETWORK_QUIT_TEXT.get(reason_code, f"quit {reason_code}")
+                    for p in self.plugins: 
+                        if hasattr(p, 'on_player_quit'): p.on_player_quit(cid, reason_str)
+                elif len(payload) >= 4:
                     cid = struct.unpack('<I', payload[0:4])[0]
                     for p in self.plugins: 
-                        if hasattr(p, 'on_player_quit'): p.on_player_quit(cid)
+                        if hasattr(p, 'on_player_quit'): p.on_player_quit(cid, "leaving")
 
             elif ptype == ServerPacketType.SERVER_CLIENT_ERROR:
                 if len(payload) >= 5:
                     cid = struct.unpack('<I', payload[0:4])[0]
-                    err = payload[4]
-                    # print(f"[DEBUG] SERVER_CLIENT_ERROR: ClientID={cid}, ErrorCode={err}")
+                    err_code = payload[4]
+                    err_str = NETWORK_ERROR_TEXT.get(err_code, f"error {err_code}")
+                    # print(f"[DEBUG] SERVER_CLIENT_ERROR: ClientID={cid}, ErrorCode={err_code} ({err_str})")
                     for p in self.plugins: 
-                        if hasattr(p, 'on_player_error'): p.on_player_error(cid, err)
+                        if hasattr(p, 'on_player_error'): p.on_player_error(cid, err_str)
 
             elif ptype == ServerPacketType.SERVER_CHAT:
                 if len(payload) >= 6:
