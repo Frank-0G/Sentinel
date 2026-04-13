@@ -75,7 +75,7 @@ class GameScriptConnector(IPlugin):
             elif cmd == "sql_read":
                 self.run_sql_read_and_reply(req.get("query"), req.get("params", []), req.get("callback_id"))
             elif cmd == "irc_msg":
-                irc = self.client.get_service("IRC_Bridge")
+                irc = self.client.get_service("IRCBridge")
                 if irc: irc.send_message(req.get("channel"), req.get("msg"))
             elif cmd == "game_chat":
                 target_type = req.get("type", 0) 
