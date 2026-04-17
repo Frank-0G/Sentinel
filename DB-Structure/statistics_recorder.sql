@@ -15,39 +15,46 @@ SET time_zone = "+00:00";
 
 CREATE TABLE IF NOT EXISTS `openttd_company_stats` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
-    -- Meta Info
+    -- Company Info
     `server_id` INT NOT NULL,
-    `timestamp` BIGINT NOT NULL,
-    `datetime` DATETIME NOT NULL,
     `company_id` INT NOT NULL,
     `company_name` VARCHAR DEFAULT ``,
-    
-    -- High Level Performance
-    `performance_rating` INT DEFAULT 0,
-    `income` BIGINT DEFAULT 0,
+    `performance` INT DEFAULT 0,
+    `company_value` BIGINT DEFAULT 0,
     `bank_balance` BIGINT DEFAULT 0,
+    `income` BIGINT DEFAULT 0,
     `loan` BIGINT DEFAULT 0,
-    `cargo_delivered` INT DEFAULT 0,
-    
+    -- Cargo Overview
+    `cargo_delivered` BIGINT DEFAULT 0,
+    `cargo_transported` INT DEFAULT 0,
+    `cargo_count` INT DEFAULT 0,
     -- Fleet Overview
-    `v_count` INT DEFAULT 0,
-    `avg_veh_age` INT DEFAULT 0,
+    `trains` INT DEFAULT 0,
+    `roadveh` INT DEFAULT 0,
+    `ships` INT DEFAULT 0,
+    `aircrafts` INT DEFAULT 0,
+    `vehicles_count` INT DEFAULT 0,
     `stopped_vehs` INT DEFAULT 0,
-    `stopped_val` BIGINT DEFAULT 0,
+    `stopped_val` INT DEFAULT 0,
     `crashed_vehs` INT DEFAULT 0,
-    `crashed_val` BIGINT DEFAULT 0,
+    `crashed_val` INT DEFAULT 0,
     `loss_vehs` INT DEFAULT 0,
-    `loss_val` BIGINT DEFAULT 0,
+    `loss_val` INT DEFAULT 0,
     `old_vehs` INT DEFAULT 0,
-    `old_val` BIGINT DEFAULT 0,
-    
-    -- Network Quality
-    `avg_station_rating` INT DEFAULT 0,
+    `old_val` INT DEFAULT 0,
+    `avg_veh_age` INT DEFAULT 0,
+    -- Station Overview
+    `trainstation` INT DEFAULT 0,
+    `truckstop` INT DEFAULT 0,
+    `busstop` INT DEFAULT 0,
+    `airport` INT DEFAULT 0,
+    `dock` INT DEFAULT 0,
+    `serviced_towns` INT DEFAULT 0,
     `avg_town_rating` INT DEFAULT 0,
-    `cargo_types_transported` INT DEFAULT 0,
     `station_count` INT DEFAULT 0,
-    `serviced_station_count` INT DEFAULT 0,
-    
+    `rated_stations` INT DEFAULT 0,
+    `serviced_stations` INT DEFAULT 0,
+    `avg_station_rating` INT DEFAULT 0,
     -- Infrastructure Counts (Granular)
     `infra_rail` INT DEFAULT 0,
     `infra_road` INT DEFAULT 0,
@@ -57,6 +64,8 @@ CREATE TABLE IF NOT EXISTS `openttd_company_stats` (
     `infra_station` INT DEFAULT 0,
     `infra_airport` INT DEFAULT 0,
     `infra_dock` INT DEFAULT 0,
-    
+    -- Timestamps
+    `timestamp` BIGINT NOT NULL,
+    `datetime` DATETIME NOT NULL,
     INDEX `idx_server_co_time` (`server_id`, `company_id`, `timestamp`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

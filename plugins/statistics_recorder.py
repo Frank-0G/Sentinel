@@ -94,34 +94,34 @@ class StatisticsRecorder(IPlugin):
                 
                 query = f"""
                 INSERT INTO {self.table_name}
-                (server_id, company_name, timestamp, datetime, company_id, 
-                 performance_rating, income, bank_balance, loan, cargo_delivered,
-                 v_count, avg_veh_age, stopped_vehs, stopped_val, 
-                 crashed_vehs, crashed_val, loss_vehs, loss_val, old_vehs, old_val,
-                 avg_station_rating, avg_town_rating, cargo_types_transported, 
-                 station_count, serviced_station_count,
-                 infra_rail, infra_road, infra_tram, infra_signals,
-                 infra_canals, infra_station, infra_airport, infra_dock) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (server_id, company_id, 
+                company_name, performance, company_value, bank_balance, 
+                income, loan, cargo_delivered, cargo_transported, cargo_count,
+                trains, roadveh, ships, aircrafts, vehicles_count,
+                stopped_vehs, stopped_val, crashed_vehs, crashed_val, 
+                loss_vehs, loss_val, old_vehs, old_val, avg_veh_age,
+                trainstation, truckstop, busstop, airport, dock,
+                serviced_towns, avg_town_rating, station_count, 
+                rated_stations, serviced_stations, avg_station_rating,
+                infra_rail, infra_road, infra_tram, infra_signals, 
+                infra_canals, infra_station, infra_airport, infra_dock, 
+                timestamp, datetime) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 
                 params = (
-                    self.server_id,
-		    s.get('company_name','Unnamed'), 
-		    ts, dt, co_id,
-                    s.get('performance_rating', 0), s.get('income', 0), 
-                    s.get('bank_balance', 0), s.get('loan', 0), s.get('delivered', 0),
-                    s.get('v_count', 0), s.get('avg_veh_age', 0),
-                    s.get('stopped_vehs', 0), s.get('stopped_val', 0),
-                    s.get('crashed_vehs', 0), s.get('crashed_val', 0),
-                    s.get('loss_vehs', 0), s.get('loss_val', 0),
-                    s.get('old_vehs', 0), s.get('old_val', 0),
-                    s.get('avg_station_rating', 0), s.get('avg_town_rating', 0),
-                    s.get('cargo_types_transported', 0),
-                    s.get('station_count', 0), s.get('serviced_stations', 0),
-                    s.get('infra_rail', 0), s.get('infra_road', 0), s.get('infra_tram', 0), 
-                    s.get('infra_signals', 0), s.get('infra_canals', 0), 
-                    s.get('infra_station', 0), s.get('infra_airport', 0), s.get('infra_dock', 0)
+                    self.server_id, co_id,
+		            s.get('company_name','Unnamed'), s.get('performance', 0), s.get('company_value', 0), s.get('bank_balance', 0), 
+                    s.get('income', 0), s.get('loan', 0), s.get('cargo_delivered', 0), s.get('cargo_transported', 0), s.get('cargo_count', 0),
+                    s.get('trains', 0), s.get('roadveh', 0), s.get('ships', 0), s.get('aircrafts', 0), s.get('vehicles_count', 0), 
+                    s.get('stopped_vehs', 0), s.get('stopped_val', 0), s.get('crashed_vehs', 0), s.get('crashed_val', 0),
+                    s.get('loss_vehs', 0), s.get('loss_val', 0), s.get('old_vehs', 0), s.get('old_val', 0), s.get('avg_veh_age', 0),
+                    s.get('trainstation', 0), s.get('truckstop', 0), s.get('busstop', 0), s.get('airport', 0), s.get('dock', 0),
+                    s.get('serviced_towns', 0), s.get('avg_town_rating', 0), s.get('station_count', 0), 
+                    s.get('rated_stations', 0), s.get('serviced_stations', 0), s.get('avg_station_rating', 0),
+                    s.get('infra_rail', 0), s.get('infra_road', 0), s.get('infra_tram', 0), s.get('infra_signals', 0), 
+                    s.get('infra_canals', 0), s.get('infra_station', 0), s.get('infra_airport', 0), s.get('infra_dock', 0),
+                    ts, dt
                 )
                 
                 mysql.execute_query(self.db_config, query, params)

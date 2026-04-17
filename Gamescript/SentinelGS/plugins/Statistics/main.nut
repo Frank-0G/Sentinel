@@ -5,21 +5,13 @@
 class Statistics
 {
     api = null;
-    state = 0; // 0: Idle, 1: Collecting Vehicles, 2: Collecting Stations, 3: Finalizing
-    
+
     // Cycle Management
-    c_idx = 0; // Current index in company iteration
-    co_id = -1; // Current active company being processed
     last_run_tick = -4000; // Force run on first hit if tick 0
-    
-    // Work Lists for amortization
-    v_list = null;
-    s_list = null;
-    
+
     // Results
-    curr_results = null; 
-    all_results = null;  
-    c_observed = null;   
+    curr_results = null;
+    all_results = null;
 
     constructor(_api) {
         this.api = _api;
@@ -32,13 +24,9 @@ class Statistics
     function Run(ticks) {
         try {
             // Trigger cycle every 4000 ticks (~2 months)
-            if (this.state == 0 && (ticks - this.last_run_tick >= 4000 || ticks < this.last_run_tick)) {
+            if (ticks - this.last_run_tick >= 2000 || ticks < this.last_run_tick) {
                 this.last_run_tick = ticks;
                 this.StartCycle();
-            }
-
-            if (this.state > 0) {
-                this.ProcessStep();
             }
         } catch(e) {
             this.api.Log("CRITICAL ERROR in Statistics Plugin: " + e);
@@ -47,92 +35,128 @@ class Statistics
     }
 
     function StartCycle() {
-        this.state = 1;
-        this.c_idx = GSCompany.COMPANY_FIRST;
         this.all_results = {};
-        this.PrepareNextCompany();
+        this.GetStatistics();
     }
 
-    function PrepareNextCompany() {
-        while (this.c_idx <= GSCompany.COMPANY_LAST) {
-            local cid = GSCompany.ResolveCompanyID(this.c_idx);
-            if (cid != GSCompany.COMPANY_INVALID) {
-                this.co_id = cid;
-                this.c_observed = {};
-                this.curr_results = {
-                    stopped_vehs = 0, stopped_val = 0,
-                    crashed_vehs = 0, crashed_val = 0,
-                    loss_vehs = 0, loss_val = 0,
-                    old_vehs = 0, old_val = 0,
-                    avg_veh_age = 0, v_count = 0,
-                    station_count = 0, serviced_stations = 0,
-                    avg_station_rating = 0, rated_stations = 0,
-                    avg_town_rating = 0,
-                    income = 0, delivered = 0,
-                    cargo_types_transported = 0,
-                    bank_balance = 0, loan = 0, performance_rating = 0,
-                    infra_rail = 0, infra_road = 0, infra_tram = 0, 
-                    infra_signals = 0, infra_canals = 0, infra_station = 0, 
-                    infra_airport = 0, infra_dock = 0,
-                    tot_age = 0, tot_rating = 0, company_name = ""
-                };
-                
-                local scope = GSCompanyMode(this.co_id);
+    function GetStatistics() {
 
-                this.curr_results.company_name = GSCompany.GetName(this.co_id);
-                this.curr_results.bank_balance = GSCompany.GetBankBalance(this.co_id);
-                this.curr_results.loan = GSCompany.GetLoanAmount(); 
-                this.curr_results.income = GSCompany.GetQuarterlyIncome(this.co_id, 0);
-                this.curr_results.delivered = GSCompany.GetQuarterlyCargoDelivered(this.co_id, 0);
-                this.curr_results.performance_rating = GSCompany.GetQuarterlyPerformanceRating(this.co_id, 0);
-                
-                // Infrastructure Piece Counts (API 15)
-                this.curr_results.infra_rail = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_RAIL);
-                this.curr_results.infra_road = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_ROAD);
-                this.curr_results.infra_signals = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_SIGNALS);
-                this.curr_results.infra_canals = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_CANAL);
-                this.curr_results.infra_station = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_STATION);
-                this.curr_results.infra_airport = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_AIRPORT);
-                
-                // Fallbacks for types not appearing in basic INFRA list
-                if ("INFRASTRUCTURE_TRAM" in GSInfrastructure) this.curr_results.infra_tram = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_TRAM);
-                if ("INFRASTRUCTURE_DOCK" in GSInfrastructure) this.curr_results.infra_dock = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_DOCK);
-                    
-                // Town Ratings 
-                local t_list = GSTownList();
-                local t_rating_sum = 0;
-                local t_count = 0;
-                foreach (tid, _ in t_list) {
-                    local r = GSTown.GetRating(tid, this.co_id);
-                    if (r > 0) {
-                        t_rating_sum += r;
-                        t_count++;
-                    }
-                }
-                this.curr_results.avg_town_rating = (t_count > 0) ? (t_rating_sum / t_count) : 0;
-                
-                this.v_list = GSVehicleList();
-                this.s_list = GSStationList(GSStation.STATION_ANY);
-                
-                this.state = 1; 
-                this.c_idx++; 
-                return;
-            }
-            this.c_idx++;
+        // Create list of valid companies
+        local companies = GSList();
+    	for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
+    		if (GSCompany.ResolveCompanyID(c_id) != GSCompany.COMPANY_INVALID) {
+                companies.AddItem(c_id, 1);
+    		} else {
+    			continue;
+    		}
         }
-        this.state = 3; 
-    }
 
-    function ProcessStep() {
-        if (this.state == 1) {
-            local scope = GSCompanyMode(this.co_id);
-            local quota = 50;
-            while (quota > 0 && !this.v_list.IsEmpty()) {
-                local vid = this.v_list.Begin();
-                this.v_list.RemoveItem(vid);
-                this.curr_results.v_count++;
-                local val = GSVehicle.GetCurrentValue(vid);
-                local st = GSVehicle.GetState(vid);
+        // Start iterating companies
+        local c_id = 0;
+        foreach (c_id, _ in companies) {
+            this.curr_results = {
+                    company_name = "",
+                    bank_balance = 0,
+                    loan = 0,
+                    company_value = 0,
+                    income = 0,
+                    cargo_delivered = 0,
+                    performance = 0,
+                    infra_rail = 0,
+                    infra_road = 0,
+                    infra_signals = 0,
+                    infra_canals = 0,
+                    infra_station = 0,
+                    infra_airport = 0,
+                    infra_tram = 0,
+                    infra_dock = 0,
+                    trains = 0,
+                    roadveh = 0,
+                    ships = 0,
+                    aircrafts = 0,
+                    vehicles_count = 0,
+                    avg_town_rating = 0,
+                    serviced_towns = 0,
+                    stopped_vehs = 0,
+                    stopped_val = 0,
+                    crashed_vehs = 0,
+                    crashed_val = 0,
+                    loss_vehs = 0,
+                    loss_val = 0,
+                    old_vehs = 0,
+                    old_val = 0,
+                    avg_veh_age = 0,
+                    station_count = 0,
+                    serviced_stations = 0,
+                    rated_stations = 0,
+                    avg_station_rating = 0,
+                    trainstation = 0,
+                    truckstop = 0,
+                    busstop = 0,
+                    airport = 0,
+                    dock = 0,
+                    cargo_transported = 0,
+                    cargo_count = 0
+            };
+            local scope = GSCompanyMode(c_id);
+
+            // Basic company info
+            this.curr_results.company_name = GSCompany.GetName(c_id);
+            this.curr_results.bank_balance = GSCompany.GetBankBalance(c_id);
+            this.curr_results.loan = GSCompany.GetLoanAmount();
+
+            //Quarterly data for current quarter (API 15)
+            this.curr_results.company_value = GSCompany.GetQuarterlyCompanyValue(c_id, 1);
+            this.curr_results.income = GSCompany.GetQuarterlyIncome(c_id, 1);
+            this.curr_results.cargo_delivered = GSCompany.GetQuarterlyCargoDelivered(c_id, 1);
+            this.curr_results.performance = GSCompany.GetQuarterlyPerformanceRating(c_id, 1);
+
+            // Infrastructure Piece Counts (API 15)
+            this.curr_results.infra_rail = GSInfrastructure.GetInfrastructurePieceCount(c_id, GSInfrastructure.INFRASTRUCTURE_RAIL);
+            this.curr_results.infra_road = GSInfrastructure.GetInfrastructurePieceCount(c_id, GSInfrastructure.INFRASTRUCTURE_ROAD);
+            this.curr_results.infra_signals = GSInfrastructure.GetInfrastructurePieceCount(c_id, GSInfrastructure.INFRASTRUCTURE_SIGNALS);
+            this.curr_results.infra_canals = GSInfrastructure.GetInfrastructurePieceCount(c_id, GSInfrastructure.INFRASTRUCTURE_CANAL);
+            this.curr_results.infra_station = GSInfrastructure.GetInfrastructurePieceCount(c_id, GSInfrastructure.INFRASTRUCTURE_STATION);
+            this.curr_results.infra_airport = GSInfrastructure.GetInfrastructurePieceCount(c_id, GSInfrastructure.INFRASTRUCTURE_AIRPORT);
+
+            // Fallbacks for types not appearing in basic INFRA list
+            if ("INFRASTRUCTURE_TRAM" in GSInfrastructure) this.curr_results.infra_tram = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_TRAM);
+            if ("INFRASTRUCTURE_DOCK" in GSInfrastructure) this.curr_results.infra_dock = GSInfrastructure.GetInfrastructurePieceCount(this.co_id, GSInfrastructure.INFRASTRUCTURE_DOCK);
+
+            //Create and sort townlist of current company
+            local towns = GSList();
+            local t_rating_sum = 0;
+            foreach (t_id, _ in GSTownList()) {
+                    local rating = GSTown.GetRating(t_id, c_id);
+                    if (rating > 0) {
+                        towns.AddItem(t_id, rating);
+                        t_rating_sum += rating;
+                        }
+            }
+            this.curr_results.avg_town_rating = (towns.Count() > 0) ? (t_rating_sum / towns.Count()) : 0; //average town rating for company
+            this.curr_results.serviced_towns = towns.Count();
+
+
+            // check vehicles of current company
+            local tot_age = 0;
+            foreach (v_id, _ in GSVehicleList()) {
+
+                // count vehicles by type
+                if (GSVehicle.GetVehicleType(v_id) == GSVehicle.VT_RAIL)
+                    this.curr_results.trains++;
+                else if (GSVehicle.GetVehicleType(v_id) == GSVehicle.VT_ROAD)
+                    this.curr_results.roadveh++;
+                else if (GSVehicle.GetVehicleType(v_id) == GSVehicle.VT_WATER)
+                    this.curr_results.ships++;
+                else if (GSVehicle.GetVehicleType(v_id) == GSVehicle.VT_AIR)
+                	this.curr_results.aircrafts++;
+                else if (GSVehicle.GetVehicleType(v_id) == GSVehicle.VT_INVALID)
+                    continue; //unknown type, do nothing
+                this.curr_results.vehicles_count++; // total vehicle count
+
+                // common vehicle metrics
+                local val = GSVehicle.GetCurrentValue(v_id);
+                local st = GSVehicle.GetState(v_id);
                 if (st == GSVehicle.VS_STOPPED || st == GSVehicle.VS_IN_DEPOT) {
                     this.curr_results.stopped_vehs++;
                     this.curr_results.stopped_val += val;
@@ -140,67 +164,95 @@ class Statistics
                     this.curr_results.crashed_vehs++;
                     this.curr_results.crashed_val += val;
                 }
-                if (GSVehicle.GetProfitThisYear(vid) < 0) {
+
+                // loss making vehicles
+                if (GSVehicle.GetProfitThisYear(v_id) < 0) {
                     this.curr_results.loss_vehs++;
                     this.curr_results.loss_val += val;
                 }
-                local max_age = GSVehicle.GetMaxAge(vid);
+
+                // average age calculation
+                local max_age = GSVehicle.GetMaxAge(v_id);
                 if (max_age > 0) {
-                    local age_pct = (GSVehicle.GetAge(vid) * 100) / max_age;
-                    this.curr_results.tot_age += age_pct;
+                    local age_pct = (GSVehicle.GetAge(v_id) * 100) / max_age;
+                    tot_age += age_pct;
                 }
-                if (GSVehicle.GetAgeLeft(vid) <= 0) {
+
+                // end of life vehicles
+                if (GSVehicle.GetAgeLeft(v_id) <= 0) {
                     this.curr_results.old_vehs++;
                     this.curr_results.old_val += val;
                 }
-                quota--;
             }
-            if (this.v_list.IsEmpty()) this.state = 2;
-        } else if (this.state == 2) {
-            local scope = GSCompanyMode(this.co_id);
-            local quota = 25;
-            while (quota > 0 && !this.s_list.IsEmpty()) {
-                local sid = this.s_list.Begin();
-                this.s_list.RemoveItem(sid);
-                this.curr_results.station_count++;
-                if (GSVehicleList_Station(sid).Count() > 0) this.curr_results.serviced_stations++;
-                local c_list = GSCargoList_StationAccepting(sid);
+            this.curr_results.avg_veh_age = (this.curr_results.vehicles_count > 0) ? (100 - (tot_age / this.curr_results.vehicles_count)) : 0;
+
+            local CompanyCargoList = GSList();
+            local tot_station_rating = 0;
+            // check stations of current company
+
+            foreach (s_id, _ in GSStationList(GSStation.STATION_ANY)) {
+
+                this.curr_results.station_count++; // total station count
+
+                if (GSCargoList_StationAccepting(s_id).Count() > 0)
+                    this.curr_results.serviced_stations++; // serviced station count
+
+                // station rating calculation
                 local station_rating_sum = 0;
                 local station_rating_count = 0;
-                foreach (cid, _ in c_list) {
-                    local r = GSStation.GetCargoRating(sid, cid);
+                foreach (cargo_id, _ in GSCargoList_StationAccepting(s_id)) {
+                    local r = GSStation.GetCargoRating(s_id, cargo_id);
                     if (r > 0) {
                         station_rating_sum += r;
                         station_rating_count++;
-                        if (!(cid in this.c_observed)) this.c_observed[cid] <- 0;
-                        this.c_observed[cid]++;
                     }
                 }
                 if (station_rating_count > 0) {
-                    this.curr_results.tot_rating += (station_rating_sum / station_rating_count);
+                    tot_station_rating += (station_rating_sum / station_rating_count);
                     this.curr_results.rated_stations++;
                 }
-                quota--;
-            }
-            if (this.s_list.IsEmpty()) {
-                this.FinalizeCompany();
-                this.PrepareNextCompany(); 
-            }
-        } else if (this.state == 3) {
-            this.api.SendToController({ event = "statistics_full_update", stats = this.all_results });
-            this.state = 0;
-        }
-    }
 
-    function FinalizeCompany() {
-        this.curr_results.avg_veh_age = (this.curr_results.v_count > 0) ? (100 - (this.curr_results.tot_age / this.curr_results.v_count)) : 0;
-        this.curr_results.avg_station_rating = (this.curr_results.rated_stations > 0) ? (this.curr_results.tot_rating / this.curr_results.rated_stations) : 0;
-        local variety = 0;
-        local threshold = this.curr_results.station_count * 0.2;
-        foreach (cid, count in this.c_observed) { if (count >= threshold) variety++; }
-        this.curr_results.cargo_types_transported = variety;
-        delete this.curr_results.tot_age;
-        delete this.curr_results.tot_rating;
-        this.all_results[this.co_id.tostring()] <- this.curr_results;
+                //check transported cargo
+                foreach(cargo_id, _ in GSCargoList()){
+                    if (GSStation.HasCargoRating(s_id, cargo_id)) {
+                        if (CompanyCargoList.HasItem(cargo_id)) continue;
+                        else CompanyCargoList.AddItem(cargo_id, 1)
+                    }
+                }
+
+                //count type of stations
+                if (GSStation.HasStationType(s_id, GSStation.STATION_TRAIN))
+                    this.curr_results.trainstation++;
+                else if (GSStation.HasStationType(s_id, GSStation.STATION_TRUCK_STOP))
+                    this.curr_results.truckstop++;
+                else if (GSStation.HasStationType(s_id, GSStation.STATION_BUS_STOP))
+                    this.curr_results.busstop++;
+                else if (GSStation.HasStationType(s_id, GSStation.STATION_AIRPORT))
+                    this.curr_results.airport++;
+                else if (GSStation.HasStationType(s_id, GSStation.STATION_DOCK))
+                    this.curr_results.dock++;
+
+            }
+            if (this.curr_results.serviced_stations > 0) {
+            	this.curr_results.avg_station_rating = (this.curr_results.rated_stations > 0) ? (tot_station_rating / this.curr_results.rated_stations) : 0;
+            }
+            local cargolist = GSCargoList();
+            this.curr_results.cargo_transported = CompanyCargoList.Count();
+            this.curr_results.cargo_count = GSCargoList().Count();
+
+            //for debug
+            //this.api.Log("Company ID: " + c_id + " Name: " + this.curr_results.company_name + " Money: " + this.curr_results.bank_balance +" Income: " + this.curr_results.income +" CV: " + this.curr_results.company_value + " Loan: " + this.curr_results.loan+ " Performance: " + this.curr_results.performance);
+            //this.api.Log("Serviced Towns: " + towns.Count() + " Average Town Rating: " + this.curr_results.avg_town_rating+" Cargo transported: " + this.curr_results.cargo_transported + " Cargos: "+ this.curr_results.cargo_count);
+            //this.api.Log("Total Vehicles: " + this.curr_results.vehicles_count + " Trains: " + this.curr_results.trains + " Road: " + this.curr_results.roadveh + " Ships: " + this.curr_results.ships +" Aircrafts: " + this.curr_results.aircrafts);
+            //this.api.Log("Vehicles Stopped: " + this.curr_results.stopped_vehs + " Crashed: " + this.curr_results.crashed_vehs + " Old: " + this.curr_results.old_vehs + " Loss: " + this.curr_results.loss_vehs + " Average Age: " + this.curr_results.avg_veh_age);
+            //this.api.Log("Serviced Stations: " + this.curr_results.serviced_stations + " Rated Stations: " + this.curr_results.rated_stations + " Average Station Rating: " + this.curr_results.avg_station_rating);
+            //this.api.Log("Trainstations: " + this.curr_results.trainstation + " Truckstops: " + this.curr_results.truckstop + " Busstops: " + this.curr_results.busstop + " Airports: " + this.curr_results.airport + " Docks: " + this.curr_results.dock);
+
+            //prepare current company results for controller
+            this.all_results[c_id.tostring()] <- this.curr_results;
+        }
+        //Send final results to controller
+        this.api.SendToController({ event = "statistics_full_update", stats = this.all_results });
+        //this.api.Log("Send to controller complete.");
     }
 }
