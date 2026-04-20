@@ -22,6 +22,14 @@ class SentinelGS extends GSInfo
         });
         this.AddLabels("log_level", {_0 = "No logs", _1 = "All logs"});
 
+		// for running without Sentinel controller
+        this.AddSetting({
+            name = "development", description = "Development Mode",
+            easy_value = 0, medium_value = 0, hard_value = 0, custom_value = 0,
+            flags = CONFIG_INGAME, min_value = 0, max_value = 1
+        });
+        this.AddLabels("development", {_0 = "Off", _1 = "On"});
+		
         // Main Game Mode Switch
         this.AddSetting({
             name = "game_mode", description = "Game Mode Selection",

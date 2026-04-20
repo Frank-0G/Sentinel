@@ -121,6 +121,9 @@ class SentinelCore extends GSController
     function RunLoop() {
         while(true) {
             this.HandleEvents();
+			
+			// for running without Sentinel controller
+			if (this.GSController.GetSetting("development")) this.LazyInitPlugins();
 
             local now = GSDate.GetCurrentDate();
             if (GSDate.GetMonth(now) != this.month) {
