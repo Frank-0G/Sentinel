@@ -1,5 +1,4 @@
 require("main.nut");
-require("../../api.nut");
 
 class Sentinel_Statistics {
     impl = null;

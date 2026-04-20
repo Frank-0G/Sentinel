@@ -10,6 +10,9 @@ class Sentinel
     _storageKeys = [];
     _storageValues = [];
     
+    // Internal Storage (Replaces root table access for stability)
+    static _SentinelStorage = {};
+
     // Static Version Info
     static VERSION = "1.0-SENTINEL";
     
@@ -192,23 +195,16 @@ class Sentinel
     
     static function SetStorage(storagekey, storagevalue)
     {
-        local root = getroottable();
-        if (!("SentinelStorage" in root)) root.SentinelStorage <- {};
-        if (storagekey in root.SentinelStorage) {
-            root.SentinelStorage[storagekey] = storagevalue;
+        if (storagekey in Sentinel._SentinelStorage) {
+            Sentinel._SentinelStorage[storagekey] = storagevalue;
         } else {
-            root.SentinelStorage[storagekey] <- storagevalue;
+            Sentinel._SentinelStorage[storagekey] <- storagevalue;
         }
     }
 
     static function GetStorage(storagekey)
     {
-        local root = getroottable();
-        if (!("SentinelStorage" in root)) return null;
-        if (storagekey in root.SentinelStorage) return root.SentinelStorage[storagekey];
+        if (storagekey in Sentinel._SentinelStorage) return Sentinel._SentinelStorage[storagekey];
         return null;
     }
 }
-
-// Global Alias for Legacy Support
-::SendAdmin <- Sentinel.SendAdmin;

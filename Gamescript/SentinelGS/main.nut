@@ -1,4 +1,5 @@
 require("Sentinel.nut");
+require("api.nut");
 require("kernel_services.nut");
 
 class SentinelCore extends GSController
@@ -6,6 +7,7 @@ class SentinelCore extends GSController
     // Kernel State
     active_plugin = null;
     stats_plugin = null;
+    anticheat_plugin = null;
     ticks = 0;
     month = -1;
     gs_log_level = 1;
@@ -77,6 +79,11 @@ class SentinelCore extends GSController
             require("plugins/Statistics/wrapper.nut");
             this.stats_plugin = Sentinel_Statistics(this);
             this.stats_plugin.Start();
+
+            // --- ANTI-CHEAT ---
+            require("plugins/AntiCheat/wrapper.nut");
+            this.anticheat_plugin = Sentinel_AntiCheat(this);
+            this.anticheat_plugin.Start();
 
             // --- MODE SELECTION ---
             local mode = GSController.GetSetting("game_mode").tointeger();
@@ -187,7 +194,9 @@ class SentinelCore extends GSController
                     this.HandleProgressCmd(data);
                     continue;
                 } else if (cmd == "check_crossing") {
-                    this.check_crossing(data.c_id, data.comp_id, data.tiles);
+                    if (this.anticheat_plugin != null) {
+                        this.anticheat_plugin.check_crossing(data.c_id, data.comp_id, data.tiles);
+                    }
                     continue;
                 } else if (cmd == "cmd_log") {
                     this.HandleCommandLog(data);
@@ -619,9 +628,5 @@ class SentinelCore extends GSController
         }
     }
 
-    // --- ANTICHEAT: Crossing Protection (Native) ---
-    function check_crossing(c_id_str, comp_id_str, tiles_array) {
-        // ... (Ported from original main.nut) ...
-        // Keeping it same for now as it works well.
-    }
+    // (Delegated to AntiCheat plugin)
 }
