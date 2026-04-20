@@ -6,6 +6,7 @@ controller_config.xml
 test_xml.py
 test_loop.py
 /Website/
+/plugins/backups/
 
 # Python cache files
 __pycache__/
