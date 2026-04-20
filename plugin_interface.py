@@ -16,7 +16,7 @@ class IPlugin:
 
     def on_player_join(self, client_id: int, name: str, ip: str, company_id: int): pass
     def on_player_update(self, client_id: int, name: str, company_id: int): pass
-    def on_player_quit(self, client_id: int): pass
+    def on_player_quit(self, client_id: int, reason: str = "leaving"): pass
     def on_player_error(self, client_id: int, error_code: int): pass
 
     def on_company_created(self, company_id: int): pass

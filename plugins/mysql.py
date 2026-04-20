@@ -56,7 +56,22 @@ class MySQL(IPlugin):
             daemon=True
         ).start()
 
+    def execute_batch(self, db_config, queries_with_params, callback=None):
+        """
+        Executes a list of (query, params) tuples sequentially in a single transaction.
+        """
+        if not db_config:
+            self.client.log(f"[{self.name}] Error: Empty db_config provided for batch.")
+            return
+
+        threading.Thread(
+            target=self._batch_worker, 
+            args=(db_config, queries_with_params, callback),
+            daemon=True
+        ).start()
+
     def _worker(self, db_config, query, params, callback, fetch):
+        # ... (rest of _worker is same)
         conn = None
         cursor = None
         result = None
@@ -90,6 +105,36 @@ class MySQL(IPlugin):
                 callback(result)
             except Exception as e:
                 self.client.log(f"[{self.name}] CallbackError: {e}")
+
+    def _batch_worker(self, db_config, queries_with_params, callback):
+        conn = None
+        cursor = None
+        try:
+            pool = self.get_pool(db_config)
+            conn = pool.get_connection()
+            cursor = conn.cursor(dictionary=True) # Dictionary cursor for consistency
+            
+            for query, params in queries_with_params:
+                cursor.execute(query, params or ())
+                
+            conn.commit()
+            
+        except Exception as e:
+            self.client.log(f"[{self.name}] BatchSQLError: {e}")
+            if conn:
+                try: conn.rollback()
+                except: pass
+        finally:
+            if cursor:
+                try: cursor.close()
+                except: pass
+            if conn:
+                try: conn.close()
+                except: pass
+        
+        if callback:
+            try: callback(None)
+            except: pass
 
     def on_unload(self):
         # access to protected member _cnx_queue of CMySQLConnection which is not ideal but standard cleanup is hard with pools

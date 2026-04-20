@@ -37,8 +37,9 @@ class Sentinel
     {
         if (!Sentinel._ShouldLog()) return;
         // Standard Logging
-        GSLog.Info("[Sentinel] " + message);
-        local packet = { command = "logmessage", type = "info", text = message };
+        local msgStr = (typeof message == "string" ? message : message.tostring());
+        GSLog.Info("[SENTINEL] " + msgStr);
+        local packet = { command = "logmessage", type = "info", text = msgStr };
         Sentinel.SendAdmin(packet);
     }
 
@@ -46,7 +47,7 @@ class Sentinel
     {
         if (!Sentinel._ShouldLog()) return;
         // Debug Logging
-        GSLog.Info("[Sentinel DEBUG] " + message);
+        GSLog.Info("[SENTINEL DEBUG] " + message);
         local packet = { command = "logmessage", type = "debug", text = message };
         Sentinel.SendAdmin(packet);
     }
@@ -55,7 +56,7 @@ class Sentinel
     {
         if (!Sentinel._ShouldLog()) return;
         // Error Logging
-        GSLog.Error("[Sentinel ERROR] " + message);
+        GSLog.Info("[SENTINEL ERROR] " + message);
         local packet = { command = "logmessage", type = "error", text = message };
         Sentinel.SendAdmin(packet);
     }
@@ -158,7 +159,7 @@ class Sentinel
                 housecount = GSTown.GetHouseCount(town_id),
                 growthrate = GSTown.GetGrowthRate(town_id),
                 statue = GSTown.HasStatue(town_id),
-                location = GSMap.GetTileX(location) + "x" + GSMap.GetTileY(location)
+                location = GSMap.GetTileX(location).tostring() + "x" + GSMap.GetTileY(location).tostring()
             };
             
             // Check for owner if CityBuilder is active and has matching structures
@@ -193,7 +194,11 @@ class Sentinel
     {
         local root = getroottable();
         if (!("SentinelStorage" in root)) root.SentinelStorage <- {};
-        root.SentinelStorage[storagekey] <- storagevalue;
+        if (storagekey in root.SentinelStorage) {
+            root.SentinelStorage[storagekey] = storagevalue;
+        } else {
+            root.SentinelStorage[storagekey] <- storagevalue;
+        }
     }
 
     static function GetStorage(storagekey)

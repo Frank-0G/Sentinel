@@ -157,7 +157,7 @@ class CommandManager(IPlugin):
             "version": self.cmd_version,
             "companies": self.cmd_companies,
             "name": self.cmd_name,
-            "cv": self.cmd_cv,
+            "cv": self.proxy_goal_cmd,
             "plugins": self.cmd_plugins,
             "alogin": self.cmd_auth,
             "alogout": self.cmd_auth,
@@ -306,7 +306,7 @@ class CommandManager(IPlugin):
         # Signal Sentinel to restart ONLY the game process
         self.client.restart_requested = True
 
-    def on_player_quit(self, cid): self.trigger_reset_check()
+    def on_player_quit(self, cid, reason="leaving"): self.trigger_reset_check()
     def on_player_update(self, cid, name, company_id): self.trigger_reset_check()
     def trigger_reset_check(self): threading.Timer(1.0, self._check_resets_impl).start()
 
@@ -486,10 +486,7 @@ class CommandManager(IPlugin):
             return f"Company #{display_id}"
         except: return f"Company #{co_id+1}"
 
-    def cmd_cv(self, cmd, args, reply, source, admin_name, context):
-        gs = self.client.get_service("GoalSystem")
-        if gs: gs.cmd_goal(cmd, args, reply, source, context)
-        else: reply.append("Goal: Money")
+
 
     def cmd_resetme(self, cmd, args, reply, source, admin_name, context):
         if source != "game": 
@@ -1154,6 +1151,19 @@ class CommandManager(IPlugin):
         else:
             reply.append("Error: OpenttdSession not available.")
 
+    def cmd_goalreached(self, cmd, args, reply, source, admin_name, context):
+        if not admin_name:
+            reply.append("This command is restricted to administrators.")
+            return
+
+        gs = self.client.get_service("GameScriptConnector")
+        if gs:
+            # We don't take arguments anymore; GS will decide who the winner is (or a draw)
+            gs.send_to_gs({"command": "goalreached"})
+            reply.append("Requesting Goal Reached sequence from GameScript...")
+        else:
+            reply.append("Error: GameScriptConnector not found.")
+
     def cmd_rules(self, cmd, args, reply, source, admin_name, context):
         reply.append("Rules: Be nice.")
 
@@ -1193,8 +1203,9 @@ class CommandManager(IPlugin):
         
         elapsed = time.time() - self.gs_ping_context["time"]
         tick = data.get("tick", "unknown")
+        mode = data.get("mode", "Unknown")
         
-        msg = f"GameScript is ALIVE (Tick: {tick}, Response: {elapsed:.2f}s)"
+        msg = f"GameScript is ALIVE (Mode: {mode}, Tick: {tick}, Response: {elapsed:.2f}s)"
         self._send_directed(msg, self.gs_ping_context["source"], self.gs_ping_context["context"])
         self.gs_ping_context = None
 
@@ -1231,16 +1242,21 @@ class CommandManager(IPlugin):
             reply.append(al.process_command(cmd, args, source, admin_name, auth_id) or "")
 
     def proxy_goal_cmd(self, cmd, args, reply, source, admin_name, context):
-        gs = self.client.get_service("GoalSystem")
-        if gs:
-            if cmd == "goal" or cmd == "cv": gs.cmd_goal(cmd, args, reply, source, context)
-            elif cmd == "progress": gs.cmd_progress(cmd, args, reply, source, context)
-            elif cmd == "townstats": gs.cmd_townstats(cmd, args, reply, source, context)
-            elif cmd == "claimed": gs.cmd_claimed(cmd, args, reply, source, context)
-            elif cmd == "goalreached": gs.cmd_goalreached(cmd, args, reply, source, context)
-            elif cmd == "awarning": gs.cmd_awarning(cmd, args, reply, source, context)
+        gsc = self.client.get_service("GameScriptConnector")
+        if gsc:
+            # Forward the command to the GameScript Kernel via the connector
+            # We include source information so the GS knows where to reply
+            source_id = context.get('cid') or context.get('irc_target') or context.get('discord_channel_id')
+            gsc.send_to_gs({
+                "command": cmd,
+                "args": args,
+                "source": source,
+                "source_id": source_id,
+                "admin_name": admin_name
+            })
+            # No immediate reply, wait for GS to send chat_reply event
         else:
-            reply.append("GoalSystem plugin not loaded.")
+            reply.append("GameScriptConnector plugin not loaded. Goal system unavailable.")
 
     def cmd_help(self, cmd, args, reply, source, admin_name, context):
         # Use the prefix that was actually used to invoke the command

@@ -244,7 +244,7 @@ class AdminClient:
                     self.current_seed = parts[1].strip()
             except: pass
 
-        if not self.dashboard_active and self.config.get("wrapper_logs", True):
+        if not self.dashboard_active and self.config.get("logs", {}).get("wrapper_logs", True):
              print(f"[WRAPPER] {text.strip()}")
         for p in self.plugins:
             if hasattr(p, 'on_wrapper_log'): 
@@ -466,13 +466,15 @@ class AdminClient:
                         
                         # Skip logging commands if requested
                         show_cmd = True
-                        log_automated = self.config.get("log_automated_commands", False)
+                        log_config = self.config.get("logs", {})
+                        log_automated = log_config.get("log_automated_commands", False)
+                        log_debug = log_config.get("log_debug_commands", False)
                         gs_log_0 = (getattr(self, 'gs_log_level', 1) == 0)
 
-                        # IF GS says "No logs", we SILENCE EVERYTHING (except maybe errors, but these are debug cmds)
-                        if gs_log_0:
+                        # IF GS says "No logs", or globally disabled we SILENCE EVERYTHING
+                        if gs_log_0 or not log_debug:
                             show_cmd = False
-                        # Otherwise, apply automated command filtering
+                        # Otherwise, apply automated command filtering (cid 1)
                         elif cid == 1 and not log_automated:
                             show_cmd = False
                         
@@ -578,7 +580,8 @@ class AdminClient:
                         self.current_seed = output.split("Generation Seed:")[1].strip()
                     except: pass
                     
-                print(f"[RCON REPLAY] {output}")
+                if self.config.get("logs", {}).get("log_rcon_replay", False):
+                    print(f"[RCON REPLAY] {output}")
                 
                 for p in self.plugins: 
                     if hasattr(p, 'on_rcon_result'): p.on_rcon_result("Unknown", output)
@@ -769,7 +772,7 @@ if __name__ == "__main__":
             threading.Thread(target=monitor_wrapper_output, daemon=True).start()
             print("[Launcher] OpenTTD Server is Starting, Please wait...")
             
-            if not config.get("wrapper_logs", True):
+            if not config.get("logs", {}).get("wrapper_logs", True):
                  print("[Launcher] TIP: If you want to see what is happening, please enable the 'Wrapper Logs' in the settings.")
             
             # Wait for server to be ready before connecting

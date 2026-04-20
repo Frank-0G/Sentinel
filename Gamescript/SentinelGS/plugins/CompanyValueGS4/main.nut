@@ -18,7 +18,8 @@ class CompanyValueGS4
 	companies = null;
 	goal_mode = null;
 	goal_reached = null;
-	goal_value = null;
+	SENTINEL_TARGET = null;
+	header_goal_id = null;
 
 	goal_company = {
 		c_id = null,
@@ -67,7 +68,7 @@ class CompanyValueGS4
         this.api.SendToController({
             event = "goaltypeinfo",
             goalmastergame = 9, // ScriptGoal
-            target_value = this.goal_value,
+            target_value = this.SENTINEL_TARGET,
 			target_mode = "companyvalue"
         });
 	}
@@ -140,10 +141,12 @@ class CompanyValueGS4
 			this.goal_mode = GSController.GetSetting("goal_mode") == 1 ? true : false;
 		}
 
-		if (this.goal_value == null) {
-			this.goal_value = GSController.GetSetting("goal_value") * 1000;
-			this.api.Log("CompanyValueGS4: Initialized goal value = " + this.goal_value);
-		}
+		if (this.SENTINEL_TARGET == null) {
+			this.SENTINEL_TARGET = GSController.GetSetting("sentinel_goal_sync_value") * 1000;
+			this.api.Log("Plugin Core: Initialized target from Game Settings: " + this.SENTINEL_TARGET);
+		} else {
+            this.api.Log("Plugin Core: Initialized successfully with Sentinel Synchronized target: " + this.SENTINEL_TARGET);
+        }
 
 		if (this.goal_reached == true) {
 			this.TriggerWin(this.goal_company.c_id, this.goal_company.goal_value);
@@ -229,8 +232,17 @@ class CompanyValueGS4
 
 	}
 
+    function RefreshGoals() {
+        this.api.Log("Hot-swapping goal UI to: " + this.SENTINEL_TARGET);
+        for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
+            if (this.companies[c_id].goal_id != null) {
+                GSGoal.SetText(this.companies[c_id].goal_id, GSText(GSText.STR_COMPANY_GOAL, this.SENTINEL_TARGET));
+            }
+        }
+    }
+
 	function Run(ticks) {
-        if (ticks % 75 == 0) {
+        if (ticks % 20 == 0) {
             this.UpdateScoreboard();
 			//this.api.Log("CompanyValueGS4: Tick...");
         }
@@ -296,9 +308,9 @@ class CompanyValueGS4
 						assert(this.companies[ec_id].inauguration_date == null);
 						local inauguration_date = GSDate.GetCurrentDate();
 						assert(this.companies[ec_id].goal_id == null);
-						this.companies[ec_id].goal_id = GSGoal.New(ec_id, GSText(GSText.STR_COMPANY_GOAL, goal_value), GSGoal.GT_COMPANY, ec_id);
+						this.companies[ec_id].goal_id = GSGoal.New(ec_id, GSText(GSText.STR_COMPANY_GOAL, this.SENTINEL_TARGET), GSGoal.GT_COMPANY, ec_id);
 						this.companies[ec_id].inauguration_date = inauguration_date;
-						GSGoal.Question(ec_id, ec_id, GSText(GSText.STR_COMPANY_GOAL, goal_value), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
+						GSGoal.Question(ec_id, ec_id, GSText(GSText.STR_COMPANY_GOAL, this.SENTINEL_TARGET), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
 					}
 				}
 				else {
@@ -377,9 +389,8 @@ class CompanyValueGS4
 			/* update company values */
 			for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
 				if (GSCompany.ResolveCompanyID(c_id) != GSCompany.COMPANY_INVALID) {
-					//local c_value = GSCompany.GetQuarterlyCompanyValue(c_id, GSCompany.CURRENT_QUARTER);
-					/* always get the value of the first previous quarter */
-					local c_value = GSCompany.GetQuarterlyCompanyValue(c_id, 1);
+					// Use current quarter (0) for real-time tracking instead of previous (1)
+					local c_value = GSCompany.GetQuarterlyCompanyValue(c_id, 0);
 					if (this.global_list.HasItem(c_id)) {
 						if (this.global_list.GetValue(c_id) != c_value) {
 							this.global_list.SetValue(c_id, c_value);
@@ -398,10 +409,26 @@ class CompanyValueGS4
 			}
 
 			if (this.goal_mode != false) {
-				if (this.best_value != goal_value) {
-					this.best_value = goal_value;
+				if (this.best_value != this.SENTINEL_TARGET) {
+					this.best_value = this.SENTINEL_TARGET;
 					if (update_method != null) update_method = true;
 				}
+				
+				// Handle descriptive header line
+				if (this.SENTINEL_TARGET > 0) {
+					local header_text = GSText(GSText.STR_COMPANY_GOAL, this.SENTINEL_TARGET);
+					if (this.header_goal_id == null) {
+						this.header_goal_id = GSGoal.New(GSCompany.COMPANY_INVALID, header_text, GSGoal.GT_NONE, 0);
+					} else {
+						GSGoal.SetText(this.header_goal_id, header_text);
+					}
+				} else if (this.header_goal_id != null) {
+					GSGoal.Remove(this.header_goal_id);
+					this.header_goal_id = null;
+				}
+			} else if (this.header_goal_id != null) {
+				GSGoal.Remove(this.header_goal_id);
+				this.header_goal_id = null;
 			}
 
 			if (update_method != false) {
@@ -479,7 +506,7 @@ class CompanyValueGS4
 
 						/* check for goal reached */
 						if (this.goal_mode == true) {
-							if (c_value >= goal_value) {
+							if (c_value >= this.SENTINEL_TARGET) {
 								if (this.goal_reached != true) {
 									local days_taken = GSDate.GetCurrentDate() - this.companies[c_id].inauguration_date;
 									local c_num = c_id + 1;
@@ -511,16 +538,8 @@ class CompanyValueGS4
 				//GSLog.Info("=====Ended goal computations=====");
 
 				if (this.goal_reached == true) {
-					for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
-						if (GSCompany.ResolveCompanyID(c_id) != GSCompany.COMPANY_INVALID) {
-							GSGoal.CloseQuestion(c_id);
-						}
-					}
 					this.TriggerWin(this.goal_company.c_id, this.goal_company.goal_value);
-					GSGoal.Question(25, GSCompany.COMPANY_INVALID, GSText(GSText.STR_GOAL_REACHED, this.goal_company.days_taken, this.goal_company.c_id, this.goal_company.c_id, this.goal_value), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
-					//this.UpdateTop10();
-					//GSGame.Pause();
-					//GSLog.Warning("Game paused. Asking companies to continue...");
+					// Victory popup is now handled by Python + Kernel to ensure correct sequence
 				}
 			}
 		}

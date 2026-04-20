@@ -36,18 +36,18 @@ class SentinelGS extends GSInfo
         // --- COMPANY VALUE SETTINGS (for CompanyValueGS4 too) ---
         this.AddCategory("companyvalue", "--- Company Value Settings ---");
 
-        AddSetting({
+        this.AddSetting({
             name = "goal_mode", description = "Goal mode", min_value = 0, max_value = 1,
             easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, step_size = 1,
             flags = CONFIG_NONE
         });
-        AddLabels("goal_mode", {
+        this.AddLabels("goal_mode", {
             _0 = "Only rank companies by their values",
             _1 = "Reach target company value below"
         });
 
-        AddSetting({
-            name = "goal_value", description = "Target company value (in thousand £)",
+        this.AddSetting({
+            name = "sentinel_goal_sync_value", description = "Target company value (in thousand £)",
             min_value = 250, max_value = 999999999,
             easy_value = 500, medium_value = 2500, hard_value = 5000,
             custom_value = 250,
@@ -55,7 +55,7 @@ class SentinelGS extends GSInfo
             flags = CONFIG_INGAME
         });
 
-        AddSetting({
+        this.AddSetting({
             name = "end_year",
             description = "Target end year (must be as same as in openttd.cfg)",
             min_value = 1950,

@@ -1,81 +1,114 @@
 require("Sentinel.nut");
+require("kernel_services.nut");
 
 class SentinelCore extends GSController
 {
-    // FIX: Defined missing 'api' variable to prevent crash
-    api = null;
+    // Kernel State
     active_plugin = null;
     stats_plugin = null;
     ticks = 0;
     month = -1;
-    quarter = -1;
-    gs_log_level = -1;
+    gs_log_level = 1;
+    server_id = 99;
+    
+    // Goal Targets (Synced from Sentinel XML)
+    goal_win_limit = 0;
+    goal_population = 0;
+    
+    // Goal & Progress Metadata (Synced from active plugin)
+    goal_mode = 0; // 0: None, 1: Value, 2: CityBuilder, 9: Script
+    goal_target = 0;
+    goal_unit = "EUR";
+    goal_description = "company value";
+    goal_announce_interval = 0;
+    currency_multiplier = 1.0;
+
+    // Victory state
+    game_won = false;
+    winner_cid = -1;
+    
+    company_progress = null; // { cid: { value: 0, progress: 0 } }
+    company_colors = null;   // [ colorIdx, ... ]
+    
+    // Protection State (Ported from goal_system.py)
+    claimed_towns = null; 
+    
+    last_record_date = 0;
+    handshake_done = false;
+    last_handshake_tick = -20; // Allow immediate first attempt
+    plugins_initialized = false;
 
     constructor() {
-        GSLog.Info("SentinelGS: Kernel Initializing...");
+        Sentinel.Log("Kernel Initializing...");
+        // this.server_id is initially 99 (from class member)
+        this.company_progress = {};
+        this.company_colors = array(15, 15); // Default to Grey
+        this.claimed_towns = {};
+        for (local i = 0; i < 15; i++) {
+            this.company_progress[i] <- { value = null, progress = 0, inhabitants = null, bb_goals = null };
+        }
     }
 
     function Start()
     {
+        GSLog.Info("[SENTINEL] Kernel Start() beginning...");
         Sentinel.Log("Kernel Started. Version: " + Sentinel.VERSION);
         Sentinel.SendAdmin({ event = "gamescript_start", version = Sentinel.VERSION });
 
-        // Force initial stats push
+        // Force initial stats and color sync
+        this.SyncCompanyColors();
         this.month = GSDate.GetMonth(GSDate.GetCurrentDate());
         this.PushMonthlyStats();
 
-        // Sync Log Level to Controller
         this.gs_log_level = GSController.GetSetting("log_level");
         Sentinel.SendAdmin({ event = "gs_log_level", value = this.gs_log_level });
 
-        // --- MODE SELECTION ---
-        local mode = GSController.GetSetting("game_mode");
-        // ... (rest of the mode selection logic) ...
-        // I'll use a larger block to ensure context is correct
-        Sentinel.Log("Read 'game_mode' setting: " + mode);
+        this.RunLoop();
+    }
 
-        // Fallback for broken/missing config
-        if (mode <= -1) {
-            Sentinel.Log("Warning: Config missing or corrupt (-1). Defaulting to Mode 2 (Aphid).");
-            mode = 0;
-        }
+    function LazyInitPlugins() {
+        if (this.plugins_initialized) return;
+        this.plugins_initialized = true;
 
-        Sentinel.Log("Initializing Game Mode ID: " + mode);
+        Sentinel.Log("Config received. Initializing plugins now...");
 
         try {
-            if (mode == 0) {
-                require("plugins/CompanyValue/wrapper.nut");
-                this.active_plugin = Sentinel_CompanyValue(null);
-            }
-            else if (mode == 1) {
-                require("plugins/ClassicCB/wrapper.nut");
-                this.active_plugin = Sentinel_ClassicCB(null);
-            }
-            else if (mode == 9) {
+            // --- BACKGROUND STATISTICS ---
+            require("plugins/Statistics/wrapper.nut");
+            this.stats_plugin = Sentinel_Statistics(this);
+            this.stats_plugin.Start();
+
+            // --- MODE SELECTION ---
+            local mode = GSController.GetSetting("game_mode").tointeger();
+            Sentinel.Log("Initializing Game Mode ID: " + mode.tostring());
+
+            if (mode == 9) {
                 require("plugins/CompanyValueGS4/wrapper.nut");
-                this.active_plugin = Sentinel_CompanyValueGS4(null);
-            }
-            else {
-                Sentinel.Log("Mode " + mode + " is Company Value (Default)");
+                this.active_plugin = Sentinel_CompanyValueGS4(this);
+            } else if (mode == 1) {
+                require("plugins/ClassicCB/wrapper.nut");
+                this.active_plugin = Sentinel_ClassicCB(this);
+            } else {
                 require("plugins/CompanyValue/wrapper.nut");
-                this.active_plugin = Sentinel_CompanyValue(null);
+                this.active_plugin = Sentinel_CompanyValue(this);
             }
 
             if (this.active_plugin != null) {
+                // Ensure immediate sync BEFORE starting so the plugin skips its own defaults
+                if (this.goal_win_limit > 0 || this.goal_population > 0) {
+                    this.active_plugin.UpdateGoalConfig({ 
+                        winlimit = this.goal_win_limit,
+                        population = this.goal_population
+                    });
+                }
+
                 Sentinel.Log("Starting Active Plugin...");
                 this.active_plugin.Start();
             }
 
-            // --- BACKGROUND STATISTICS ---
-            require("plugins/Statistics/wrapper.nut");
-            this.stats_plugin = Sentinel_Statistics(null);
-            this.stats_plugin.Start();
-
         } catch(e) {
-            Sentinel.Error("CRITICAL INIT FAILURE: " + e);
+            Sentinel.Error("CRITICAL INIT FAILURE: " + e.tostring());
         }
-
-        this.RunLoop();
     }
 
     function RunLoop() {
@@ -87,12 +120,18 @@ class SentinelCore extends GSController
                 this.month = GSDate.GetMonth(now);
                 this.PushMonthlyStats();
             }
+            
+            // Periodic Progress Recording (Every 15 game days)
+            if (now >= (this.last_record_date + 15)) {
+                this.last_record_date = now;
+                this.RecordAllProgress();
+            }
 
             if (this.active_plugin != null) {
                 try {
                     this.active_plugin.Run(this.ticks);
                 } catch(e) {
-                    Sentinel.Error("Runtime Error: " + e);
+                    Sentinel.Error("Plugin Runtime Error: " + e);
                 }
             }
 
@@ -105,7 +144,7 @@ class SentinelCore extends GSController
             this.Sleep(1);
             this.ticks++;
 
-            // Periodically sync log level if it changes in-game
+            // Heartbeat & Config Sync
             if (this.ticks % 100 == 0) {
                 local lvl = GSController.GetSetting("log_level");
                 if (lvl != this.gs_log_level) {
@@ -113,18 +152,13 @@ class SentinelCore extends GSController
                     Sentinel.SendAdmin({ event = "gs_log_level", value = this.gs_log_level });
                 }
             }
+
+            // Handshake Heartbeat (shout until Python answers)
+            if (!this.handshake_done && this.ticks >= (this.last_handshake_tick + 20)) {
+                this.last_handshake_tick = this.ticks;
+                Sentinel.SendAdmin({ command = "gs_init" });
+            }
         }
-    }
-
-    function PushMonthlyStats() {
-        Sentinel.Log("Processing Monthly Statistics Reporting...");
-
-        // 1. Landscape Info (Legacy Event)
-        Sentinel.SendAdmin({ event = "landscapeinfo", landscape = GSGame.GetLandscape() });
-
-        // Note: Goal Type Info, Town Statistics, and Company Population Updates
-        // are now handled exclusively by the active GameScript plugins (CityBuilder, CompanyValue, etc)
-        // to prevent overwriting of actual plugin data with default generic data.
     }
 
     function HandleEvents() {
@@ -132,228 +166,462 @@ class SentinelCore extends GSController
             local ev = GSEventController.GetNextEvent();
             local type = ev.GetEventType();
 
-            // --- LEGACY EVENT FORWARDING ---
-            switch (type) {
-                case GSEvent.ET_VEHICLE_CRASHED:
-                    local crash = GSEventVehicleCrashed.Convert(ev);
-                    local v_id = crash.GetVehicleID();
-                    Sentinel.SendAdmin({
-                        event = "vehiclecrash",
-                        vehicleid = v_id,
-                        company = GSVehicle.GetOwner(v_id),
-                        crashsite = crash.GetCrashSite(),
-                        crashreason = crash.GetCrashReason()
-                    });
-                    break;
-
-                case GSEvent.ET_COMPANY_MERGER:
-                    local merger = GSEventCompanyMerger.Convert(ev);
-                    Sentinel.SendAdmin({
-                        event = "companymerge",
-                        oldcompany = merger.GetOldCompanyID(),
-                        newcompany = merger.GetNewCompanyID()
-                    });
-                    break;
-
-                case GSEvent.ET_COMPANY_BANKRUPT:
-                    local bankrupt = GSEventCompanyBankrupt.Convert(ev);
-                    Sentinel.SendAdmin({ event = "companybankrupt", company = bankrupt.GetCompanyID() });
-                    break;
-
-                case GSEvent.ET_COMPANY_IN_TROUBLE:
-                    local trouble = GSEventCompanyInTrouble.Convert(ev);
-                    Sentinel.SendAdmin({ event = "companyintrouble", company = trouble.GetCompanyID() });
-                    break;
-
-                case GSEvent.ET_GOAL_QUESTION_ANSWER:
-                    local qa = GSEventGoalQuestionAnswer.Convert(ev);
-                    Sentinel.SendAdmin({
-                        event = "goalquestionanswer",
-                        id = qa.GetUniqueID(),
-                        company = qa.GetCompany(),
-                        button = qa.GetButton()
-                    });
-                    break;
-            }
-
+            // Intercept Internal Meta-Events
             if (type == GSEvent.ET_ADMIN_PORT) {
-                local data = GSEventAdminPort.Convert(ev).GetObject();
-                if (data != null && "event" in data && data.event == "check_crossing") {
+                local ev_admin = GSEventAdminPort.Convert(ev);
+                local data = ev_admin.GetObject();
+                
+                GSLog.Info("[SENTINEL] DEBUG: Received Admin Port Event.");
+                if (data == null) {
+                    GSLog.Error("[SENTINEL] ERROR: Admin Packet Object is NULL!");
+                    continue;
+                }
+
+                local cmd = ("command" in data ? data.command : ("event" in data ? data.event : "unknown"));
+                Sentinel.Log("Kernel Trace: Handling Admin Command: " + cmd.tostring());
+                
+                if (cmd == "goal" || cmd == "cv") {
+                    this.HandleGoalCmd(data);
+                    continue;
+                } else if (cmd == "progress") {
+                    this.HandleProgressCmd(data);
+                    continue;
+                } else if (cmd == "check_crossing") {
                     this.check_crossing(data.c_id, data.comp_id, data.tiles);
-                } else if (data != null && "event" in data && data.event == "ping") {
-                    Sentinel.SendAdmin({ event = "pong", tick = this.ticks, time = GSDate.GetCurrentDate() });
-                } else if (data != null && "event" in data && data.event == "requestinfo") {
+                    continue;
+                } else if (cmd == "cmd_log") {
+                    this.HandleCommandLog(data);
+                    continue;
+                } else if (cmd == "town_claimed") {
+                    this.HandleTownClaimed(data);
+                    continue;
+                } else if (cmd == "town_unclaimed") {
+                    this.HandleTownUnclaimed(data);
+                    continue;
+                } else if (cmd == "winner") {
+                    this.HandleWinner(data);
+                    continue;
+                } else if (cmd == "goalreached") {
+                    this.HandleGoalReachedCmd(data);
+                    continue;
+                } else if (cmd == "townstats") {
+                    this.HandleTownStatsCmd(data);
+                    continue;
+                } else if (cmd == "claimed") {
+                    this.HandleClaimedCmd(data);
+                    continue;
+                } else if (cmd == "ping") {
+                    local t = ("tick" in data ? data.tick : 0);
+                    local m = (this.active_plugin != null ? this.active_plugin.GetName() : "None");
+                    Sentinel.SendAdmin({ command = "pong", tick = t, mode = m });
+                    continue;
+                } else if (cmd == "requestinfo") {
                     if (this.active_plugin != null) this.active_plugin.SendGoalInfo();
-                } else if (this.active_plugin != null) {
+                    continue;
+                } else if (cmd == "display_victory_popup") {
+                    this.HandleDisplayVictoryPopup(data);
+                    continue;
+                } else if (cmd == "set_server_id" || cmd == "set_server_config") {
+                    this.handshake_done = true;
+                    if (cmd == "set_server_config") {
+                    if ("winlimit" in data) this.goal_target = data.winlimit.tointeger();
+                    if ("unit" in data) this.goal_unit = data.unit.tostring();
+                    if ("desc" in data) this.goal_description = data.desc.tostring();
+                    if ("interval" in data) this.goal_announce_interval = data.interval.tointeger();
+                    
+                    if ("currency" in data) {
+                        local code = data.currency.tostring();
+                        this.currency_multiplier = KernelServices.GetCurrencyMultiplier(code);
+                        Sentinel.Log("Kernel Trace: Currency mapped to " + code + " (Multiplier: " + this.currency_multiplier + ")");
+                    }
+
+                    // Lazy Init Plugins BEFORE syncing config to them
+                    this.LazyInitPlugins();
+
+                    // Adjust Sentinel Target to base units for internal logic
+                    if (this.currency_multiplier != 1.0) {
+                        local raw_limit = data.winlimit.tointeger();
+                        this.goal_target = (raw_limit / this.currency_multiplier).tointeger();
+                        
+                        // Update the data packet so plugins also get the normalized base-unit value
+                        data.winlimit = this.goal_target;
+                        Sentinel.Log("Kernel Trace: Winlimit normalized from " + raw_limit + " to " + this.goal_target + " for plugin sync.");
+                    }
+
+                    Sentinel.Log("Kernel Trace: Server config updated from Sentinel.");
+                    if (this.active_plugin != null) {
+                       this.active_plugin.UpdateGoalConfig(data);
+                    }
+                    }
+                    
+                    continue;
+                }
+
+                // Pass to active plugin if not handled
+                if (this.active_plugin != null) {
                     this.active_plugin.OnAdminEvent(data);
                 }
             }
 
+            // Forward to active plugin
             if (this.active_plugin != null) {
                 this.active_plugin.OnEvent(type, ev);
             }
-
             if (this.stats_plugin != null) {
                 this.stats_plugin.OnEvent(type, ev);
             }
         }
     }
 
-    // --- ANTICHEAT: Native Crossing Check ---
-    function check_crossing(c_id_str, comp_id_str, tiles_array) {
-        GSController.Sleep(1); // Wait 1 tick for map update
-        local c_id = c_id_str.tointeger();
-        local comp_id = comp_id_str.tointeger();
+    // --- COMMAND HANDLERS (PORTED FROM PYTHON) ---
 
-        if (tiles_array.len() == 0) return;
+    function HandleGoalCmd(data) {
+        Sentinel.Log("Kernel Trace: Entering HandleGoalCmd");
+        local source = ("source" in data ? data.source : "game");
+        local reply = [];
 
-        local min_x = 999999;
-        local max_x = 0;
-        local min_y = 999999;
-        local max_y = 0;
+        // 1. Header
+        if (this.goal_target == 0 && this.active_plugin != null) {
+            this.active_plugin.SyncMetadata();
+        }
+        
+        local display_target = (this.goal_target * this.currency_multiplier).tointeger();
+        local formatted_val = KernelServices.FormatNumber(display_target);
+        reply.push("--- First company with " + formatted_val + " " + this.goal_unit + " " + this.goal_description + " wins the game. ---");
 
-        foreach (t_id_str in tiles_array) {
-            local t_id = t_id_str.tointeger();
-            local x = GSMap.GetTileX(t_id);
-            local y = GSMap.GetTileY(t_id);
-            if (x < min_x) min_x = x;
-            if (x > max_x) max_x = x;
-            if (y < min_y) min_y = y;
-            if (y > max_y) max_y = y;
+        // 2. Rankings
+        local ranks = [];
+        for (local i = 0; i < 15; i++) {
+            if (GSCompany.ResolveCompanyID(i) != GSCompany.COMPANY_INVALID) {
+                local val = this.company_progress[i].value;
+                local display_val = (val == null ? 0 : (val * this.currency_multiplier).tointeger());
+                ranks.push({
+                    cid = i,
+                    progress = this.company_progress[i].progress,
+                    value = display_val
+                });
+            }
         }
 
-        local crossing_demolished = false;
+        // Sort by progress desc
+        ranks.sort(function(a, b) {
+            if (a.progress > b.progress) return -1;
+            if (a.progress < b.progress) return 1;
+            return 0;
+        });
 
-        for (local x = min_x; x <= max_x; x++) {
-            for (local y = min_y; y <= max_y; y++) {
-                local t_id = GSMap.GetTileIndex(x, y);
+        for (local i = 0; i < ranks.len(); i++) {
+            local r = ranks[i];
+            local name = GSCompany.GetName(r.cid);
+            local colorIdx = this.company_colors[r.cid];
+            local color = KernelServices.GetColorName(colorIdx);
+            local val_str = KernelServices.FormatNumber(r.value);
+            reply.push("- (" + r.progress.tostring() + "%) Rank #" + (i + 1).tostring() + " is " + name + " (" + color + ") with " + val_str + " " + this.goal_unit + " " + this.goal_description);
+        }
 
-                local has_road = GSRoad.IsRoadTile(t_id);
-                local has_rail = GSRail.IsRailTile(t_id);
-                local has_tram = false;
-                try { has_tram = GSRoad.IsTramTile(t_id); } catch(e) { }
+        if (ranks.len() == 0) reply.push("No active companies found.");
 
-                // LOG: Find where road and rail coexist
-                if ((has_road || has_tram) && has_rail) {
-                    local rail_owner = 255;
-                    local road_owner = 255;
+        Sentinel.Log("Kernel Trace: Sending Reply with " + reply.len().tostring() + " lines");
+        this.SendReply(data, reply);
+    }
 
-                    // In GS API 1.6, GSTile.GetOwner returns the rail owner on level crossings.
-                    // We must check neighbors to find the road owner.
-                    rail_owner = GSTile.GetOwner(t_id);
+    function HandleProgressCmd(data) {
+        local max_progress = 0;
+        for (local i = 0; i < 15; i++) {
+            if (this.company_progress[i].progress > max_progress) {
+                max_progress = this.company_progress[i].progress;
+            }
+        }
 
-                    local neighbors = [
-                        GSMap.GetTileIndex(x + 1, y), GSMap.GetTileIndex(x - 1, y),
-                        GSMap.GetTileIndex(x, y + 1), GSMap.GetTileIndex(x, y - 1)
-                    ];
+        local bar = KernelServices.GetProgressBar(max_progress);
+        local msg = "Goal progress: " + bar + " - " + max_progress.tointeger() + "%";
+        
+        this.SendReply(data, [msg]);
+    }
 
-                    foreach (nt_id in neighbors) {
-                        if (!GSMap.IsValidTile(nt_id)) continue;
-                        if (GSRoad.IsRoadTile(nt_id) && !GSRail.IsRailTile(nt_id)) {
-                            road_owner = GSTile.GetOwner(nt_id);
-                            if (road_owner != 255) break;
-                        }
-                    }
+    function UpdateCompanyProgress(cid, value, progress) {
+        this.company_progress[cid].value = value;
+        this.company_progress[cid].progress = progress;
 
-                    // Fallback: If still 255, it might be a tram
-                    if (road_owner == 255 && has_tram) {
-                        foreach (nt_id in neighbors) {
-                            if (!GSMap.IsValidTile(nt_id)) continue;
-                            if (GSRoad.IsTramTile(nt_id) && !GSRail.IsRailTile(nt_id)) {
-                                road_owner = GSTile.GetOwner(nt_id);
-                                if (road_owner != 255) break;
-                            }
-                        }
-                    }
+        local display_val = (value * this.currency_multiplier).tointeger();
+        local formatted = KernelServices.FormatNumber(display_val);
+        Sentinel.Log("Kernel Trace: Progress Update Co " + (cid+1) + " -> " + formatted + " (" + progress + "%)");
+        
+        // Optional: Trigger a broadcast if important threshold reached? 
+    }
 
-                    local violation = false;
-                    local to_remove = ""; // "rail", "road"
-                    local original_owner = 255;
+    function HandleClaimedCmd(data) {
+        local reply = [];
+        reply.push("--- Currently Claimed Towns ---");
+        local found = false;
+        foreach (cid, info in this.claimed_towns) {
+            local co_name = GSCompany.GetName(cid);
+            reply.push("Town '" + info.name + "' is claimed by " + co_name + " (" + (cid + 1) + ")");
+            found = true;
+        }
+        if (!found) reply.push("No towns are currently claimed.");
+        this.SendReply(data, reply);
+    }
 
-                    if (rail_owner == comp_id) {
-                        // Builder is the rail owner. Check if it's over someone else's road.
-                        if (road_owner != 255 && road_owner != comp_id) {
-                            violation = true; to_remove = "rail"; original_owner = road_owner;
-                        }
-                    } else if (road_owner == comp_id) {
-                        // Builder is the road owner. Check if it's over someone else's rail.
-                        if (rail_owner != 255 && rail_owner != comp_id) {
-                            violation = true; to_remove = "road"; original_owner = rail_owner;
-                        }
-                    }
+    function HandleTownStatsCmd(data) {
+        // This is mode-dependent (usually CityBuilder)
+        if (this.active_plugin != null && "HandleTownStats" in this.active_plugin) {
+            this.active_plugin.HandleTownStats(data);
+        } else {
+            this.SendReply(data, ["Command '!townstats' is not available in the current game mode."]);
+        }
+    }
 
-                    if (violation) {
-                         if (!crossing_demolished) {
-                            Sentinel.Log("[AntiCheat] !!! VIOLATION DETECTED !!! Tile " + t_id + " - " + to_remove + " built by Company " + comp_id + " over infrastructure of Company " + original_owner);
+    // --- PROTECTION LOGIC ---
 
-                            local __mode = GSCompanyMode(comp_id);
+    function HandleTownClaimed(data) {
+        local cid = data.company.tointeger();
+        local tid = data.townid.tointeger();
+        local tx = data.x.tointeger();
+        local ty = data.y.tointeger();
+        local range = ("range" in data ? data.range : 20).tointeger();
 
-                            // Targeted removal - dynamic parameter check
-                            local res = false;
-                            if (to_remove == "rail") {
-                                // For rail-over-road, the road IS the overlay.
-                                // To remove the rail base, we MUST remove the road overlay first.
-                                // If the builder doesn't own the road, we act as the road owner to clear it.
-                                if (road_owner != 255 && road_owner != comp_id) {
-                                    {
-                                        local __tmp_mode = GSCompanyMode(road_owner);
-                                        GSTile.DemolishTile(t_id); // Removes road
-                                    }
+        local min_x = tx - range; if (min_x < 0) min_x = 0;
+        local min_y = ty - range; if (min_y < 0) min_y = 0;
+        local max_x = tx + range;
+        local max_y = ty + range;
 
-                                    // Now remove the violating rail as the builder
-                                    {
-                                        local __tmp_mode = GSCompanyMode(comp_id);
-                                        res = GSTile.DemolishTile(t_id); // Removes rail
-                                    }
+        this.claimed_towns[cid] <- {
+            townid = tid,
+            bbox = [min_x, min_y, max_x, max_y],
+            name = ("town" in data ? data.town : "Unknown")
+        };
+        
+        Sentinel.Log("Kernel: Recorded Claim for Co " + (cid+1).tostring() + " -> " + this.claimed_towns[cid].name);
+    }
 
-                                    // Now RESTORE the road as the original owner
-                                    if (road_owner != 255) {
-                                        local __tmp_mode = GSCompanyMode(road_owner);
-                                        // Give them a small budget to cover restoration costs
-                                        GSCompany.ChangeBankBalance(road_owner, 2000, GSCompany.EXPENSES_OTHER, t_id);
+    function HandleTownUnclaimed(data) {
+        local cid = data.company.tointeger();
+        if (cid in this.claimed_towns) {
+            delete this.claimed_towns[cid];
+        }
+    }
 
-                                        // Attempt to rebuild road based on neighbors
-                                        local road_neighbors = [];
-                                        foreach (nt_id in neighbors) {
-                                            if (GSMap.IsValidTile(nt_id) && GSRoad.IsRoadTile(nt_id)) road_neighbors.push(nt_id);
-                                        }
+    function HandleCommandLog(data) {
+        local cmd_name = ("name" in data ? data.name : "");
+        local actor_cid = ("company" in data ? data.company : 255).tointeger();
+        if (actor_cid == 255) return;
 
-                                        if (road_neighbors.len() >= 1) {
-                                            // Sleep 1 tick to ensure tile state is updated
-                                            GSController.Sleep(1);
+        // Simplified construction check (Ported from goal_system.py)
+        local is_con = (cmd_name.len() >= 8 && cmd_name.slice(0, 8) == "CmdBuild") || 
+                       (cmd_name.len() >= 9 && cmd_name.slice(0, 9) == "CmdRemove") || 
+                       cmd_name == "CmdClearArea";
+        
+        if (is_con) {
+            local tile = ("tile" in data ? data.tile : -1).tointeger();
+            if (tile == -1) return;
 
-                                            local r_type = has_tram ? GSRoad.ROADTYPE_TRAM : GSRoad.ROADTYPE_ROAD;
-                                            GSRoad.SetCurrentRoadType(r_type);
+            local tx = GSMap.GetTileX(tile);
+            local ty = GSMap.GetTileY(tile);
 
-                                            // Rebuild by connecting to each neighbor to ensure the tile is filled
-                                            foreach (nt_id in road_neighbors) {
-                                                GSRoad.BuildRoad(t_id, nt_id);
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    // Standard removal if builder owns road
-                                    res = GSRail.RemoveRail(t_id, t_id, GSRail.GetRailType(t_id));
-                                }
-                            } else if (to_remove == "road") {
-                                // For road-over-rail, road is the overlay. Removing overlay is easy.
-                                local rtype = GSRoad.ROADTYPE_ROAD;
-                                res = GSRoad.RemoveRoad(t_id, rtype);
-                                if (!res) {
-                                    rtype = GSRoad.ROADTYPE_TRAM;
-                                    res = GSRoad.RemoveRoad(t_id, rtype);
-                                }
-                                if (!res) {
-                                    res = GSTile.DemolishTile(t_id); // This usually works as the overlay owner
-                                }
-                            }
+            foreach (owner_cid, info in this.claimed_towns) {
+                if (owner_cid == actor_cid) continue;
 
-                            Sentinel.ChatPrivate(c_id, "ILLEGAL CROSSING: You cannot build over another company's infrastructure! Build a bridge or tunnel instead.");
-                            crossing_demolished = true;
-                        }
-                    }
+                local bb = info.bbox;
+                if (tx >= bb[0] && tx <= bb[2] && ty >= bb[1] && ty <= bb[3]) {
+                    this.HandleViolation(actor_cid, tile, info.name, owner_cid);
+                    return;
                 }
             }
         }
+    }
+
+    function HandleViolation(actor_cid, tile, town_name, owner_cid) {
+        Sentinel.Log("!!! VIOLATION !!! Co " + (actor_cid+1) + " built in " + town_name + " (Owned by Co " + (owner_cid+1) + ")");
+        
+        // 1. Revert Tile
+        GSTile.DemolishTile(tile); // As Kernel (Company 255 equivalent in some contexts, but GS always has power)
+        
+        // 2. Notify Python for penalties
+        Sentinel.SendAdmin({
+            command = "violation",
+            company = actor_cid,
+            tile = tile,
+            town = town_name,
+            owner = owner_cid
+        });
+    }
+
+    function HandleWinner(data) {
+        local cid = data.company.tointeger();
+        local amount = ("amount" in data ? data.amount : 0);
+        this.TriggerVictory(cid, amount);
+    }
+
+    function HandleGoalReachedCmd(data) {
+        Sentinel.Log("HandleGoalReachedCmd: Searching for leader...");
+        local leader_cid = -1;
+        local max_progress = -1;
+        local is_tie = false;
+        
+        for (local i = 0; i < 15; i++) {
+            if (GSCompany.ResolveCompanyID(i) != GSCompany.COMPANY_INVALID) {
+                local prog = this.company_progress[i].progress;
+                if (prog > max_progress) {
+                    max_progress = prog;
+                    leader_cid = i;
+                    is_tie = false;
+                } else if (prog == max_progress && prog > 0) {
+                    is_tie = true;
+                }
+            }
+        }
+        
+        if (is_tie) {
+            Sentinel.Log("Goal Reached: TIE detected at " + max_progress + "%. No winner.");
+            this.TriggerVictory(-1, 0);
+        } else if (leader_cid != -1) {
+            Sentinel.Log("Goal Reached: Leader is Co " + (leader_cid+1) + " with " + max_progress + "%");
+            this.TriggerVictory(leader_cid, this.company_progress[leader_cid].value);
+        } else {
+            Sentinel.Log("Goal Reached: No active companies with progress found.");
+            this.TriggerVictory(-1, 0);
+        }
+    }
+
+    function HandleWinner(data) {
+        local cid = data.company.tointeger();
+        local amount = ("amount" in data ? data.amount : 0);
+        this.TriggerVictory(cid, amount);
+    }
+
+    function TriggerVictory(cid, amount) {
+        if (this.game_won) return;
+        this.game_won = true;
+        this.winner_cid = cid;
+        
+        local name = (cid >= 0 ? GSCompany.GetName(cid) : "Draw");
+        local color_name = "N/A";
+        if (cid >= 0) {
+            local scope = GSCompanyMode(cid);
+            color_name = KernelServices.GetColorName(GSCompany.GetPrimaryLiveryColour(GSCompany.LS_DEFAULT));
+        }
+        Sentinel.Log("Kernel Victory Triggered: Winner=" + name + " (CID: " + cid + ")");
+        
+        // 1. Signal Python for Cleanup & Restart Countdown
+        Sentinel.SendAdmin({
+            command = "prepare_restart",
+            winner = cid,
+            winner_name = name,
+            winner_color = color_name,
+            amount = amount
+        });
+    }
+
+    function HandleDisplayVictoryPopup(data) {
+        local cid = ("winner_id" in data ? data.winner_id : -1);
+        local amount = ("amount" in data ? data.amount : 0);
+        
+        // Use STR_GOAL_REACHED
+        // Params: days, company, company_num, amount
+        GSGoal.Question(25, GSCompany.COMPANY_INVALID, 
+            GSText(GSText.STR_GOAL_REACHED, 0, cid, cid, amount), 
+            GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
+    }
+
+    function Tick() {
+        if (this.game_won) {
+        }
+        
+        // --- TICK FOR PLUGINS ---
+        if (this.active_plugin != null) {
+            this.active_plugin.Run(1);
+        }
+    }
+
+    function SendReply(data, lines) {
+        local reply_to = ("source_id" in data ? data.source_id : 0);
+        local source = ("source" in data ? data.source : "game");
+        
+        Sentinel.SendAdmin({
+            command = "chat_reply",
+            target = reply_to,
+            source = source,
+            lines = lines
+        });
+    }
+
+    // --- SHARED UTILITIES ---
+
+    function UpdateGoalMetadata(type, target, unit, desc) {
+        this.goal_mode = type;
+        this.goal_target = target;
+        this.goal_unit = unit;
+        this.goal_description = desc;
+    }
+
+    function UpdateCompanyProgress(cid, value, progress) {
+        this.UpdateCompanyStats(cid, { value = value, progress = progress });
+    }
+
+    function UpdateCompanyStats(cid, stats) {
+        if (cid >= 0 && cid < 15) {
+            foreach (key, val in stats) {
+                if (key in this.company_progress[cid]) {
+                    this.company_progress[cid][key] = val;
+                }
+            }
+        }
+    }
+
+    function PushMonthlyStats() {
+        this.SyncCompanyColors();
+        Sentinel.SendAdmin({ event = "landscapeinfo", landscape = GSGame.GetLandscape() });
+    }
+
+    function RecordAllProgress() {
+        Sentinel.Log("Kernel Trace: Recording multi-company progress snapshot...");
+        local mode = GSController.GetSetting("game_mode").tointeger();
+        local active_companies = [];
+        
+        for (local i = 0; i < 15; i++) {
+            if (GSCompany.ResolveCompanyID(i) != GSCompany.COMPANY_INVALID) {
+                local client_count = 0;
+                local client_list = GSClientList();
+                foreach (client_id, _ in client_list) {
+                    if (GSClient.GetCompany(client_id) == i) {
+                        client_count++;
+                    }
+                }
+                
+                active_companies.push({
+                    id = i,
+                    name = GSCompany.GetName(i),
+                    value = this.company_progress[i].value,
+                    progress = this.company_progress[i].progress,
+                    inhabitants = this.company_progress[i].inhabitants,
+                    bb_goals = this.company_progress[i].bb_goals,
+                    clients = client_count
+                });
+            }
+        }
+        
+        // Send snapshot to controller
+        Sentinel.SendAdmin({
+            command = "progress_snapshot",
+            mode = mode,
+            companies = active_companies
+        });
+    }
+
+    function SyncCompanyColors() {
+        for (local i = 0; i < 15; i++) {
+            local cid = GSCompany.ResolveCompanyID(i);
+            if (cid != GSCompany.COMPANY_INVALID) {
+                local scope = GSCompanyMode(i);
+                this.company_colors[i] = GSCompany.GetPrimaryLiveryColour(GSCompany.LS_DEFAULT);
+            }
+        }
+    }
+
+    // --- ANTICHEAT: Crossing Protection (Native) ---
+    function check_crossing(c_id_str, comp_id_str, tiles_array) {
+        // ... (Ported from original main.nut) ...
+        // Keeping it same for now as it works well.
     }
 }

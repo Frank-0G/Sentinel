@@ -86,7 +86,7 @@ class DataController(IPlugin):
             # Player updated before join event - create entry with current time
             self.clients[client_id] = {"name": name, "ip": "Unknown", "company": company_id, "joined": time.time()}
 
-    def on_player_quit(self, client_id):
+    def on_player_quit(self, client_id, reason="leaving"):
         if client_id in self.clients:
             del self.clients[client_id]
 
