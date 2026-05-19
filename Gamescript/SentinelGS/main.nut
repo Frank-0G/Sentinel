@@ -12,11 +12,11 @@ class SentinelCore extends GSController
     month = -1;
     gs_log_level = 1;
     server_id = 99;
-    
+
     // Goal Targets (Synced from Sentinel XML)
     goal_win_limit = 0;
     goal_population = 0;
-    
+
     // Goal & Progress Metadata (Synced from active plugin)
     goal_mode = 0; // 0: None, 1: Value, 2: CityBuilder, 9: Script
     goal_target = 0;
@@ -28,13 +28,13 @@ class SentinelCore extends GSController
     // Victory state
     game_won = false;
     winner_cid = -1;
-    
+
     company_progress = null; // { cid: { value: 0, progress: 0 } }
     company_colors = null;   // [ colorIdx, ... ]
-    
+
     // Protection State (Ported from goal_system.py)
-    claimed_towns = null; 
-    
+    claimed_towns = null;
+
     last_record_date = 0;
     handshake_done = false;
     last_handshake_tick = -20; // Allow immediate first attempt
@@ -103,7 +103,7 @@ class SentinelCore extends GSController
             if (this.active_plugin != null) {
                 // Ensure immediate sync BEFORE starting so the plugin skips its own defaults
                 if (this.goal_win_limit > 0 || this.goal_population > 0) {
-                    this.active_plugin.UpdateGoalConfig({ 
+                    this.active_plugin.UpdateGoalConfig({
                         winlimit = this.goal_win_limit,
                         population = this.goal_population
                     });
@@ -121,7 +121,7 @@ class SentinelCore extends GSController
     function RunLoop() {
         while(true) {
             this.HandleEvents();
-			
+
 			// for running without Sentinel controller
 			if (this.GSController.GetSetting("development")) this.LazyInitPlugins();
 
@@ -130,7 +130,7 @@ class SentinelCore extends GSController
                 this.month = GSDate.GetMonth(now);
                 this.PushMonthlyStats();
             }
-            
+
             // Periodic Progress Recording (Every 15 game days)
             if (now >= (this.last_record_date + 15)) {
                 this.last_record_date = now;
@@ -172,6 +172,7 @@ class SentinelCore extends GSController
     }
 
     function HandleEvents() {
+        local mode = GSController.GetSetting("game_mode").tointeger();
         while (GSEventController.IsEventWaiting()) {
             local ev = GSEventController.GetNextEvent();
             local type = ev.GetEventType();
@@ -180,7 +181,7 @@ class SentinelCore extends GSController
             if (type == GSEvent.ET_ADMIN_PORT) {
                 local ev_admin = GSEventAdminPort.Convert(ev);
                 local data = ev_admin.GetObject();
-                
+
                 GSLog.Info("[SENTINEL] DEBUG: Received Admin Port Event.");
                 if (data == null) {
                     GSLog.Error("[SENTINEL] ERROR: Admin Packet Object is NULL!");
@@ -189,7 +190,7 @@ class SentinelCore extends GSController
 
                 local cmd = ("command" in data ? data.command : ("event" in data ? data.event : "unknown"));
                 Sentinel.Log("Kernel Trace: Handling Admin Command: " + cmd.tostring());
-                
+
                 if (cmd == "goal" || cmd == "cv") {
                     this.HandleGoalCmd(data);
                     continue;
@@ -236,11 +237,12 @@ class SentinelCore extends GSController
                 } else if (cmd == "set_server_id" || cmd == "set_server_config") {
                     this.handshake_done = true;
                     if (cmd == "set_server_config") {
-                    if ("winlimit" in data) this.goal_target = data.winlimit.tointeger();
+                    if (("winlimit" in data) && (mode == 9)) this.goal_target = data.winlimit.tointeger();
+                    if (("population" in data) && (mode == 1)) this.goal_target = data.population.tointeger();
                     if ("unit" in data) this.goal_unit = data.unit.tostring();
                     if ("desc" in data) this.goal_description = data.desc.tostring();
                     if ("interval" in data) this.goal_announce_interval = data.interval.tointeger();
-                    
+
                     if ("currency" in data) {
                         local code = data.currency.tostring();
                         this.currency_multiplier = KernelServices.GetCurrencyMultiplier(code);
@@ -254,7 +256,7 @@ class SentinelCore extends GSController
                     if (this.currency_multiplier != 1.0) {
                         local raw_limit = data.winlimit.tointeger();
                         this.goal_target = (raw_limit / this.currency_multiplier).tointeger();
-                        
+
                         // Update the data packet so plugins also get the normalized base-unit value
                         data.winlimit = this.goal_target;
                         Sentinel.Log("Kernel Trace: Winlimit normalized from " + raw_limit + " to " + this.goal_target + " for plugin sync.");
@@ -265,7 +267,7 @@ class SentinelCore extends GSController
                        this.active_plugin.UpdateGoalConfig(data);
                     }
                     }
-                    
+
                     continue;
                 }
 
@@ -292,14 +294,21 @@ class SentinelCore extends GSController
         local source = ("source" in data ? data.source : "game");
         local reply = [];
 
+        local mode = GSController.GetSetting("game_mode").tointeger();
+
         // 1. Header
         if (this.goal_target == 0 && this.active_plugin != null) {
             this.active_plugin.SyncMetadata();
         }
-        
+
         local display_target = (this.goal_target * this.currency_multiplier).tointeger();
         local formatted_val = KernelServices.FormatNumber(display_target);
+        if (mode == 1) {
+            formatted_val = this.goal_target.tointeger(); // For population goals, show raw number without currency formatting
+            reply.push("--- First company with " + formatted_val + " " + this.goal_unit + " wins the game. ---");
+        } else {
         reply.push("--- First company with " + formatted_val + " " + this.goal_unit + " " + this.goal_description + " wins the game. ---");
+        }
 
         // 2. Rankings
         local ranks = [];
@@ -307,6 +316,7 @@ class SentinelCore extends GSController
             if (GSCompany.ResolveCompanyID(i) != GSCompany.COMPANY_INVALID) {
                 local val = this.company_progress[i].value;
                 local display_val = (val == null ? 0 : (val * this.currency_multiplier).tointeger());
+                if (mode == 1) display_val = (val == null ? 0 : val.tointeger());
                 ranks.push({
                     cid = i,
                     progress = this.company_progress[i].progress,
@@ -347,7 +357,7 @@ class SentinelCore extends GSController
 
         local bar = KernelServices.GetProgressBar(max_progress);
         local msg = "Goal progress: " + bar + " - " + max_progress.tointeger() + "%";
-        
+
         this.SendReply(data, [msg]);
     }
 
@@ -358,8 +368,8 @@ class SentinelCore extends GSController
         local display_val = (value * this.currency_multiplier).tointeger();
         local formatted = KernelServices.FormatNumber(display_val);
         Sentinel.Log("Kernel Trace: Progress Update Co " + (cid+1) + " -> " + formatted + " (" + progress + "%)");
-        
-        // Optional: Trigger a broadcast if important threshold reached? 
+
+        // Optional: Trigger a broadcast if important threshold reached?
     }
 
     function HandleClaimedCmd(data) {
@@ -403,7 +413,7 @@ class SentinelCore extends GSController
             bbox = [min_x, min_y, max_x, max_y],
             name = ("town" in data ? data.town : "Unknown")
         };
-        
+
         Sentinel.Log("Kernel: Recorded Claim for Co " + (cid+1).tostring() + " -> " + this.claimed_towns[cid].name);
     }
 
@@ -414,16 +424,18 @@ class SentinelCore extends GSController
         }
     }
 
+    //TODO: call this function for construction commands (CmdBuild*, CmdRemove*, CmdClearArea) to detect potential violations in claimed areas
     function HandleCommandLog(data) {
+        Sentinel.Log("HandleCommandLog received data !");
         local cmd_name = ("name" in data ? data.name : "");
         local actor_cid = ("company" in data ? data.company : 255).tointeger();
         if (actor_cid == 255) return;
 
         // Simplified construction check (Ported from goal_system.py)
-        local is_con = (cmd_name.len() >= 8 && cmd_name.slice(0, 8) == "CmdBuild") || 
-                       (cmd_name.len() >= 9 && cmd_name.slice(0, 9) == "CmdRemove") || 
+        local is_con = (cmd_name.len() >= 8 && cmd_name.slice(0, 8) == "CmdBuild") ||
+                       (cmd_name.len() >= 9 && cmd_name.slice(0, 9) == "CmdRemove") ||
                        cmd_name == "CmdClearArea";
-        
+
         if (is_con) {
             local tile = ("tile" in data ? data.tile : -1).tointeger();
             if (tile == -1) return;
@@ -445,10 +457,10 @@ class SentinelCore extends GSController
 
     function HandleViolation(actor_cid, tile, town_name, owner_cid) {
         Sentinel.Log("!!! VIOLATION !!! Co " + (actor_cid+1) + " built in " + town_name + " (Owned by Co " + (owner_cid+1) + ")");
-        
+
         // 1. Revert Tile
         GSTile.DemolishTile(tile); // As Kernel (Company 255 equivalent in some contexts, but GS always has power)
-        
+
         // 2. Notify Python for penalties
         Sentinel.SendAdmin({
             command = "violation",
@@ -470,7 +482,7 @@ class SentinelCore extends GSController
         local leader_cid = -1;
         local max_progress = -1;
         local is_tie = false;
-        
+
         for (local i = 0; i < 15; i++) {
             if (GSCompany.ResolveCompanyID(i) != GSCompany.COMPANY_INVALID) {
                 local prog = this.company_progress[i].progress;
@@ -483,7 +495,7 @@ class SentinelCore extends GSController
                 }
             }
         }
-        
+
         if (is_tie) {
             Sentinel.Log("Goal Reached: TIE detected at " + max_progress + "%. No winner.");
             this.TriggerVictory(-1, 0);
@@ -506,7 +518,7 @@ class SentinelCore extends GSController
         if (this.game_won) return;
         this.game_won = true;
         this.winner_cid = cid;
-        
+
         local name = (cid >= 0 ? GSCompany.GetName(cid) : "Draw");
         local color_name = "N/A";
         if (cid >= 0) {
@@ -514,7 +526,7 @@ class SentinelCore extends GSController
             color_name = KernelServices.GetColorName(GSCompany.GetPrimaryLiveryColour(GSCompany.LS_DEFAULT));
         }
         Sentinel.Log("Kernel Victory Triggered: Winner=" + name + " (CID: " + cid + ")");
-        
+
         // 1. Signal Python for Cleanup & Restart Countdown
         Sentinel.SendAdmin({
             command = "prepare_restart",
@@ -528,18 +540,22 @@ class SentinelCore extends GSController
     function HandleDisplayVictoryPopup(data) {
         local cid = ("winner_id" in data ? data.winner_id : -1);
         local amount = ("amount" in data ? data.amount : 0);
-        
+        local mode = GSController.GetSetting("game_mode").tointeger();
+
         // Use STR_GOAL_REACHED
         // Params: days, company, company_num, amount
-        GSGoal.Question(25, GSCompany.COMPANY_INVALID, 
-            GSText(GSText.STR_GOAL_REACHED, 0, cid, cid, amount), 
-            GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
+        if (mode == 1) {
+            GSGoal.Question(25, GSCompany.COMPANY_INVALID, GSText(GSText.STR_GOAL_REACHED_POPGOAL, 0, cid, cid, amount), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
+        }
+        else if (mode == 9) {
+            GSGoal.Question(25, GSCompany.COMPANY_INVALID, GSText(GSText.STR_GOAL_REACHED, 0, cid, cid, amount), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
+        }
     }
 
     function Tick() {
         if (this.game_won) {
         }
-        
+
         // --- TICK FOR PLUGINS ---
         if (this.active_plugin != null) {
             this.active_plugin.Run(1);
@@ -549,7 +565,7 @@ class SentinelCore extends GSController
     function SendReply(data, lines) {
         local reply_to = ("source_id" in data ? data.source_id : 0);
         local source = ("source" in data ? data.source : "game");
-        
+
         Sentinel.SendAdmin({
             command = "chat_reply",
             target = reply_to,
@@ -590,7 +606,7 @@ class SentinelCore extends GSController
         Sentinel.Log("Kernel Trace: Recording multi-company progress snapshot...");
         local mode = GSController.GetSetting("game_mode").tointeger();
         local active_companies = [];
-        
+
         for (local i = 0; i < 15; i++) {
             if (GSCompany.ResolveCompanyID(i) != GSCompany.COMPANY_INVALID) {
                 local client_count = 0;
@@ -600,7 +616,7 @@ class SentinelCore extends GSController
                         client_count++;
                     }
                 }
-                
+
                 active_companies.push({
                     id = i,
                     name = GSCompany.GetName(i),
@@ -612,7 +628,7 @@ class SentinelCore extends GSController
                 });
             }
         }
-        
+
         // Send snapshot to controller
         Sentinel.SendAdmin({
             command = "progress_snapshot",

@@ -7,13 +7,13 @@
   "Neighbours are important" by Zuu
   "Realistic Town Dependencies" by Fanatik
   etc.
-
+ 
  Special thanks goes to:
   The OTTD devs for the GameScript feature, inspiration, ideas and help.
   The_Dude for inspiration, ideas and help.
   Zuu for inspiration, ideas and help.
   etc.
-
+   
 */
 CLAIM_NOT_CLAIMED <- -1; // town not claimed
 CLAIM_TOO_BIG <- -2; // claimed town is bigger than <maxpopulation>
@@ -23,141 +23,69 @@ CLAIM_OVERLAP <- -5; // protected area of claimed town would overlap with protec
 
 class CityBuilder
 {
-	api = null;
-	// for ranking and goal stuff
-	companies = null;
-	goal_mode = null;
-	goal_reached = null;
-	goal_value = null;
-	start_population = null;
-	SENTINEL_TARGET = null;
-	header_goal_id = null;
-
-	goal_company = {
-		c_id = null,
-		goal_value = null,
-		days_taken = null
-	};
-
-	rankings = null;
-	best_value = 1;
-	end_year = GSController.GetSetting("end_year");
-	_restart = GSController.GetSetting("restart");
-	announce = false;
-	announce1 = false;
-	announce2 = false;
-	_unpaused = false;
-	global_list = GSList();
-
-	//CB Settings
-	//goal_value = 4000; // already declared above
-
-
-	// citybuilder stuff
-	_load_data = null;
-	populations = null;
-	claimed_towns = null;
-	companyStartDate = null;
-	signlist = null;
-	sign = null;
-	towns = null;
-	oldsign = null;
-	whenwas = null;
-	whenwas_last = 0;
-	fromLoad = false;
-	last_date = 0;
-	fromSavegame = false;
-	cache = RTDCache();
-	townmanagedelay = 31;
-	lasttownmanage = 0;
-	lasttimetaken = 31;
-	maxpopulation = GSController.GetSetting("maxpopulation");
-	protectionrange = 20;
-	protectionsigns = true;
-	_mapX = 0;
-	_mapY = 0;
-
-	constructor(_api) {
-		this.api = _api;
-		populations = GSList();
-		companyStartDate = GSList();
-		signlist = GSList();
-		claimed_towns = GSList();
+		_load_data = null;
+		populations = null;
+		claimed_towns = null;
+		companyStartDate = null;
+		signlist = null;
+		sign = null;
 		towns = null;
-		start_population = GSList();
-	}
-	function CreateTownList();
-	story = []; //storypage ids
+		oldsign = null;
+		whenwas = null;
+		whenwas_last = 0;
+		fromLoad = false;
+		last_date = 0;
+		fromSavegame = false;
+		cache = RTDCache();
+		townmanagedelay = 31;
+		lasttownmanage = 0;
+		lasttimetaken = 31;
+		maxpopulation = GSController.GetSetting("maxpopulation");
+		protectionrange = 20;
+		protectionsigns = true;
+		_mapX = 0;
+		_mapY = 0;
 
+		constructor() {
+			populations = GSList();
+			companyStartDate = GSList();
+			signlist = GSList();
+			claimed_towns = GSList();
+			towns = null;
+		}	
+		function CreateTownList();
+		story = []; //storypage ids
+	
 }
 
 function CityBuilder::GetName()			{ return "CityBuilder v1 by Frank and Knogle"; }
 
-/*
-	--- GOAL INFO & PROGRESS COMMUNICATION WITH CONTROLLER ---
-	These functions are used to send information about the goal
-	and the progress of the companies to the controller, which
-	can then be used to display this information in a custom UI
-	or for other purposes.
-*/
-function CityBuilder::SendGoalInfo() {
-    this.api.SendToController({
-        event = "goaltypeinfo",
-        goalmastergame = 9, // ScriptGoal
-        target_value = this.SENTINEL_TARGET,
-		target_mode = "population"
-    });
-}
-
-function CityBuilder::SendGoalProgress(company, value, progress) {
-	this.api.SendToController({
-        event = "companyprogress",
-        goalmastergame = 9, // ScriptGoal
-        company = company,
-		value = value,
-        progress = progress
-     });
-}
-
-function CityBuilder::TriggerWin(company, amount) {
-    local cName = GSCompany.GetName(company);
-    this.api.SendToController({
-        event = "winner",
-        company = company,
-		amount = amount
-    });
-}
-
-function CityBuilder::RefreshGoals() {
-    Sentinel.InfoMessage("[CB] RefresHot-swapping goal UI to: " + this.SENTINEL_TARGET);
-	this.goal_value = this.SENTINEL_TARGET;
-    for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
-        if (this.companies[c_id].goal_id != null) {
-            GSGoal.SetText(this.companies[c_id].goal_id, GSText(GSText.STR_COMPANY_POPGOAL, this.SENTINEL_TARGET));
-        }
-    }
+function CityBuilder::SendGoalInfo()
+{
+	SendAdmin( { event = "goalunitinfo", goalunitvaluetext = "a population of", goalunitname = "inhabitant", goalunitnameplural = "inhabitants" } );
+	SendAdmin( { event = "goaltypeinfo", goalmastergame = 1, target_pop = this.maxpopulation } );
 }
 
 // Start function, this is where it all begins
 function CityBuilder::Initialize()
 {
-	Sentinel.InfoMessage("[CB] CityBuilder by Knogle and Frank is being started...");
+	Sentinel.InfoMessage("[CityBuilder] CityBuilder by Knogle and Frank is being started...");
 
 	local start_tick = GSController.GetTick();
 
 	if (!this.fromLoad) {
 		local now = GSDate.GetSystemTime();
 		this.last_date = GSDate.GetCurrentDate();
-	}
+	}	
 
-	Sentinel.InfoMessage("[CB] Preparing the cache...");
+	Sentinel.InfoMessage("[CityBuilder] Preparing the cache...");
 	// Sync the Cache Initially
 	this.cache.Sync();
 	this.cache.Print();
 
 	_mapX = GSMap.GetMapSizeX() - 2;
 	_mapY = GSMap.GetMapSizeY() - 2;
-
+	
 	// Override Game Settings with custom values
 	// - Disallow Funding of Buildings (default)
 	GSGameSettings.SetValue("economy.fund_buildings", GSController.GetSetting("rtd.allow_city_funding"));
@@ -166,53 +94,7 @@ function CityBuilder::Initialize()
 
 	this.last_date = GSDate.GetCurrentDate();
 
-
-	// goal and ranking
-	if (this.companies == null) {
-		this.companies = {};
-		for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
-			this.companies[c_id] <- null;
-			this.companies[c_id] = {
-				goal_id = null,
-				inauguration_date = null
-			};
-		}
-	}
-
-	if (this.SENTINEL_TARGET == null) {
-			this.SENTINEL_TARGET = GSController.GetSetting("popgoal_value");
-			Sentinel.InfoMessage("[CB] Initialized target from Game Settings: " + this.SENTINEL_TARGET);
-	} else {
-            Sentinel.InfoMessage("[CB] Initialized successfully with Sentinel Synchronized target: " + this.SENTINEL_TARGET);
-    }
-
-	// max population for claiming towns
-	Sentinel.InfoMessage("[CB] Initialized maxpopulation from Game Settings: " + this.maxpopulation);
-
-	//keep old variable structure
-	this.goal_value = this.SENTINEL_TARGET;
-
-	if (this.goal_reached == true) {
-			this.TriggerWin(this.goal_company.c_id, this.goal_company.goal_value);
-	}
-	this.goal_mode = GSController.GetSetting("goal_mode") == 1 ? true : false;
-	Sentinel.InfoMessage("[CB] Plugin is in goalmode: " + this.goal_mode);
-
-	if (this.rankings == null) {
-		this.rankings = {};
-		for (local rank = GSCompany.COMPANY_FIRST + 1; rank <= GSCompany.COMPANY_LAST; rank++) {
-			this.rankings[rank] <- null;
-			this.rankings[rank] = {
-				goal_id = null,
-				c_id = null,
-				c_value = null,
-				c_progress = null,
-			};
-		}
-	}
-
-
-	Sentinel.InfoMessage("[CB] (0%) Initializing town data...");
+	Sentinel.InfoMessage("[CityBuilder] (0%) Initializing town data...");
 	// Set initial time the towns will grow
 	local lastdisplaytick = GSController.GetTick();
 	local all_towns = GSTownList();
@@ -228,7 +110,7 @@ function CityBuilder::Initialize()
 		{
 			lastdisplaytick = GSController.GetTick();
 			local percentage = ((currenttown * 100) / towncount);
-			Sentinel.InfoMessage("[CB] (" + percentage + "%) Initializing town data...");
+			Sentinel.InfoMessage("[CityBuilder] (" + percentage + "%) Initializing town data...");
 		}
 		town.check_timer = GSBase.RandRange(20) + 10;
 		town.ManageTown(0);
@@ -239,10 +121,18 @@ function CityBuilder::Initialize()
 		}
 		currenttown++;
 	}
-	Sentinel.InfoMessage("[CB] (100%) Initialized " + (towncount - citycount) + " towns and " + citycount + " cities.");
+	Sentinel.InfoMessage("[CityBuilder] (100%) Initialized " + (towncount - citycount) + " towns and " + citycount + " cities.");
 
 	local setup_duration = GSController.GetTick() - start_tick;
-	Sentinel.InfoMessage("[CB] CityBuilder has started. Setup took " + setup_duration + " ticks.");
+
+	Sentinel.Log("Game setup done");
+	Sentinel.Log("Setup took " + setup_duration + " ticks");
+	Sentinel.Log("");
+
+	Sentinel.Log("Happy playing");
+
+	// Log the event to Sentinel
+	Sentinel.InfoMessage("[CityBuilder] CityBuilder has started. Setup took " + setup_duration + " ticks.");
 }
 
 function CityBuilder::Process()
@@ -259,9 +149,7 @@ function CityBuilder::Process()
 	// Resync Cache
 	this.cache.SyncOnDemand(delta);
 
-	HasCompanyBuiltHQ();
 	CheckMap();
-    UpdateScoreboard();
 
 	if ((GSController.GetTick() - lasttownmanage) > townmanagedelay)
 	{
@@ -272,22 +160,22 @@ function CityBuilder::Process()
 		}
 		lasttownmanage = GSController.GetTick();
 		local townmanagetimetaken = GSController.GetTick() - manageticks;
-		Sentinel.DebugMessage("[CB] Town management took " + townmanagetimetaken + " ticks");
-
+		DebugMessage("Town management took " + townmanagetimetaken + " ticks");
+		
 		local diff = (townmanagetimetaken - townmanagedelay);
 		if (diff > 0) // generously increase when processing takes longer than the delay
 			townmanagedelay = townmanagedelay + (diff * 0.3);
 		if ((diff < (townmanagedelay * -0.1)) && (townmanagetimetaken <= lasttimetaken) && (townmanagetimetaken > 0)) // only decrease the delay under special circumstances
 			townmanagedelay = townmanagedelay + (diff * 0.03);
-
+		
 		if (townmanagedelay < 31) // sanity check: never go lower than a second whatever happens
 			townmanagedelay = 31;
-
+		
 		lasttimetaken = townmanagetimetaken;
-		Sentinel.DebugMessage("[CB] Town management delay is now " + townmanagedelay + " ticks");
-
+		
+		DebugMessage("Town management delay is now " + townmanagedelay + " ticks");
 	}
-
+	
 }
 
 function CityBuilder::Save()
@@ -296,16 +184,16 @@ function CityBuilder::Save()
 	// - Cached Values
 	// - Congested Cities
 	// - City Growth Steps
-
-	Sentinel.InfoMessage("[CB] TRYING TO SAVE...", Log.LVL_INFO);
+	
+	Log.Info("TRYING TO SAVE...", Log.LVL_INFO);
 
 	return {};
 }
 
 function CityBuilder::Load(version, tbl)
 {
-	Sentinel.InfoMessage("[CB] LOAD()", Log.LVL_INFO);
-
+	Log.Info("LOAD()", Log.LVL_INFO);
+	
 	// Remember that we did load from a savegame at some point
 	// (unused for now, but might come in handy)
 	this.fromSavegame = true;
@@ -317,146 +205,69 @@ function CityBuilder::DebugMessage(message)
 	//Sentinel.IrcPublicMessage("DEBUG: " + message);
 }
 
-function CityBuilder::ProcessEvent(type,ev)
+function CityBuilder::ProcessEvent(event)
 {
-	local eventType = type;
-
-	Sentinel.DebugMessage("[CB] Event: " + eventType);
-
-	//after finish: switch to ranking mode
-	if (eventType == GSEvent.ET_GOAL_QUESTION_ANSWER) {
-		local ec = GSEventGoalQuestionAnswer.Convert(ev);
-		local eq_id = ec.GetUniqueID();
-		local ec_id = ec.GetCompany();
-		if (this.goal_mode != false) {
-			if (this.goal_reached == true) {
-				if (eq_id == 25) {
-					if (ec.GetButton() == GSGoal.BUTTON_CONTINUE) {
-						GSGame.Unpause();
-						local ec_num = ec_id + 1;
-						GSLog.Warning("Game unpaused by " + GSCompany.GetName(ec_id) + " (Company " + ec_num + ").")
-						GSGoal.CloseQuestion(eq_id);
-						for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
-							if (this.companies[c_id].goal_id != null) {
-								GSGoal.Remove(this.companies[c_id].goal_id);
-								this.companies[c_id].goal_id = null;
-								this.companies[c_id].inauguration_date = null;
-							}
-						}
-						this.goal_company.c_id = null;
-						this.goal_company.goal_value = null;
-						this.goal_company.days_taken = null;
-						this.goal_reached = null;
-						update_method = null;
-						this.goal_mode = false;
-						Sentinel.DebugMessage("[CB] Switched to Ranking mode.");
-					}
-					if (ec.GetButton() == GSGoal.BUTTON_OK) {
-						GSGoal.CloseQuestion(eq_id);
-					}
-				}
-			}
-		}
+	local eventType = event.GetEventType();
+	
+	// ### NEW COMPANY ###
+	if(eventType == GSEvent.ET_COMPANY_NEW)
+	{
+		Sentinel.Log("Found new company!");
+		// Log the event to Sentinel
+		DebugMessage("Found new company!");
+		// Done Logging the event to Sentinel
+		local newcompany = GSEventCompanyNew.Convert(event);
+		GSNews.Create(GSNews.NT_GENERAL, GSText(GSText.STR_PLACE_HQ), newcompany.GetCompanyID(), GSNews.NR_NONE, 0);
+		Sentinel.TeamChat("-=[ Build your HQ in a town to claim it for city building ]=-", newcompany.GetCompanyID());
+		claimed_towns.AddItem(newcompany.GetCompanyID(), CLAIM_NOT_CLAIMED);
+		companyStartDate.AddItem(newcompany.GetCompanyID(), GSDate.GetCurrentDate());
 	}
-
-	if (eventType == GSEvent.ET_COMPANY_NEW) {
-		local ec = GSEventCompanyNew.Convert(ev);
-		local ec_id = ec.GetCompanyID();
-		if (this.goal_mode != false) {
-			if (this.goal_reached == true) {
-				// Victory popup is now handled by Python + Kernel to ensure correct sequence
-				//this.goal_reached = GSGoal.Question(25, ec_id, GSText(GSText.STR_GOAL_REACHED_POPGOAL, this.goal_company.days_taken, this.goal_company.c_id, this.goal_company.c_id, this.goal_value), GSGoal.QT_INFORMATION, GSGoal.BUTTON_CONTINUE);
-				this.TriggerWin(this.goal_company.c_id, this.goal_value);
-				local ec_num = ec_id + 1;
-			} else {
-				assert(this.companies[ec_id].inauguration_date == null);
-				local inauguration_date = GSDate.GetCurrentDate();
-				assert(this.companies[ec_id].goal_id == null);
-				this.companies[ec_id].goal_id = GSGoal.New(ec_id, GSText(GSText.STR_COMPANY_POPGOAL, this.SENTINEL_TARGET), GSGoal.GT_COMPANY, ec_id);
-				this.companies[ec_id].inauguration_date = inauguration_date;
-				GSGoal.Question(ec_id, ec_id, GSText(GSText.STR_COMPANY_POPGOAL, this.SENTINEL_TARGET), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
-			}
-		} else {
-			GSGoal.New(ec_id, GSText(GSText.STR_RANK,end_year), GSGoal.GT_NONE, 0);
-			GSGoal.Question(ec_id, ec_id, GSText(GSText.STR_RANK, end_year), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
-			if (GSGame.IsPaused()==true) GSGame.Unpause();
-		}
-		Sentinel.TeamChat("-=[ Build your HQ in a town to claim it for city building ]=-", ec.GetCompanyID());
-		claimed_towns.AddItem(ec.GetCompanyID(), CLAIM_NOT_CLAIMED);
-		companyStartDate.AddItem(ec.GetCompanyID(), GSDate.GetCurrentDate());
-	}
-
-	if (eventType == GSEvent.ET_COMPANY_BANKRUPT) {
-		local ec = GSEventCompanyBankrupt.Convert(ev);
-		local ec_id = ec.GetCompanyID();
-		if (this.goal_mode != false) {
-			if (this.companies[ec_id].goal_id != null) {
-				GSGoal.Remove(this.companies[ec_id].goal_id);
-				this.companies[ec_id].goal_id = null;
-				this.companies[ec_id].inauguration_date = null;
-			}
-			GSGoal.CloseQuestion(ec_id);
-		}
-		if (populations.HasItem(ec_id))
-			populations.RemoveItem(ec_id);
-		if (start_population.HasItem(ec_id))
-			start_population.RemoveItem(ec_id);
-		if (claimed_towns.HasItem(ec_id))
+	// ### BANKRUPT COMPANY ###
+	if (eventType == GSEvent.ET_COMPANY_BANKRUPT)
+	{
+		// Delete the company from the company pool
+		Sentinel.Log("Found bankrupt company!");
+		// Log the event to Sentinel
+		DebugMessage("Found bankrupt company!");
+		// Done Logging the event to Sentinel
+		local company_id = GSEventCompanyBankrupt.Convert(event).GetCompanyID();
+		if (populations.HasItem(company_id))
+			populations.RemoveItem(company_id);
+		if (claimed_towns.HasItem(company_id))
 		{
-			if (GSTown.IsValidTown(claimed_towns.GetValue(ec_id)))
+			if (GSTown.IsValidTown(claimed_towns.GetValue(company_id)))
 			{
-				local townlocation = GSTown.GetLocation(claimed_towns.GetValue(ec_id));
+				local townlocation = GSTown.GetLocation(claimed_towns.GetValue(company_id));
 				RemoveSign(townlocation);
 				RemoveProtectionSigns(townlocation);
 			}
-			claimed_towns.RemoveItem(ec_id);
-			companyStartDate.RemoveItem(ec_id);
-
-			// Inform the controller about the unclaimed town, so that it can update the UI accordingly
-			this.api.SendToController(
-				{
-					event = "town_unclaimed",
-					company = ec_id
-				}
-			);
+			claimed_towns.RemoveItem(company_id);
+			companyStartDate.RemoveItem(company_id);
 		}
 	}
-
-	if (eventType == GSEvent.ET_COMPANY_MERGER) {
-		local ec = GSEventCompanyMerger.Convert(ev);
-		local ec_id = ec.GetOldCompanyID();
-		if (this.goal_mode != false) {
-			if (this.companies[ec_id].goal_id != null) {
-				GSGoal.Remove(this.companies[ec_id].goal_id);
-				this.companies[ec_id].goal_id = null;
-				this.companies[ec_id].inauguration_date = null;
-			}
-			GSGoal.CloseQuestion(ec_id);
-		}
-		if (populations.HasItem(ec_id))
-			populations.RemoveItem(ec_id);
-		if (start_population.HasItem(ec_id))
-			start_population.RemoveItem(ec_id);
-		if (claimed_towns.HasItem(ec_id))
+	// ### MERGE COMPANY ###
+	if (eventType == GSEvent.ET_COMPANY_MERGER)
+	{
+		local merge = GSEventCompanyMerger.Convert(event);
+		local oldcompanyid = merge.GetOldCompanyID();
+		Sentinel.Log("Caught company merge of company " + oldcompanyid + " into " + GSCompany.GetName(merge.GetNewCompanyID()));
+		// Log the event to Sentinel
+		DebugMessage("Caught company merge of company " + oldcompanyid + " into " + GSCompany.GetName(merge.GetNewCompanyID()));
+		// Done Logging the event to Sentinel
+		if (populations.HasItem(oldcompanyid))
+			populations.RemoveItem(oldcompanyid);
+		if (claimed_towns.HasItem(oldcompanyid))
 		{
-			if (GSTown.IsValidTown(claimed_towns.GetValue(ec_id)))
+			if (GSTown.IsValidTown(claimed_towns.GetValue(oldcompanyid)))
 			{
-				local townlocation = GSTown.GetLocation(claimed_towns.GetValue(ec_id));
+				local townlocation = GSTown.GetLocation(claimed_towns.GetValue(oldcompanyid));
 				RemoveSign(townlocation);
 				RemoveProtectionSigns(townlocation);
-				//SendAdmin( { event = "citybuilder", action = "unclaimed", company = ec_id } );  //new location for this SendAdmin
+				SendAdmin( { event = "citybuilder", action = "unclaimed", company = oldcompanyid } );  //new location for this SendAdmin
 			}
-			claimed_towns.RemoveItem(ec_id);
-			companyStartDate.RemoveItem(ec_id);
+			claimed_towns.RemoveItem(oldcompanyid);
 			//SendAdmin( { event = "citybuilder", action = "unclaimed", company = oldcompanyid } );  //old location for this SendAdmin
-
-			// Inform the controller about the unclaimed town, so that it can update the UI accordingly
-			this.api.SendToController(
-				{
-					event = "town_unclaimed",
-					company = ec_id
-				}
-			);
+			companyStartDate.RemoveItem(oldcompanyid);
 		}
 	}
 }
@@ -479,7 +290,7 @@ function CityBuilder::IsProtected(tile, range)
 	// nothing is protected if the protection feature is disabled
 	if (protectionrange <= 0)
 		return false;
-
+	
 	local locationX = GSMap.GetTileX(tile);
 	local locationY = GSMap.GetTileY(tile);
 	foreach (company_id, town_id in claimed_towns)
@@ -495,42 +306,26 @@ function CityBuilder::IsProtected(tile, range)
 	return false;
 }
 
-function CityBuilder::HasCompanyBuiltHQ()
-{
-	//check all companies
-    for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
-    	if (GSCompany.ResolveCompanyID(c_id) != GSCompany.COMPANY_INVALID) {
-			HandleHQBuilt(c_id);
-    	} else {
-    		continue;
-    	}
-    }
-}
-
-
 function CityBuilder::HandleHQBuilt(company_id)
 {
 	local company_hq = GSCompany.GetCompanyHQ(company_id);
-	// check if HQ already existed or has been relocated
-	Sentinel.DebugMessage("[CB] Handle HQ for company " + GSCompany.GetName(company_id));
-
+	// check if HQ already existed and has been relocated
 	if (claimed_towns.HasItem(company_id) && GSTown.IsValidTown(claimed_towns.GetValue(company_id)))
 	{
 		local lasttown = claimed_towns.GetValue(company_id);
 		local townlocation = GSTown.GetLocation(lasttown);
 		if (lasttown == GSTile.GetClosestTown(company_hq))
 			return; // HQ was moved within the same town area, don't do anything
-		Sentinel.DebugMessage(GSCompany.GetName(company_id) + " moved his HQ from " + GSTown.GetName(lasttown) + " to " + GSTown.GetName(GSTile.GetClosestTown(company_hq)));
+		DebugMessage(GSCompany.GetName(company_id) + " moved his HQ from " + GSTown.GetName(lasttown) + " to " + GSTown.GetName(GSTile.GetClosestTown(company_hq)));
 		RemoveSign(townlocation);
 		RemoveProtectionSigns(townlocation);
 		claimed_towns.SetValue(company_id, CLAIM_NOT_CLAIMED);
 	}
-
+	
 	// nothing more to do if no HQ is placed
 	if (company_hq == GSMap.TILE_INVALID)
 		return;
-
-	Sentinel.DebugMessage("[CB] Check placement");
+	
 	// check HQ placement
 	local closesttown = GSTile.GetClosestTown(company_hq);
 	if (!CheckTown(company_id, closesttown))
@@ -540,46 +335,28 @@ function CityBuilder::HandleHQBuilt(company_id)
 		// check whether town is too big for getting claimed
 		if (GSTown.GetPopulation(closesttown) > maxpopulation)
 		{
-			Sentinel.DebugMessage("[CB]" + companyname + " tried to claim " + townname + ", only towns < " + maxpopulation + " can be claimed");
+			Sentinel.Log(companyname + " tried to claim " + townname + ", only towns < " + maxpopulation + " can be claimed");
+			DebugMessage(companyname + " tried to claim " + townname + ", only towns < " + maxpopulation + " can be claimed");
 			Sentinel.TeamChat("Only towns smaller than " + maxpopulation + " can be claimed -- Please move your HQ to a smaller TOWN to participate in the game!", company_id);
 			claimed_towns.SetValue(company_id, CLAIM_TOO_BIG);
 			return;
 		}
-
+		
 		local townlocation = GSTown.GetLocation(closesttown);
 		if (IsProtected(townlocation, protectionrange * 2)) // check for doubled protection area (existing claimed town + new claimed town shouldn't overlap)
 		{
-			Sentinel.DebugMessage("[CB]" + companyname + " tried to claim " + townname + ", which is overlapping with an existing claimed town area.");
+			DebugMessage(companyname + " tried to claim " + townname + ", which is overlapping with an existing claimed town area.");
 			Sentinel.TeamChat("Your protected area would overlap with the area of someone else, you cannot claim this town, please relocate your HQ!", company_id);
 			claimed_towns.SetValue(company_id, CLAIM_OVERLAP);
 			return;
 		}
 		claimed_towns.SetValue(company_id, closesttown);
+		Sentinel.Log(companyname + " claimed " + townname);
 		BuildSign(townlocation, GSText(GSText.STR_HQCITY, company_id));
 		GSNews.Create(GSNews.NT_GENERAL, GSText(GSText.STR_NEW_HQ, company_id, closesttown), GSCompany.COMPANY_INVALID, GSNews.NR_TOWN, closesttown);
-		Sentinel.DebugMessage("[CB]" + companyname + " claimed " + townname);
+		DebugMessage(companyname + " claimed " + townname);
 		Sentinel.ServerChat(companyname + " claimed " + townname);
-
-		if (start_population.HasItem(company_id)) {
-			start_population.SetValue(company_id, GSTown.GetPopulation(closesttown));
-		} else start_population.AddItem(company_id, GSTown.GetPopulation(closesttown));
-
 		SendAdmin( { event = "citybuilder", action = "claimed", company = company_id, town = townname, population = GSTown.GetPopulation(closesttown), x = GSMap.GetTileX(GSTown.GetLocation(closesttown)), y = GSMap.GetTileY(GSTown.GetLocation(closesttown)) } );
-
-		this.api.SendToController(
-			{
-				event = "town_claimed",
-				company = company_id,
-				townid = closesttown,
-				town = townname,
-				range = protectionrange,
-				x = GSMap.GetTileX(GSTown.GetLocation(closesttown)),
-				y = GSMap.GetTileY(GSTown.GetLocation(closesttown))
-			}
-		);
-
-		Sentinel.DebugMessage("[CB] Town claimed: " + townname + " by company " + companyname + " with population " + GSTown.GetPopulation(closesttown));
-
 		if (protectionrange > 0)
 		{
 			local locationX = GSMap.GetTileX(townlocation);
@@ -587,7 +364,6 @@ function CityBuilder::HandleHQBuilt(company_id)
 			local areastart = GSMap.GetTileIndex(Max(locationX - protectionrange, 1), Max(locationY - protectionrange, 1));
 			local areaend = GSMap.GetTileIndex(Min(locationX + protectionrange, _mapX), Min(locationY + protectionrange, _mapY));
 			local exceptioncompanies = CompaniesInArea(areastart, areaend);
-			Sentinel.DebugMessage("[CB] Protection Areastart: " + areastart + " Protection Areaend: " + areaend);
 			foreach (exceptioncompanyid, _ in exceptioncompanies)
 			{
 				if (exceptioncompanyid != company_id)
@@ -607,14 +383,16 @@ function CityBuilder::HandleHQBuilt(company_id)
 	{
 		claimed_towns.SetValue(company_id, CLAIM_CITY);
 		//Show error message/chat message/anything that HQ's aren't meant to be built in cities, and they'd have to move it
-		Sentinel.DebugMessage("[CB] " + GSCompany.GetName(company_id) + " tried to claim a CITY, tell them they can't!");
+		Sentinel.Log(GSCompany.GetName(company_id) + " tried to claim a CITY, tell them they can't!");
+		DebugMessage(GSCompany.GetName(company_id) + " tried to claim a CITY, telling them they can't!");
 		Sentinel.TeamChat("You built your HQ in a CITY, which can't be claimed -- Please move your HQ to a TOWN to participate in the game!", company_id);
 	}
 	else if (CheckTown(company_id, closesttown) == "OWNED")
 	{
 		claimed_towns.SetValue(company_id, CLAIM_OWNED);
 		//Show error message/chat message/anything that town was already claimed, and they'd have to move their HQ
-		Sentinel.DebugMessage("[CB] " + GSCompany.GetName(company_id) + " tried to claim a town already claimed by someone else, tell them they can't!");
+		Sentinel.Log(GSCompany.GetName(company_id) + " tried to claim a town already claimed by someone else, tell them they can't!");
+		DebugMessage(GSCompany.GetName(company_id) + " tried to claim a town already claimed by someone else, telling them they can't!");
 		Sentinel.TeamChat("You built your HQ in a town already claimed by someone else, please move it to participate in the game!", company_id);
 	}
 }
@@ -650,7 +428,7 @@ function CityBuilder::CompaniesInArea(startTile, endTile)
 		xSpread = (xSpread * -1);
 	if (ySpread < 0)
 		ySpread = (ySpread * -1);
-
+		
 	local tileCount = 0;
 	local xCoord = xTile;
 	local yCoord = yTile;
@@ -679,7 +457,7 @@ function CityBuilder::CompaniesInArea(startTile, endTile)
 function CityBuilder::CheckMap()
 {
 	local whenwas = GSDate.GetMonth(GSDate.GetCurrentDate());
-	Sentinel.DebugMessage("[CB] Checking Map");
+	Sentinel.Log("Checking Map");
 	foreach (company_id, town_id in claimed_towns)
 	{
 		if (whenwas > whenwas_last)
@@ -687,6 +465,7 @@ function CityBuilder::CheckMap()
 			switch (town_id)
 			{
 				case CLAIM_NOT_CLAIMED:
+					Sentinel.Log("Place your HQ");
 					Sentinel.TeamChat("-=[ Build your HQ in a town to claim it for city building ]=-", company_id);
 					break;
 				case CLAIM_TOO_BIG:
@@ -703,11 +482,10 @@ function CityBuilder::CheckMap()
 					break;
 			}
 
-			Sentinel.DebugMessage("[CB] Sending demands for company " + GSCompany.GetName(company_id));
 			SendDemands()
-
+			
 		}
-
+		
 		if (town_id >= 0)
 		{
 			local inhabitants = GSTown.GetPopulation(town_id);
@@ -736,29 +514,32 @@ function CityBuilder::CheckMap()
 			//local populationMessage = { event = "populationupdated", company = company_id+1, population = -1, companyage = GSDate.GetCurrentDate() - companyStartDate.GetValue(company_id) };
 			SendAdmin(populationMessage);
 		}
-
+		
 	}
 	whenwas_last = whenwas;
 }
 
-
-function CityBuilder::GetPopulation(c_id)
+function CityBuilder::SendPopulation()
 {
+  Sentinel.Log("Sending Population");
 	foreach (company_id, townid in claimed_towns)
 	{
-		if (company_id == c_id)
+		if (townid >= 0)
 		{
-			if (townid >= 0)
+			local inhabitants = GSTown.GetPopulation(townid);
+			if (populations.HasItem(company_id))
 			{
-				local inhabitants = GSTown.GetPopulation(townid);
-				if (populations.HasItem(company_id))
-				{
-					return inhabitants;
-				}
+				local populationMessage = { event = "populationupdated", company = company_id, population = inhabitants };
+				//local populationMessage = { event = "populationupdated", company = company_id+1, population = inhabitants, companyage = GSDate.GetCurrentDate() - companyStartDate.GetValue(company_id) };
+				SendAdmin(populationMessage);
 			}
-			else return 0;
 		}
-		else continue;
+		else
+		{
+			local populationMessage = { event = "populationupdated", company = company_id, population = -1 };
+			//local populationMessage = { event = "populationupdated", company = company_id+1, population = -1, companyage = GSDate.GetCurrentDate() - companyStartDate.GetValue(company_id) };
+			SendAdmin(populationMessage);
+		}
 	}
 }
 
@@ -772,12 +553,12 @@ function CityBuilder::SendDemands()
 	{
 		if (townid >= 0)
 		{
-
+			
 			SendAdmin( { event = "citybuilder", action = "townstats", company = company_id, townid = townid, townname = GSTown.GetName(townid), population = GSTown.GetPopulation(townid), housecount = GSTown.GetHouseCount(townid), growthrate = GSTown.GetGrowthRate(townid), statue = GSTown.HasStatue(townid), location = "" + GSMap.GetTileX(GSTown.GetLocation(townid)) + "x" + GSMap.GetTileY(GSTown.GetLocation(townid))} );
-
+						
 			if (populations.HasItem(company_id))
 			{
-				if (GSTown.GetCargoGoal(townid, GSCargo.TE_PASSENGERS) != 0)
+				if (GSTown.GetCargoGoal(townid, GSCargo.TE_PASSENGERS) != 0) 
 				{
           local tmcargo = Sentinel.GetCargoName(0);
 					SendAdmin( { event = "citybuilder", action = "towndemands", townid = townid, cargo_suffix = tmcargo, cargo_supply = GSTown.GetLastMonthReceived(townid, GSCargo.TE_PASSENGERS), cargo_goal = GSTown.GetCargoGoal(townid, GSCargo.TE_PASSENGERS), cargo_stocked = 0 } );
@@ -820,7 +601,7 @@ function CityBuilder::SendDemands()
 			local townname = GSTown.GetName(townid);
 			local inhabitants = GSTown.GetPopulation(townid);
 			local houses = GSTown.GetHouseCount(townid);
-
+			
 			if (populations.HasItem(companystats))
 			{
 				Sentinel.TeamChat("-= Town Info =-", companystats);
@@ -898,7 +679,7 @@ function CityBuilder::SendStatisticsIRC(companystats)
 			local townname = GSTown.GetName(townid);
 			local inhabitants = GSTown.GetPopulation(townid);
 			local houses = GSTown.GetHouseCount(townid);
-
+			
 			if (populations.HasItem(companystats))
 			{
 				Sentinel.IrcPublicMessage("Company: " + companyname);
@@ -977,7 +758,7 @@ function CityBuilder::CheckTown(mycompany, mytown)
 	{
 		if(GSCompany.ResolveCompanyID(c) != GSCompany.COMPANY_INVALID)
 		{
-			// Checks if another company already claimed the town and returns OWNED
+			// Checks if another company already claimed the town and returns OWNED 
 			if (GSTile.GetClosestTown(GSCompany.GetCompanyHQ(GSCompany.ResolveCompanyID(c))) == mytown && GSCompany.ResolveCompanyID(c) != mycompany)
 				return "OWNED";
 		}
@@ -1072,7 +853,7 @@ function CityBuilder::StoryStart(){
 		{
 			// Show amounts wanted/needed and population when it starts the demand
 			// ( With FIRS we dont need to adjust for different Landscapes )
-
+			
 			tmp_val = (1000 / divPassenger) * factor;
       GSStoryPage.NewElement(this.story[1], GSStoryPage.SPET_TEXT, 0, GSText(GSText.STR_TOWN_CARGOS_NEEDED_CB_B, tmp_val.tointeger(), 1 << 0, minPassenger.tointeger()));
       tmp_val = (1000 / divMail) * factor;
@@ -1219,7 +1000,7 @@ function CityBuilder::OnAdminEvent(data)
     if (data.event == "hqbuilt") {
         local cid = ("company" in data) ? data.company.tointeger() : -1;
         if (cid != -1) this.HandleHQBuilt(cid);
-    }
+    } 
     else if (data.event == "cleartile") {
         if ("tile" in data) {
             local tile = data.tile.tointeger();
@@ -1231,213 +1012,4 @@ function CityBuilder::OnAdminEvent(data)
             Sentinel.Debug("Cleared tile " + tile + " as company " + cid + " due to protection violation.");
         }
     }
-}
-
-function CityBuilder::UpdateScoreboard() {
-	//Sentinel.InfoMessage("CompanyValueGS4: Tick...");
-	//ping++;
-	//var
-	local month = GSDate.GetMonth(GSDate.GetCurrentDate());
-	local year = GSDate.GetYear(GSDate.GetCurrentDate());
-	local day = GSDate.GetDayOfMonth(GSDate.GetCurrentDate());
-
-	local update_method = false;
-
-	if (this.goal_reached == null) {
-		if (update_method != null) {
-			update_method = false;
-		} else {
-			this.goal_mode = null;
-		}
-
-		/* update company values */
-		for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
-			if (GSCompany.ResolveCompanyID(c_id) != GSCompany.COMPANY_INVALID) {
-				//get population of town
-				local c_value = GetPopulation(c_id);
-				if (this.global_list.HasItem(c_id)) {
-					if (this.global_list.GetValue(c_id) != c_value) {
-						this.global_list.SetValue(c_id, c_value);
-						if (update_method != null) update_method = true;
-					}
-				} else {
-					this.global_list.AddItem(c_id, c_value);
-					update_method = null;
-				}
-			} else {
-				if (this.global_list.HasItem(c_id)) {
-					this.global_list.RemoveItem(c_id);
-					if (update_method != null) update_method = true;
-				}
-			}
-		}
-
-		if (this.goal_mode != false) {
-			if (this.best_value != this.SENTINEL_TARGET) {
-				this.best_value = this.SENTINEL_TARGET;
-				if (update_method != null) update_method = true;
-			}
-
-			// Handle descriptive header line
-			if (this.SENTINEL_TARGET > 0) {
-				local header_text = GSText(GSText.STR_COMPANY_POPGOAL, this.SENTINEL_TARGET);
-				if (this.header_goal_id == null) {
-					this.header_goal_id = GSGoal.New(GSCompany.COMPANY_INVALID, header_text, GSGoal.GT_NONE, 0);
-				} else {
-					GSGoal.SetText(this.header_goal_id, header_text);
-				}
-			} else if (this.header_goal_id != null) {
-				GSGoal.Remove(this.header_goal_id);
-				this.header_goal_id = null;
-			}
-		} else if (this.header_goal_id != null) {
-				GSGoal.Remove(this.header_goal_id);
-				this.header_goal_id = null;
-		}
-
-		if (update_method != false) {
-			//GSLog.Info("=====Starting goal computations=====")
-
-			local rank = 0;
-			if (this.global_list.Count() > 0) {
-				this.global_list.Sort(GSList.SORT_BY_VALUE, GSList.SORT_DESCENDING);
-
-				for (local c_id = this.global_list.Begin(); !this.global_list.IsEnd(); c_id = this.global_list.Next()) {
-					rank++;
-
-					local c_value = this.global_list.GetValue(c_id);
-					if (this.goal_mode != true) {
-						if (rank == 1) {
-							this.best_value = c_value;
-							if (c_value < 1) return;
-						}
-					}
-
-					if (this.rankings[rank].goal_id != null) {
-						if (update_method == null && this.goal_mode != false) {
-							GSGoal.Remove(this.rankings[rank].goal_id);
-							this.rankings[rank].goal_id = null;
-							this.rankings[rank].c_id = null;
-							this.rankings[rank].c_value = null;
-							this.rankings[rank].c_progress = null;
-							this.rankings[rank].goal_id = GSGoal.New(GSCompany.COMPANY_INVALID, GSText(GSText.STR_RANK_COMPANY_NUM, rank, c_id, c_id), GSGoal.GT_NONE, 0);
-							this.rankings[rank].c_id = c_id;
-							this.rankings[rank].c_value = c_value;
-						} else {
-							if (this.rankings[rank].c_id != c_id) {
-								GSGoal.SetText(this.rankings[rank].goal_id, GSText(GSText.STR_RANK_COMPANY_NUM, rank, c_id, c_id));
-								if (this.rankings[rank].c_id != c_id) {
-									this.rankings[rank].c_id = c_id;
-								}
-							}
-						}
-					} else {
-						this.rankings[rank].goal_id = GSGoal.New(GSCompany.COMPANY_INVALID, GSText(GSText.STR_RANK_COMPANY_NUM, rank, c_id, c_id), GSGoal.GT_NONE, 0);
-						this.rankings[rank].c_id = c_id;
-						this.rankings[rank].c_value = c_value;
-					}
-
-					// dont allow cheat with claiming before goal
-					local c_startpop = start_population.GetValue(c_id);
-					local c_progress = 0;
-					if (c_value <= (c_startpop + 100))
-						c_progress = (c_value / 4 * 100) / this.best_value;
-					else
-						c_progress = (c_value * 100) / this.best_value;
-
-					if (this.goal_mode != false) {
-						if (c_progress > 100) {
-							c_progress = 100;
-						}
-					}
-
-					/* update rankings progress */
-					if (this.rankings[rank].c_value != c_value || this.rankings[rank].c_progress != c_progress) {
-						GSGoal.SetProgress(this.rankings[rank].goal_id, GSText(GSText.STR_GOAL_PROGRESS_POPGOAL, c_value, c_progress));
-					}
-
-					/* update company goals progress */
-					if (this.goal_mode != false) {
-						if (this.companies[c_id].goal_id != null) {
-							if (GSGoal.IsValidGoal(this.companies[c_id].goal_id)) {
-								if (this.rankings[rank].c_value != c_value || this.rankings[rank].c_progress != c_progress) {
-									GSGoal.SetProgress(this.companies[c_id].goal_id, GSText(GSText.STR_GOAL_PROGRESS_POPGOAL, c_value, c_progress));
-									this.SendGoalProgress(c_id, c_value, c_progress); //send progress to Sentinel
-									Sentinel.DebugMessage("[CB] Send Progress to Sentinel")
-								}
-							}
-						}
-					}
-
-					if (this.rankings[rank].c_value != c_value) {
-					this.rankings[rank].c_value = c_value;
-					}
-
-					if (this.rankings[rank].c_progress != c_progress) {
-						this.rankings[rank].c_progress = c_progress;
-					}
-
-					/* check for goal reached */
-					if (this.goal_mode == true) {
-						if (c_value >= this.SENTINEL_TARGET) {
-							if (this.goal_reached != true) {
-								local days_taken = GSDate.GetCurrentDate() - this.companies[c_id].inauguration_date;
-								local c_num = c_id + 1;
-								this.goal_company.c_id = c_id;
-								this.goal_company.goal_value = c_value; //use the actual value reached as the goal value to be able to show it in the goal reached message
-								this.goal_company.days_taken = days_taken;
-								this.goal_reached = true;
-							}
-						}
-					}
-				}
-				if (this.goal_mode == null) {
-					this.goal_mode = false;
-				}
-			}
-
-			while (rank < GSCompany.COMPANY_LAST) {
-				rank++;
-				if (this.rankings[rank].goal_id != null) {
-					GSGoal.Remove(this.rankings[rank].goal_id);
-					this.rankings[rank].goal_id = null;
-					this.rankings[rank].c_id = null;
-					this.rankings[rank].c_value = null;
-					this.rankings[rank].c_progress = null;
-				}
-			}
-
-
-			//GSLog.Info("=====Ended goal computations=====");
-
-			if (this.goal_reached == true) {
-				for (local c_id = GSCompany.COMPANY_FIRST; c_id < GSCompany.COMPANY_LAST; c_id++) {
-					if (GSCompany.ResolveCompanyID(c_id) != GSCompany.COMPANY_INVALID) {
-						GSGoal.CloseQuestion(c_id);
-					}
-				}
-				this.TriggerWin(this.goal_company.c_id, this.goal_company.goal_value);
-				// Victory popup is now handled by Python + Kernel to ensure correct sequence
-				//GSGoal.Question(25, GSCompany.COMPANY_INVALID, GSText(GSText.STR_GOAL_REACHED_POPGOAL, this.goal_company.days_taken, this.goal_company.c_id, this.goal_company.c_id, this.goal_value), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
-				//this.UpdateTop10();
-				//GSGame.Pause();
-				//GSLog.Warning("Game paused. Asking companies to continue...");
-			}
-
-		}
-		//announce last year
-		if ((year == end_year) && (month == 1) && (day == 10) && (announce == false)){
-
-			Sentinel.InfoMessage("[CB] Announce last year");
-			GSGoal.Question(26, GSCompany.COMPANY_INVALID, GSText(GSText.STR_SERVER_INFO), GSGoal.QT_INFORMATION, GSGoal.BUTTON_OK);
-			announce = true;
-		}
-
-		//announce restart soon
-		if ((year == (_restart-1)) && (month == 12) && (day == 25) && (announce1 == false)){
-		Sentinel.InfoMessage("[CB] Announce server restart soon");
-		SGoal.Question(27, GSCompany.COMPANY_INVALID, GSText(GSText.STR_RESTART), GSGoal.QT_WARNING, GSGoal.BUTTON_OK);
-		announce1 = true;
-		}
-	}
 }

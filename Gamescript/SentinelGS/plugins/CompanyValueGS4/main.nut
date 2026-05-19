@@ -142,10 +142,11 @@ class CompanyValueGS4
 		}
 
 		if (this.SENTINEL_TARGET == null) {
-			this.SENTINEL_TARGET = GSController.GetSetting("sentinel_goal_sync_value") * 1000;
-			this.api.Log("Plugin Core: Initialized target from Game Settings: " + this.SENTINEL_TARGET);
+			//this.SENTINEL_TARGET = GSController.GetSetting("sentinel_goal_sync_value") * 1000;
+			this.SENTINEL_TARGET = GSController.GetSetting("goal_value") * 1000;
+			this.api.Log("CompanyValueGS4: Initialized target from Game Settings: " + this.SENTINEL_TARGET);
 		} else {
-            this.api.Log("Plugin Core: Initialized successfully with Sentinel Synchronized target: " + this.SENTINEL_TARGET);
+            this.api.Log("CompanyValueGS4: Initialized successfully with Sentinel Synchronized target: " + this.SENTINEL_TARGET);
         }
 
 		if (this.goal_reached == true) {
@@ -242,7 +243,7 @@ class CompanyValueGS4
     }
 
 	function Run(ticks) {
-        if (ticks % 20 == 0) {
+        if (ticks % 200 == 0) {
             this.UpdateScoreboard();
 			//this.api.Log("CompanyValueGS4: Tick...");
         }
@@ -359,9 +360,9 @@ class CompanyValueGS4
 		}
 
 		//this.CreateLeague(); //disable league table for now
-		this.api.Log("CompanyValueGS4: Short break for controller...");
+		//this.api.Log("CompanyValueGS4: Short break for controller...");
 		//GSController.Sleep(1000); //wait for sentinel to be ready before sending goal info
-		this.SendGoalInfo();
+		//this.SendGoalInfo();
 		this.UpdateScoreboard();
 	}
 
@@ -413,7 +414,7 @@ class CompanyValueGS4
 					this.best_value = this.SENTINEL_TARGET;
 					if (update_method != null) update_method = true;
 				}
-				
+
 				// Handle descriptive header line
 				if (this.SENTINEL_TARGET > 0) {
 					local header_text = GSText(GSText.STR_COMPANY_GOAL, this.SENTINEL_TARGET);
@@ -569,7 +570,7 @@ class CompanyValueGS4
 		}
 		*/
 		//ping-pong server
-		if (ping==10) {
+		if (ping==20) {
 			this.api.Log("CompanyValueGS4: <Ping>");
 			//GSLeagueTable.UpdateElementScore( 0,this.rankings[1].c_value,this.rankings[1].c_value);
 			ping=0;

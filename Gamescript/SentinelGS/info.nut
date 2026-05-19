@@ -29,7 +29,7 @@ class SentinelGS extends GSInfo
             flags = CONFIG_INGAME, min_value = 0, max_value = 1
         });
         this.AddLabels("development", {_0 = "Off", _1 = "On"});
-		
+
         // Main Game Mode Switch
         this.AddSetting({
             name = "game_mode", description = "Game Mode Selection",
@@ -41,9 +41,6 @@ class SentinelGS extends GSInfo
             _0 = "Mode 0: Company Value", _1 = "Mode 1: CityBuilder Classic", _9 = "Mode 9: Company Value GS4"
         });
 
-        // --- COMPANY VALUE SETTINGS (for CompanyValueGS4 too) ---
-        this.AddCategory("companyvalue", "--- Company Value Settings ---");
-
         this.AddSetting({
             name = "goal_mode", description = "Goal mode", min_value = 0, max_value = 1,
             easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, step_size = 1,
@@ -52,15 +49,6 @@ class SentinelGS extends GSInfo
         this.AddLabels("goal_mode", {
             _0 = "Only rank companies by their values",
             _1 = "Reach target company value below"
-        });
-
-        this.AddSetting({
-            name = "sentinel_goal_sync_value", description = "Target company value (in thousand £)",
-            min_value = 250, max_value = 999999999,
-            easy_value = 500, medium_value = 2500, hard_value = 5000,
-            custom_value = 250,
-            step_size = 250,
-            flags = CONFIG_INGAME
         });
 
         this.AddSetting({
@@ -87,8 +75,26 @@ class SentinelGS extends GSInfo
             flags = CONFIG_INGAME
         });
 
+        // --- COMPANY VALUE SETTINGS (for CompanyValueGS4 too) ---
+        this.AddCategory("companyvalue", "--- Company Value Settings ---");
+
+        this.AddSetting({
+            name = "goal_value", description = "Target company value (in thousand £)",
+            min_value = 250, max_value = 999999999,
+            easy_value = 500, medium_value = 2500, hard_value = 5000,
+            custom_value = 250,
+            step_size = 250,
+            flags = CONFIG_INGAME
+        });
+
         // --- CITYBUILDER SETTINGS ---
         this.AddCategory("cargogoals", "--- CityBuilder Settings ---");
+
+        this.AddSetting({
+            name = "popgoal_value", description = "Target population",
+            easy_value = 1000, medium_value = 1000, hard_value = 1000, custom_value = 1000,
+            flags = CONFIG_INGAME, min_value = 1000, max_value = 100000, step_size = 100
+        });
 
         this.AddSetting({
             name = "maxpopulation", description = "Max population allowed to claim",
