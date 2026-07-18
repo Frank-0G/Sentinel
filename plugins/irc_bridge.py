@@ -53,8 +53,10 @@ class IRCBridge(IPlugin):
         self.last_whois_time = 0
         self.notified_admins = set()
         
-        self.client_cache = {}
-        self.company_cache = {} 
+        from core_services import ClientCacheDict, CompanyCacheDict
+        # Local cache backed directly by StateManager
+        self.client_cache = ClientCacheDict(client)
+        self.company_cache = CompanyCacheDict(client)
         
         # CRASH FIX: Initialized recent_companies
         self.recent_companies = {} 
@@ -74,15 +76,15 @@ class IRCBridge(IPlugin):
 
         self.formats = {
             "chat": "\x02$playername\x02 ($companycolor): $message",
-            "joinedgame": "* \x0311--->\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has joined the game",
-            "joinedspectators": "* \x0311>>\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has joined spectators",
-            "joinedcompany": "* \x0311>>\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has joined company $companyid ($companycolor)",
-            "startedcompany": "* \x0311\x02#\x02\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has started company $companyid ($companycolor)",
-            "leftgame": "* \x0311<---\x03 \x02$playername\x02 (#$playerid/$playerip/$companyid ($companycolor)/$playercountryshort) has left the game ($message)",
-            "namechange": "* \x0311<x>\x03 \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has changed his/her name to $tplayername",
-            "companyrename": "* \x0311<x>\x03 \x02$old_name\x02 (#$companyid) is now known as $companyname",
+            "joinedgame": "* \x0309--->\x03 $playername (#$playerid/$playerip/$playercountryshort) has joined the game",
+            "joinedspectators": "* \x0313>>>\x03 $playername (#$playerid/$playerip/$playercountryshort) has joined spectators",
+            "joinedcompany": "* \x0311>>\x03 $playername (#$playerid/$playerip/$playercountryshort) has joined company $companyid ($companycolor)",
+            "startedcompany": "* \x0311>>\x03 $playername (#$playerid/$playerip/$playercountryshort) has started company $companyid ($companycolor)",
+            "leftgame": "* \x0311<--\x03 $playername (#$playerid/$playerip/$companyid ($companycolor)/$playercountryshort) has left the game ($message)",
+            "namechange": "* \x0313<x>\x03 $playername (#$playerid/$companyid ($companycolor)/$playercountryshort) has changed his/her name to $tplayername",
+            "companyrename": "* \x0313<x>\x03 $old_name (#$companyid) is now known as $companyname",
             "gamerestarted": "* ----- The game has been (re)started -----",
-            "companyclosed": "* \x034\x02X\x02\x03 $companyname ($companyid/$companycolor) has been closed ($message)",
+            "companyclosed": "* \x0304X\x03 $companyname ($companyid/$companycolor) has been closed ($message)",
             "companyunprotected": "* \x0311--\x03 Password of $companyname ($companyid/$companycolor) has been removed ($message)",
             "placedsign": "* \x0311\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has placed a sign: $message",
             "removedsign": "* \x0311\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has removed a sign: $message",
@@ -103,7 +105,7 @@ class IRCBridge(IPlugin):
             "votefinishedfail": "* \x034\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) failed.",
             "votefinishedcancel": "* \x0312\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) was cancelled.",
             "statusmessage": "* \x0311***\x03 Server status: $message",
-            "goalreached": "* \x0311***\x03\x02 GOAL REACHED!\x02 $companyname ($companyid/$companycolor) ($message) has won this game!!!",
+            "goalreached": "* \x0311*** GOAL REACHED!\x03 $companyname ($companyid/$companycolor) ($message) has won this game!!!",
             "cb_destruction": "* \x037\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)) caused destruction in $message, claimed by company $tcompanyid ($tcompanyname/$tcompanycolor)"
         }
 
@@ -203,6 +205,7 @@ class IRCBridge(IPlugin):
             return text
 
     def on_load(self):
+        self.client.state.subscribe("data_changed", self.on_data_changed)
         if self.enabled:
             self.client.log(f"[{self.name}] Starting... Connecting to {self.server}:{self.port} (SSL: {self.use_ssl})")
             self.running = True
@@ -210,10 +213,19 @@ class IRCBridge(IPlugin):
             self.thread.start()
 
     def on_unload(self):
+        self.client.state.unsubscribe("data_changed", self.on_data_changed)
         self.running = False
         if self.sock:
-            try: self.send_raw(f"QUIT :Reloading..."); self.sock.close()
-            except: pass
+            reason = "Controller Reloading..."
+            if getattr(self.client, "stop_requested", False):
+                reason = "Shutdown requested"
+            elif getattr(self.client, "restart_requested", False):
+                reason = "Controller Restarting..."
+            try: 
+                self.send_raw(f"QUIT :{reason}")
+                self.sock.close()
+            except: 
+                pass
 
     # --- HELPERS ---
     def get_data(self): return self.client.get_service("DataController")
@@ -313,17 +325,44 @@ class IRCBridge(IPlugin):
             if co: return co.get('name', f"Company {cid+1}")
         return f"Company {cid+1}"
 
+    def get_colored_player_name(self, name, co_id):
+        col_id = 0
+        if co_id in self.company_cache:
+            col_id = self.company_cache[co_id].get('color', 0)
+        else:
+            data = self.get_data()
+            if data:
+                co = data.get_company(co_id)
+                if co: col_id = co.get('color', 0)
+        irc_code = self.IRC_COLORS.get(col_id, "14") if co_id != 255 else "13"
+        return f"\x03{irc_code}{name}\x03"
+
+    def get_colored_company_name(self, cid):
+        name = self.get_company_name(cid)
+        col_id = 0
+        if cid in self.company_cache:
+            col_id = self.company_cache[cid].get('color', 0)
+        else:
+            data = self.get_data()
+            if data:
+                co = data.get_company(cid)
+                if co: col_id = co.get('color', 0)
+        irc_code = self.IRC_COLORS.get(col_id, "14")
+        return f"\x03{irc_code}{name}\x03"
+
     def get_player_vars(self, cid):
         name = "Unknown"; ip = "0.0.0.0"; iso = "??"; co_id = 255
         if cid in self.client_cache:
             c = self.client_cache[cid]
             name = c['name']; ip = c['ip']; iso = c['iso']; co_id = c['company']
+        
+        colored_name = self.get_colored_player_name(name, co_id)
         return {
-            "playername": name,
+            "playername": colored_name,
             "playerid": cid,
             "playerip": ip,
             "playercountryshort": iso,
-            "companyid": co_id + 1 if co_id != 255 else "Spec",
+            "companyid": co_id + 1 if co_id != 255 else "255",
             "companycolor": self.get_company_color_name(co_id)
         }
 
@@ -394,142 +433,133 @@ class IRCBridge(IPlugin):
              self.send_to_channel("/me " + msg, "announcements")
 
     # --- EVENT TRIGGERS ---
-    def on_player_join(self, cid, name, ip, company_id):
-        if cid == 1: return
-        
-        # If client is already in cache, this is just a polled update, not a new join
-        if cid in self.client_cache:
-            old = self.client_cache[cid]
-            # If name or company changed during poll, delegate to on_player_update for notifications
-            if old['name'] != name or old['company'] != company_id:
-                self.on_player_update(cid, name, company_id)
-            else:
-                # Just update IP if it was unknown
-                if old.get('ip') == '?':
-                    self.client_cache[cid]['ip'] = ip
-            return
+    def on_player_join(self, cid, name, ip, company_id): pass
+    def on_player_quit(self, cid, reason="leaving"): pass
+    def on_player_error(self, cid, err_str): pass
+    def on_company_created(self, company_id): pass
+    def on_company_remove(self, cid, reason): pass
+    def on_newgame(self): pass
+    def on_company_info(self, cid, name, man, col, prot, pw, founded, is_ai): pass
+    def on_player_update(self, cid, name, company_id): pass
 
-        self.topic_update_pending = True
-        iso = self.get_iso(ip)
-        self.client_cache[cid] = {'name': name, 'ip': ip, 'company': company_id, 'iso': iso}
-        msg = self.format_msg("joinedgame", playername=name, playerid=cid, playerip=ip, playercountryshort=iso)
-        self.send_to_channel("/me " + msg, "gameactions")
-        if company_id == 255:
-            msg = self.format_msg("joinedspectators", playername=name, playerid=cid, playerip=ip, playercountryshort=iso)
+    def on_data_changed(self, **kwargs):
+        evt_type = kwargs.get("type")
+        if evt_type == "player_join":
+            cid = kwargs.get("client_id")
+            if cid == 1: return
+            company_id = kwargs.get("company_id")
+            
+            self.topic_update_pending = True
+            vars = self.get_player_vars(cid)
+            msg = self.format_msg("joinedgame", **vars)
             self.send_to_channel("/me " + msg, "gameactions")
-        else:
-            ccolor = self.get_company_color_name(company_id)
-            msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playerip=ip, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor)
-            self.send_to_channel("/me " + msg, "gameactions")
-            if company_id in self.pending_started_companies:
-                self.send_company_started(cid, company_id)
-                self.pending_started_companies.remove(company_id)
-
-    def on_player_quit(self, cid, reason="leaving"):
-        if cid == 1: return
-        self.topic_update_pending = True
-        if cid in self.client_cache:
-            old = self.client_cache[cid]
-            ccolor = self.get_company_color_name(old['company'])
-            msg = self.format_msg("leftgame", playername=old['name'], playerid=cid, playerip=old['ip'], companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=old['iso'], message=reason)
-            self.send_to_channel("/me " + msg, "gameactions")
-            del self.client_cache[cid]
-
-    def on_player_error(self, cid, err_str):
-        if cid == 1: return
-        self.topic_update_pending = True
-        if cid in self.client_cache:
-            old = self.client_cache[cid]
-            ccolor = self.get_company_color_name(old['company'])
-            msg = self.format_msg("leftgame", playername=old['name'], playerid=cid, playerip=old['ip'], companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=old['iso'], message=err_str)
-            self.send_to_channel("/me " + msg, "gameactions")
-            del self.client_cache[cid]
-
-    def on_company_created(self, company_id):
-        self.pending_started_companies.add(company_id)
-        self.topic_update_pending = True
-
-    def on_company_remove(self, cid, reason):
-        msg = self.format_msg("companyclosed", companyname=self.get_company_name(cid), companyid=cid+1, companycolor=self.get_company_color_name(cid), message="Bankrupt" if reason==1 else "Manual")
-        self.send_to_channel("/me " + msg, "announcements")
-        if cid in self.company_cache: del self.company_cache[cid]
-        if cid in self.pending_started_companies: self.pending_started_companies.remove(cid)
-        self.topic_update_pending = True
-
-    def on_newgame(self):
-        self.recent_companies = {} # Reset
-        if time.time() - self.last_new_game < 20: return
-        self.last_new_game = time.time()
-        self.client_cache.clear()
-        self.company_cache.clear()
-        self.placed_signs.clear()
-        self.pending_started_companies.clear()
-        self.send_to_channel("/me " + self.format_msg("gamerestarted"), "gameactions")
-        self.topic_update_pending = True
-
-    def on_company_info(self, cid, name, man, col, prot, pw, founded, is_ai):
-        old_name = None
-        if cid in self.company_cache:
-             old_name = self.company_cache[cid].get('name')
-
-        was_pw = self.company_cache[cid].get('passworded', False) if cid in self.company_cache else False
-        self.company_cache[cid] = {'name': name, 'color': col, 'passworded': pw}
-        
-        if old_name and old_name != name:
-             msg = self.format_msg("companyrename", old_name=old_name, companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid))
-             self.send_to_channel("/me " + msg, "gameactions")
-
-        if was_pw and not pw:
-            msg = self.format_msg("companyunprotected", companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
-            self.send_to_channel("/me " + msg, "announcements")
-        
-        # Check if we were waiting to send a "Started Company" message for this ID
-        if cid in self.pending_start_events:
-            player_cid = self.pending_start_events.pop(cid)
-            self.send_company_started(player_cid, cid)
-
-    def on_player_update(self, cid, name, company_id):
-        if cid == 1: return
-        self.topic_update_pending = True
-        if cid not in self.client_cache:
-            self.client_cache[cid] = {'name': name, 'ip': '?', 'company': company_id, 'iso': '?'}
-            return
-        old = self.client_cache[cid]
-        iso = old['iso']
-        if old['name'] != name:
-            ccolor = self.get_company_color_name(old['company'])
-            msg = self.format_msg("namechange", playername=old['name'], playerid=cid, companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=iso, tplayername=name)
-            self.send_to_channel("/me " + msg, "gameactions")
-            self.client_cache[cid]['name'] = name
-        if old['company'] != company_id:
-            ccolor = self.get_company_color_name(company_id)
             if company_id == 255:
-                 msg = self.format_msg("joinedspectators", playername=name, playerid=cid, playerip=old['ip'], playercountryshort=iso)
-                 self.send_to_channel("/me " + msg, "gameactions")
+                msg = self.format_msg("joinedspectators", **vars)
+                self.send_to_channel("/me " + msg, "gameactions")
             else:
-                 msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playerip=old['ip'], playercountryshort=iso, companyid=company_id+1, companycolor=ccolor)
-                 self.send_to_channel("/me " + msg, "gameactions")
-                 # NOTE: send_company_started is now handled via on_wrapper_log + on_company_info/on_player_update 
-                 # logic to ensure color is ready. 
-                 # We still clear pending here if it fired.
-                 if company_id in self.pending_started_companies:
-                     self.pending_started_companies.remove(company_id)
-            self.client_cache[cid]['company'] = company_id
-        
-        self.queue_topic_update()
+                msg = self.format_msg("joinedcompany", **vars)
+                self.send_to_channel("/me " + msg, "gameactions")
+                if company_id in self.pending_started_companies:
+                    self.send_company_started(cid, company_id)
+                    self.pending_started_companies.remove(company_id)
+
+        elif evt_type == "player_quit":
+            cid = kwargs.get("client_id")
+            if cid == 1: return
+            self.topic_update_pending = True
+            player = kwargs.get("player")
+            reason = kwargs.get("reason", "leaving")
+            if player:
+                vars = self.get_player_vars(cid)
+                msg = self.format_msg("leftgame", message=reason, **vars)
+                self.send_to_channel("/me " + msg, "gameactions")
+
+        elif evt_type == "player_update":
+            cid = kwargs.get("client_id")
+            if cid == 1: return
+            self.topic_update_pending = True
+            changed = kwargs.get("changed", {})
+            player = self.client.state.get_player(cid)
+            if not player: return
+            
+            vars = self.get_player_vars(cid)
+            
+            if 'name' in changed:
+                old_name, new_name = changed['name']
+                old_name_colored = self.get_colored_player_name(old_name, player.company_id)
+                new_name_colored = self.get_colored_player_name(new_name, player.company_id)
+                msg = self.format_msg("namechange", playername=old_name_colored, tplayername=new_name_colored, **vars)
+                self.send_to_channel("/me " + msg, "gameactions")
+                
+            if 'company_id' in changed:
+                old_co, company_id = changed['company_id']
+                if company_id == 255:
+                     msg = self.format_msg("joinedspectators", **vars)
+                     self.send_to_channel("/me " + msg, "gameactions")
+                else:
+                     msg = self.format_msg("joinedcompany", **vars)
+                     self.send_to_channel("/me " + msg, "gameactions")
+                     if company_id in self.pending_started_companies:
+                         self.pending_started_companies.remove(company_id)
+            
+            self.queue_topic_update()
+
+        elif evt_type == "company_created":
+            company_id = kwargs.get("company_id")
+            self.pending_started_companies.add(company_id)
+            self.topic_update_pending = True
+
+        elif evt_type == "company_info":
+            cid = kwargs.get("company_id")
+            changed = kwargs.get("changed", {})
+            c = self.client.state.companies.get(cid)
+            if not c: return
+            
+            companyname_colored = self.get_colored_company_name(cid)
+            ccolor = self.get_company_color_name(cid)
+            
+            # Disable company rename notifications as requested
+            pass
+                
+            if 'passworded' in changed:
+                old_pw, new_pw = changed['passworded']
+                if old_pw and not new_pw:
+                    msg = self.format_msg("companyunprotected", companyname=companyname_colored, companyid=cid+1, companycolor=ccolor, message="manual removal")
+                    self.send_to_channel("/me " + msg, "announcements")
+            
+            if cid in self.pending_start_events:
+                player_cid = self.pending_start_events.pop(cid)
+                self.send_company_started(player_cid, cid)
+
+        elif evt_type == "company_remove":
+            cid = kwargs.get("company_id")
+            reason = kwargs.get("reason", 0)
+            ccolor = self.get_company_color_name(cid)
+            companyname_colored = self.get_colored_company_name(cid)
+            msg = self.format_msg("companyclosed", companyname=companyname_colored, companyid=cid+1, companycolor=ccolor, message="Bankrupt" if reason==1 else "Manual")
+            self.send_to_channel("/me " + msg, "announcements")
+            if cid in self.pending_started_companies: self.pending_started_companies.remove(cid)
+            self.topic_update_pending = True
+
+        elif evt_type == "newgame":
+            self.recent_companies = {}
+            if time.time() - self.last_new_game < 20: return
+            self.last_new_game = time.time()
+            self.placed_signs.clear()
+            self.pending_started_companies.clear()
+            self.send_to_channel("/me " + self.format_msg("gamerestarted"), "gameactions")
+            self.topic_update_pending = True
 
     def send_company_started(self, cid, company_id):
-        c = self.client_cache[cid]
-        ccolor = self.get_company_color_name(company_id)
-        msg = self.format_msg("startedcompany", playername=c['name'], playerid=cid, playerip=c['ip'], playercountryshort=c['iso'], companyid=company_id+1, companycolor=ccolor)
+        vars = self.get_player_vars(cid)
+        msg = self.format_msg("startedcompany", **vars)
         self.send_to_channel("/me " + msg, "gameactions")
 
     def on_chat(self, cid, msg, action, dest_type):
         if cid == 1: return
         if action == NetworkAction.NETWORK_ACTION_CHAT:
-            sender = self.client_cache[cid]['name'] if cid in self.client_cache else f"Client #{cid}"
-            ccolor = self.get_company_color_name(self.client_cache[cid]['company']) if cid in self.client_cache else "Spectator"
-            out = self.format_msg("chat", playername=sender, companycolor=ccolor, message=msg)
+            vars = self.get_player_vars(cid)
+            out = self.format_msg("chat", playername=vars["playername"], companycolor=vars["companycolor"], message=msg)
             self.send_to_channel(out, "gamechat")
 
     def on_event(self, pt, pl):

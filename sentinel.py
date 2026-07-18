@@ -15,8 +15,9 @@ import xml.etree.ElementTree as ET
 # --- IMPORT TYPES ---
 try:
     from openttd_types import AdminPacketType, ServerPacketType, AdminUpdateType, AdminUpdateFrequency, NetworkAction, NETWORK_ERROR_TEXT, NETWORK_QUIT_TEXT
+    from core_services import StateManager
 except ImportError:
-    print("Error: 'openttd_types.py' not found.")
+    print("Error: 'openttd_types.py' or 'core_services.py' not found.")
     sys.exit(1)
 
 # --- PATH CONFIG ---
@@ -112,6 +113,7 @@ class AdminClient:
         self.game_cfg = {}
         
         # Game State Tracking
+        self.state = StateManager()
         self.current_year = 0
         self.current_seed = "Unknown"
         self.gs_log_level = 1 # Default to showing logs
@@ -303,9 +305,22 @@ class AdminClient:
                             if off < len(payload): company_id = payload[off]
 
                         if ptype == ServerPacketType.SERVER_CLIENT_INFO:
+                            iso = "??"
+                            geo = self.get_service("GeoIPService")
+                            if geo:
+                                try: iso = geo.resolve_iso(ip)
+                                except: pass
+                            self.state.upsert_player(cid, name=name, ip=ip, company_id=company_id, iso=iso)
+                            self.state.publish("player_join", client_id=cid, name=name, ip=ip, company_id=company_id, iso=iso)
                             for p in self.plugins: 
                                 if hasattr(p, 'on_player_join'): p.on_player_join(cid, name, ip, company_id)
                         else:
+                            old_p = self.state.get_player(cid)
+                            old_name = old_p.name if old_p else name
+                            old_company = old_p.company_id if old_p else company_id
+                            
+                            self.state.upsert_player(cid, name=name, company_id=company_id)
+                            self.state.publish("player_update", client_id=cid, name=name, company_id=company_id, old_name=old_name, old_company=old_company)
                             for p in self.plugins:
                                 if hasattr(p, 'on_player_update'): p.on_player_update(cid, name, company_id)
                     except Exception as e:
@@ -317,10 +332,14 @@ class AdminClient:
                     cid = struct.unpack('<I', payload[0:4])[0]
                     reason_code = payload[4]
                     reason_str = NETWORK_QUIT_TEXT.get(reason_code, f"quit {reason_code}")
+                    self.state.remove_player(cid)
+                    self.state.publish("player_quit", client_id=cid, reason=reason_str)
                     for p in self.plugins: 
                         if hasattr(p, 'on_player_quit'): p.on_player_quit(cid, reason_str)
                 elif len(payload) >= 4:
                     cid = struct.unpack('<I', payload[0:4])[0]
+                    self.state.remove_player(cid)
+                    self.state.publish("player_quit", client_id=cid, reason="leaving")
                     for p in self.plugins: 
                         if hasattr(p, 'on_player_quit'): p.on_player_quit(cid, "leaving")
 
@@ -329,7 +348,8 @@ class AdminClient:
                     cid = struct.unpack('<I', payload[0:4])[0]
                     err_code = payload[4]
                     err_str = NETWORK_ERROR_TEXT.get(err_code, f"error {err_code}")
-                    # print(f"[DEBUG] SERVER_CLIENT_ERROR: ClientID={cid}, ErrorCode={err_code} ({err_str})")
+                    self.state.remove_player(cid)
+                    self.state.publish("player_error", client_id=cid, error_code=err_code)
                     for p in self.plugins: 
                         if hasattr(p, 'on_player_error'): p.on_player_error(cid, err_str)
 
@@ -338,12 +358,15 @@ class AdminClient:
                     action = payload[0]; dtype = payload[1]
                     cid = struct.unpack('<I', payload[2:6])[0]
                     msg, _ = self.unpack_string(payload, 6)
+                    self.state.publish("chat", client_id=cid, msg=msg, action=action, dest=dtype)
                     for p in self.plugins: 
                         if hasattr(p, 'on_chat'): p.on_chat(cid, msg, action, dtype)
 
             elif ptype == 113: # SERVER_COMPANY_NEW
                 if len(payload) >= 1:
                     cid = payload[0]
+                    self.state.upsert_company(cid)
+                    self.state.publish("company_created", company_id=cid)
                     for p in self.plugins:
                         if hasattr(p, 'on_company_created'): p.on_company_created(cid)
 
@@ -355,7 +378,6 @@ class AdminClient:
                     tail = payload[off:]
                     if len(tail) >= 2:
                         color = tail[0]
-                        # In OT 15.0+, this byte indicates 'Protected' (Invitation system)
                         passworded = bool(tail[1])
                         founded = None; is_ai = None
                         if len(tail) >= 7:
@@ -363,14 +385,13 @@ class AdminClient:
                                 founded = struct.unpack_from('<I', tail, 2)[0]
                                 is_ai = bool(tail[6])
                             except: pass
-                        
-                        # OpenTTD 15.0+ extra fields (Bankruptcy Quarters, Share Owners)
-                        # We don't store them in DataController yet, but we parse correctly to avoid offset issues
-                        # if we ever needed to continue parsing.
-                        
-                        # DEBUG: Trace company info for verification
-                        # self.log(f"[DEBUG] Company Info: CID={cid}, Name='{cname}', PW/Prot={passworded}, Founded={founded}, AI={is_ai}")
 
+                        old_co = self.state.companies.get(cid)
+                        old_name = old_co.name if old_co else None
+                        was_pw = old_co.passworded if old_co else False
+
+                        self.state.upsert_company(cid, name=cname, manager=man_name, color=color, protected=False, passworded=passworded, founded=founded, is_ai=is_ai)
+                        self.state.publish("company_info", company_id=cid, name=cname, manager=man_name, color=color, protected=False, passworded=passworded, founded=founded, is_ai=is_ai, old_name=old_name, was_pw=was_pw)
                         for p in self.plugins:
                             if hasattr(p, 'on_company_info'):
                                 try: p.on_company_info(cid, cname, man_name, color, False, passworded, founded, is_ai)
@@ -383,6 +404,9 @@ class AdminClient:
                     delivered = struct.unpack_from('<H', payload, 25)[0]
                     value = struct.unpack_from('<Q', payload, 27)[0] 
                     perf = struct.unpack_from('<H', payload, 35)[0]
+                    economy = {"money": money, "loan": loan, "income": income, "delivered": delivered, "performance": perf, "value": value}
+                    self.state.update_company_economy(cid, economy)
+                    self.state.publish("company_economy", company_id=cid, money=money, loan=loan, income=income, delivered=delivered, performance=perf, value=value)
                     for p in self.plugins:
                         if hasattr(p, 'on_company_economy'):
                             try: p.on_company_economy(cid, money, loan, income, delivered, perf, value)
@@ -391,14 +415,17 @@ class AdminClient:
             elif ptype == ServerPacketType.SERVER_COMPANY_STATS:
                 if len(payload) >= 21:
                     cid = payload[0]
-                    # OpenTTD sends 5 vehicle types: Trains, Lorries, Busses, Planes, Ships
                     trains, lorries, busses, planes, ships = struct.unpack_from('<5H', payload, 1)
-                    # OpenTTD sends 5 station types: Train stations, Lorry stations, Bus stations, Airports, Harbors
                     train_stations, lorry_stations, bus_stations, airports, harbors = struct.unpack_from('<5H', payload, 11)
+                    stats = {
+                        "trains": trains, "roadvehicles": lorries + busses, "aircraft": planes, "ships": ships,
+                        "train_stations": train_stations, "road_stations": lorry_stations + bus_stations,
+                        "airports": airports, "harbors": harbors
+                    }
+                    self.state.update_company_stats(cid, stats)
+                    self.state.publish("company_stats", company_id=cid, trains=trains, rv=lorries + busses, ships=ships, aircraft=planes, train_stations=train_stations, road_stations=lorry_stations + bus_stations, airports=airports, harbors=harbors)
                     for p in self.plugins:
                         if hasattr(p, 'on_company_stats'):
-                            # DataController expects: trains, rv (lorries+busses), ships, aircraft
-                            # Mapping: rv = lorries + busses | aircraft = planes | ships = ships
                             try: p.on_company_stats(cid, trains, lorries + busses, ships, planes, train_stations, lorry_stations + bus_stations, airports, harbors)
                             except Exception as e: self.log(f"Error in {p.name}.on_company_stats: {e}")
 
@@ -424,7 +451,6 @@ class AdminClient:
                         data_len = struct.unpack_from('<H', payload, 7)[0]
                         data_buf = payload[9 : 9+data_len]
                         cmd_name = self.command_names.get(cmd_id, "Unknown")
-                        cmd_name = self.command_names.get(cmd_id, "Unknown")
                         
                         # Default params
                         params = {'p1': 0, 'p2': 0, 'tile': 0, 'text': ""}
@@ -440,7 +466,7 @@ class AdminClient:
                                 
                                 if param_type == "bool":
                                     val = bool(data_buf[off]); off += 1
-                                elif param_type in ["int8", "byte", "sbyte", "uint8"]:
+                                if param_type in ["int8", "byte", "sbyte", "uint8"]:
                                     val = data_buf[off]; off += 1
                                 elif param_type in ["int16", "short", "uint16", "ushort"]:
                                     val = struct.unpack_from('<H', data_buf, off)[0]; off += 2
@@ -481,14 +507,12 @@ class AdminClient:
                         if show_cmd:
                             self.log(f"[DEBUG CMD] Actor: {cid}, Co: {co_id}, ID: {cmd_id}, Name: {cmd_name}, Params: {params}")
 
-                        # Dispatch with params
+                        self.state.publish("do_command", client_id=cid, cmd_id=cmd_id, p1=p1, p2=p2, tile=tile, text=text, frame=co_id, params=params)
                         for p in self.plugins:
                             if hasattr(p, 'on_do_command'):
                                 try:
-                                    # Try new signature first
                                     p.on_do_command(cid, cmd_id, p1, p2, tile, text, co_id, params)
                                 except TypeError:
-                                    # Fallback to old signature
                                     p.on_do_command(cid, cmd_id, p1, p2, tile, text, co_id)
                     except Exception as e:
                         self.log(f"Packet 127 Error for cmd {cmd_id}: {e}")
@@ -508,6 +532,7 @@ class AdminClient:
                                 self.log(f"[System] GameScript Log Level synced to: {self.gs_log_level}")
                             except: pass
 
+                        self.state.publish("gamescript_event", event_type=evt_name, data=data)
                         for p in self.plugins:
                             if hasattr(p, "on_gamescript_event"):
                                 p.on_gamescript_event(evt_name, data)
@@ -515,7 +540,6 @@ class AdminClient:
                     self.log(f"[Gamescript] Error parsing Packet 124: {e}")
 
             elif ptype == 103 or ptype == ServerPacketType.SERVER_PROTOCOL: # SERVER_PROTOCOL
-                # If we get protocol info, we can also try syncing here as a fallback
                 if not self._initial_sync_done:
                      self._do_initial_sync()
 
@@ -527,17 +551,16 @@ class AdminClient:
                     server_name, off = self.unpack_string(payload, 0)
                     version, off = self.unpack_string(payload, off)
                     
-                    # Store real server name and version from packet
                     self.game_cfg['server_name'] = server_name
                     self.game_cfg['version_string'] = version
 
-                    
                     if off + 1 <= len(payload):
                         dedicated = bool(payload[off])
                         off += 1
                         map_name, off = self.unpack_string(payload, off)
                         if off + 13 <= len(payload):
                             seed, landscape, start_date, width, height = struct.unpack_from('<IBIHH', payload, off)
+                            self.state.publish("map_info", server_name=server_name, width=width, height=height, name=map_name, seed=seed, landscape=landscape, start_date=start_date, map_counter=0)
                             for p in self.plugins:
                                 if hasattr(p, 'on_map_info'):
                                     p.on_map_info(server_name, width, height, map_name, seed, landscape, start_date, 0)
@@ -547,34 +570,39 @@ class AdminClient:
             elif ptype == 116: # COMPANY_REMOVE
                 if len(payload) >= 2:
                     cid = payload[0]; reason = payload[1]
+                    self.state.remove_company(cid)
+                    self.state.publish("company_remove", company_id=cid, reason=reason)
                     for p in self.plugins:
                          if hasattr(p, 'on_company_remove'): p.on_company_remove(cid, reason)
 
             elif ptype == ServerPacketType.SERVER_DATE:
                 if len(payload) >= 4:
                     date_val = struct.unpack('<I', payload[0:4])[0]
-                    # Robust Year Calculation handling old (1920-based) and new (0-based) dates
-                    if date_val > 500000: # New system (roughly year 1369+)
+                    if date_val > 500000:
                         self.current_year = int(date_val / 365.2425)
-                    else: # Old system (Days since 1920)
+                    else:
                         self.current_year = 1920 + int(date_val / 365.2425)
                     
+                    self.state.set_date(date_val)
+                    self.state.publish("date_change", openttd_date_days=date_val)
                     for p in self.plugins: 
                         if hasattr(p, 'on_date_change'): p.on_date_change(date_val)
 
             elif ptype == ServerPacketType.SERVER_NEWGAME:
                 self.send_rcon("getseed")
+                self.state.mark_newgame()
+                self.state.publish("newgame")
                 for p in self.plugins: 
                     if hasattr(p, 'on_newgame'): p.on_newgame()
 
             elif ptype == ServerPacketType.SERVER_SHUTDOWN:
+                self.state.publish("shutdown")
                 for p in self.plugins: 
                     if hasattr(p, 'on_shutdown'): p.on_shutdown()
                 
             elif ptype == ServerPacketType.SERVER_RCON:
                 output, _ = self.unpack_string(payload, 2)
                 
-                # Capture Seed from RCON output
                 if "Generation Seed:" in output:
                     try:
                         self.current_seed = output.split("Generation Seed:")[1].strip()
@@ -583,6 +611,7 @@ class AdminClient:
                 if self.config.get("logs", {}).get("log_rcon_replay", False):
                     print(f"[RCON REPLAY] {output}")
                 
+                self.state.publish("rcon_result", command="Unknown", result=output)
                 for p in self.plugins: 
                     if hasattr(p, 'on_rcon_result'): p.on_rcon_result("Unknown", output)
 
@@ -591,6 +620,14 @@ class AdminClient:
 
     def _plugin_tick_loop(self):
         while not self._stop_event.is_set():
+            if self.connected and self._initial_sync_done:
+                try:
+                    self.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_INFO, 0xFFFFFFFF)
+                    self.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_ECONOMY, 0xFFFFFFFF)
+                    self.send_poll(AdminUpdateType.ADMIN_UPDATE_COMPANY_STATS, 0xFFFFFFFF)
+                    self.send_poll(AdminUpdateType.ADMIN_UPDATE_CLIENT_INFO, 0xFFFFFFFF)
+                except:
+                    pass
             for p in self.plugins:
                 try: p.on_tick()
                 except Exception as e: self.log(f"Tick Error ({p.name}): {e}")

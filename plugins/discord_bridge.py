@@ -42,9 +42,10 @@ class DiscordBridge(IPlugin):
         self.channels = {}
         self.load_channels()
         
-        # Local cache
-        self.client_cache = {}
-        self.company_cache = {} 
+        from core_services import ClientCacheDict, CompanyCacheDict
+        # Local cache backed directly by StateManager
+        self.client_cache = ClientCacheDict(client)
+        self.company_cache = CompanyCacheDict(client)
         self.placed_signs = {}
         self.pending_started_companies = set()
         self.cmd_map = {}
@@ -215,6 +216,8 @@ class DiscordBridge(IPlugin):
             self.client.log(f"[{self.name}] Plugin DISABLED: 'discord' module not found.")
             return
 
+        self.client.state.subscribe("data_changed", self.on_data_changed)
+
         if self.enabled and self.token:
             self.client.log(f"[{self.name}] Starting Discord Bot thread...")
             # Validate token minimal length to avoid immediate crash
@@ -229,6 +232,7 @@ class DiscordBridge(IPlugin):
              self.client.log(f"[{self.name}] Disabled or no token provided.")
 
     def on_unload(self):
+        self.client.state.unsubscribe("data_changed", self.on_data_changed)
         self.running = False
         if self.loop and self.bot:
             asyncio.run_coroutine_threadsafe(self.bot.close(), self.loop)
@@ -646,138 +650,125 @@ class DiscordBridge(IPlugin):
              msg = self.format_msg("maploaded", message="Server")
              self._dispatch_discord(self._send_msg(msg))
 
-    def on_player_join(self, cid, name, ip, company_id):
-        if cid == 1: return
-        
-        # If client is already in cache, this is just a polled update, not a new join
-        if cid in self.client_cache:
-            old = self.client_cache[cid]
-            # If name or company changed during poll, delegate to on_player_update for notifications
-            if old['name'] != name or old['company'] != company_id:
-                self.on_player_update(cid, name, company_id)
-            else:
-                # Just update ISO if it was unknown (e.g. initial poll might have better info)
-                if old.get('iso') == '?' or old.get('iso') == '??':
-                    iso = self.get_iso(ip)
-                    self.client_cache[cid]['iso'] = iso
-                    self.client_cache[cid]['ip'] = ip
-            return
+    def on_player_join(self, cid, name, ip, company_id): pass
+    def on_player_quit(self, cid, reason="leaving"): pass
+    def on_player_error(self, cid, err_str): pass
+    def on_company_created(self, company_id): pass
+    def on_company_remove(self, cid, reason): pass
+    def on_newgame(self): pass
+    def on_company_info(self, cid, name, man, col, prot, pw, founded, is_ai): pass
+    def on_player_update(self, cid, name, company_id): pass
 
-        iso = self.get_iso(ip)
-        self.client_cache[cid] = {'name': name, 'ip': ip, 'company': company_id, 'iso': iso}
-        
-        # Join Message
-        msg = self.format_msg("joinedgame", playername=name, playerid=cid, playercountryshort=iso, playerip=ip)
-        self._dispatch_discord(self._send_msg(msg))
-
-        if company_id == 255:
-            msg = self.format_msg("joinedspectators", playername=name, playerid=cid, playercountryshort=iso, playerip=ip)
-            self._dispatch_discord(self._send_msg(msg))
-        else:
-            ccolor = self.get_company_color_name(company_id)
-            msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor, playerip=ip)
-            self._dispatch_discord(self._send_msg(msg))
+    def on_data_changed(self, **kwargs):
+        evt_type = kwargs.get("type")
+        if evt_type == "player_join":
+            cid = kwargs.get("client_id")
+            if cid == 1: return
+            name = kwargs.get("name")
+            ip = kwargs.get("ip")
+            company_id = kwargs.get("company_id")
+            iso = kwargs.get("iso", "??")
             
-            if company_id in self.pending_started_companies:
-                self.send_company_started(cid, company_id)
-                self.pending_started_companies.remove(company_id)
-
-        self._dispatch_discord(self.update_status())
-
-    def on_player_quit(self, cid, reason="leaving"):
-        if cid == 1: return
-        if cid in self.client_cache:
-            old = self.client_cache[cid]
-            ccolor = self.get_company_color_name(old['company'])
-            msg = self.format_msg("leftgame", playername=old['name'], playerid=cid, companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=old['iso'], playerip=old.get('ip', '?'), message=reason)
+            msg = self.format_msg("joinedgame", playername=name, playerid=cid, playercountryshort=iso, playerip=ip)
             self._dispatch_discord(self._send_msg(msg))
-            del self.client_cache[cid]
-        self._dispatch_discord(self.update_status())
 
-    def on_player_error(self, cid, err_str):
-        if cid == 1: return
-        if cid in self.client_cache:
-            old = self.client_cache[cid]
-            ccolor = self.get_company_color_name(old['company'])
-            msg = self.format_msg("leftgame", playername=old['name'], playerid=cid, companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=old['iso'], playerip=old.get('ip', '?'), message=err_str)
-            self._dispatch_discord(self._send_msg(msg))
-            del self.client_cache[cid]
-        self._dispatch_discord(self.update_status())
-
-    def on_company_created(self, company_id):
-        self._dispatch_discord(self.update_status())
-
-    def on_company_remove(self, cid, reason):
-        msg = self.format_msg("companyclosed", companyname=self.get_company_name(cid), companyid=cid+1, companycolor=self.get_company_color_name(cid), message="Bankrupt" if reason==1 else "Manual")
-        self._dispatch_discord(self._send_msg(msg))
-        if cid in self.company_cache: del self.company_cache[cid]
-        if cid in self.pending_started_companies: self.pending_started_companies.remove(cid)
-        if hasattr(self, 'pending_start_events') and cid in self.pending_start_events:
-             del self.pending_start_events[cid]
-        self._dispatch_discord(self.update_status())
-
-    def on_newgame(self):
-        self.client_cache.clear()
-        self.company_cache.clear()
-        self.placed_signs.clear()
-        self.pending_started_companies.clear()
-        if hasattr(self, 'pending_start_events'): self.pending_start_events.clear()
-        self._dispatch_discord(self._send_msg(self.format_msg("gamerestarted")))
-        self._dispatch_discord(self.update_status())
-
-    def on_company_info(self, cid, name, man, col, prot, pw, founded, is_ai):
-        old_name = None
-        if cid in self.company_cache:
-            old_name = self.company_cache[cid].get('name')
-
-        was_pw = self.company_cache[cid].get('passworded', False) if cid in self.company_cache else False
-        self.company_cache[cid] = {'name': name, 'color': col, 'passworded': pw}
-        
-        if old_name and old_name != name:
-             msg = self.format_msg("companyrename", old_name=old_name, companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid))
-             self._dispatch_discord(self._send_msg(msg))
-
-        if was_pw and not pw:
-            msg = self.format_msg("companyunprotected", companyname=name, companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
-            self._dispatch_discord(self._send_msg(msg))
-        
-        # Check if we were waiting to send a "Started Company" message for this ID
-        if hasattr(self, 'pending_start_events') and cid in self.pending_start_events:
-            player_cid = self.pending_start_events.pop(cid)
-            self.send_company_started(player_cid, cid)
-            
-        self._dispatch_discord(self.update_status()) # Update status count too
-
-    def on_player_update(self, cid, name, company_id):
-        if cid == 1: return
-        if cid not in self.client_cache:
-            self.client_cache[cid] = {'name': name, 'ip': '?', 'company': company_id, 'iso': '?'}
-            return
-        old = self.client_cache[cid]
-        iso = old['iso']
-        
-        if old['name'] != name:
-            ccolor = self.get_company_color_name(old['company'])
-            msg = self.format_msg("namechange", playername=old['name'], playerid=cid, companyid=old['company']+1 if old['company']!=255 else "Spec", companycolor=ccolor, playercountryshort=iso, tplayername=name)
-            self._dispatch_discord(self._send_msg(msg))
-            self.client_cache[cid]['name'] = name
-            
-        if old['company'] != company_id:
-            ccolor = self.get_company_color_name(company_id)
             if company_id == 255:
-                 msg = self.format_msg("joinedspectators", playername=name, playerid=cid, playercountryshort=iso, playerip=old.get('ip', '?'))
-                 self._dispatch_discord(self._send_msg(msg))
+                msg = self.format_msg("joinedspectators", playername=name, playerid=cid, playercountryshort=iso, playerip=ip)
+                self._dispatch_discord(self._send_msg(msg))
             else:
-                  msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor, playerip=old.get('ip', '?'))
-                  self._dispatch_discord(self._send_msg(msg))
-                  
-                  if company_id in self.pending_started_companies:
-                      # Clear pending, but we already sent Join so Started will follow from on_company_info
-                      self.pending_started_companies.remove(company_id)
+                ccolor = self.get_company_color_name(company_id)
+                msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor, playerip=ip)
+                self._dispatch_discord(self._send_msg(msg))
+                
+                if company_id in self.pending_started_companies:
+                    self.send_company_started(cid, company_id)
+                    self.pending_started_companies.remove(company_id)
 
-            self.client_cache[cid]['company'] = company_id
-        
-        self._dispatch_discord(self.update_status())
+            self._dispatch_discord(self.update_status())
+
+        elif evt_type == "player_quit":
+            cid = kwargs.get("client_id")
+            if cid == 1: return
+            player = kwargs.get("player")
+            reason = kwargs.get("reason", "leaving")
+            if player:
+                ccolor = self.get_company_color_name(player.company_id)
+                msg = self.format_msg("leftgame", playername=player.name, playerid=cid, companyid=player.company_id+1 if player.company_id!=255 else "Spec", companycolor=ccolor, playercountryshort=player.iso, playerip=player.ip, message=reason)
+                self._dispatch_discord(self._send_msg(msg))
+            self._dispatch_discord(self.update_status())
+
+        elif evt_type == "player_update":
+            cid = kwargs.get("client_id")
+            if cid == 1: return
+            changed = kwargs.get("changed", {})
+            player = self.client.state.get_player(cid)
+            if not player: return
+            iso = player.iso
+            
+            if 'name' in changed:
+                old_name, new_name = changed['name']
+                ccolor = self.get_company_color_name(player.company_id)
+                msg = self.format_msg("namechange", playername=old_name, playerid=cid, companyid=player.company_id+1 if player.company_id!=255 else "Spec", companycolor=ccolor, playercountryshort=iso, tplayername=new_name)
+                self._dispatch_discord(self._send_msg(msg))
+                
+            if 'company_id' in changed:
+                old_co, company_id = changed['company_id']
+                ccolor = self.get_company_color_name(company_id)
+                if company_id == 255:
+                     msg = self.format_msg("joinedspectators", playername=player.name, playerid=cid, playercountryshort=iso, playerip=player.ip)
+                     self._dispatch_discord(self._send_msg(msg))
+                else:
+                     msg = self.format_msg("joinedcompany", playername=player.name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor, playerip=player.ip)
+                     self._dispatch_discord(self._send_msg(msg))
+                     
+                     if company_id in self.pending_started_companies:
+                         self.pending_started_companies.remove(company_id)
+
+            self._dispatch_discord(self.update_status())
+
+        elif evt_type == "company_created":
+            company_id = kwargs.get("company_id")
+            self.pending_started_companies.add(company_id)
+            self._dispatch_discord(self.update_status())
+
+        elif evt_type == "company_info":
+            cid = kwargs.get("company_id")
+            changed = kwargs.get("changed", {})
+            c = self.client.state.companies.get(cid)
+            if not c: return
+            
+            # Disable company rename notifications as requested
+            pass
+                
+            if 'passworded' in changed:
+                old_pw, new_pw = changed['passworded']
+                if old_pw and not new_pw:
+                    msg = self.format_msg("companyunprotected", companyname=c.name, companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
+                    self._dispatch_discord(self._send_msg(msg))
+            
+            # Check if we were waiting to send a "Started Company" message for this ID
+            if hasattr(self, 'pending_start_events') and cid in self.pending_start_events:
+                player_cid = self.pending_start_events.pop(cid)
+                self.send_company_started(player_cid, cid)
+                
+            self._dispatch_discord(self.update_status())
+
+        elif evt_type == "company_remove":
+            cid = kwargs.get("company_id")
+            reason = kwargs.get("reason", 0)
+            msg = self.format_msg("companyclosed", companyname=self.get_company_name(cid), companyid=cid+1, companycolor=self.get_company_color_name(cid), message="Bankrupt" if reason==1 else "Manual")
+            self._dispatch_discord(self._send_msg(msg))
+            if cid in self.pending_started_companies: self.pending_started_companies.remove(cid)
+            if hasattr(self, 'pending_start_events') and cid in self.pending_start_events:
+                 del self.pending_start_events[cid]
+            self._dispatch_discord(self.update_status())
+
+        elif evt_type == "newgame":
+            self.placed_signs.clear()
+            self.pending_started_companies.clear()
+            if hasattr(self, 'pending_start_events'): self.pending_start_events.clear()
+            self._dispatch_discord(self._send_msg(self.format_msg("gamerestarted")))
+            self._dispatch_discord(self.update_status())
 
     def send_company_started(self, cid, company_id):
         c = self.client_cache[cid]

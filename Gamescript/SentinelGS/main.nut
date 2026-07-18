@@ -325,10 +325,12 @@ class SentinelCore extends GSController
             }
         }
 
-        // Sort by progress desc
+        // Sort by progress desc, then by value desc
         ranks.sort(function(a, b) {
             if (a.progress > b.progress) return -1;
             if (a.progress < b.progress) return 1;
+            if (a.value > b.value) return -1;
+            if (a.value < b.value) return 1;
             return 0;
         });
 
