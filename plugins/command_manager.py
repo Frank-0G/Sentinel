@@ -990,13 +990,37 @@ class CommandManager(IPlugin):
             reply.append("Session not available.")
             return
 
-        result = ""
+        # Build an on_done callback that routes the URL back to the requester
+        # We capture source/context here for the async callback closure.
+        cid = context.get('cid') if context else None
+        irc_target = context.get('irc_target') if context else None
+        discord_channel_id = context.get('discord_channel_id') if context else None
+
+        def on_done(url_msg):
+            try:
+                if source == "game" and cid is not None:
+                    session.send_private_message(cid, url_msg)
+                elif source == "irc" and irc_target:
+                    irc = self._get_service_safe("IRCBridge")
+                    if irc:
+                        irc.send_msg(url_msg, target=irc_target)
+                elif source == "discord":
+                    discord = self._get_service_safe("DiscordBridge")
+                    if discord:
+                        # _send_msg broadcasts to all configured channels
+                        discord._dispatch_discord(discord._send_msg(url_msg))
+            except Exception as e:
+                self.client.log(f"[{self.name}] screenshot on_done error: {e}")
+
+
+        # Kick off the (async) screenshot — returns "Screenshot in progress..." immediately
         if len(args) >= 2:
-            result = session.take_screenshot(args[0], args[1])
+            status = session.take_screenshot(args[0], args[1], on_done=on_done)
         else:
-            result = session.take_screenshot(args[0])
-        
-        reply.append(result)
+            status = session.take_screenshot(args[0], on_done=on_done)
+
+        reply.append(status)
+
 
     def cmd_server(self, cmd, args, reply, source, admin_name, context): 
         # Get server info from Data Controller (single source of truth)

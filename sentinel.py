@@ -130,6 +130,14 @@ class AdminClient:
         
         self.command_names = {} 
         self._initial_sync_done = False
+        try:
+            map_x = int(self.game_cfg.get("map_x", "9"))
+            map_y = int(self.game_cfg.get("map_y", "9"))
+            self.map_width = 2 ** map_x
+            self.map_height = 2 ** map_y
+        except Exception:
+            self.map_width = 512
+            self.map_height = 512
         
         # Lifecycle state
         self.stop_requested = False
@@ -560,6 +568,8 @@ class AdminClient:
                         map_name, off = self.unpack_string(payload, off)
                         if off + 13 <= len(payload):
                             seed, landscape, start_date, width, height = struct.unpack_from('<IBIHH', payload, off)
+                            self.map_width = width
+                            self.map_height = height
                             self.state.publish("map_info", server_name=server_name, width=width, height=height, name=map_name, seed=seed, landscape=landscape, start_date=start_date, map_counter=0)
                             for p in self.plugins:
                                 if hasattr(p, 'on_map_info'):

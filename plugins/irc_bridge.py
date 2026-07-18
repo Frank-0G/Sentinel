@@ -66,6 +66,7 @@ class IRCBridge(IPlugin):
         self.last_new_game = 0
         self.cmd_map = {} 
         self.placed_signs = {} 
+        self.last_placed_sign_tile = {} 
         self.last_topic_update = 0
         self.topic_update_pending = False
 
@@ -75,38 +76,36 @@ class IRCBridge(IPlugin):
         }
 
         self.formats = {
-            "chat": "\x02$playername\x02 ($companycolor): $message",
-            "joinedgame": "* \x0309--->\x03 $playername (#$playerid/$playerip/$playercountryshort) has joined the game",
-            "joinedspectators": "* \x0313>>>\x03 $playername (#$playerid/$playerip/$playercountryshort) has joined spectators",
-            "joinedcompany": "* \x0311>>\x03 $playername (#$playerid/$playerip/$playercountryshort) has joined company $companyid ($companycolor)",
-            "startedcompany": "* \x0311>>\x03 $playername (#$playerid/$playerip/$playercountryshort) has started company $companyid ($companycolor)",
-            "leftgame": "* \x0311<--\x03 $playername (#$playerid/$playerip/$companyid ($companycolor)/$playercountryshort) has left the game ($message)",
-            "namechange": "* \x0313<x>\x03 $playername (#$playerid/$companyid ($companycolor)/$playercountryshort) has changed his/her name to $tplayername",
-            "companyrename": "* \x0313<x>\x03 $old_name (#$companyid) is now known as $companyname",
-            "gamerestarted": "* ----- The game has been (re)started -----",
-            "companyclosed": "* \x0304X\x03 $companyname ($companyid/$companycolor) has been closed ($message)",
-            "companyunprotected": "* \x0311--\x03 Password of $companyname ($companyid/$companycolor) has been removed ($message)",
-            "placedsign": "* \x0311\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has placed a sign: $message",
-            "removedsign": "* \x0311\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has removed a sign: $message",
-            "vehiclecrashed": "* \x037\x02!!\x03\x02 $companyname ($companyid/$companycolor) had a crash ($message).",
-            "companymerge": "* \x0311\x02!!\x03\x02 $tcompanyname ($tcompanyid/$tcompanycolor) was bought by $companyname ($companyid/$companycolor).",
-            "companytrouble": "* \x037\x02!!\x03\x02 $companyname ($companyid/$companycolor) is in trouble!",
-            "mapsaved": "* \x0311\x02!\x02\x03 Game has been saved to $message.",
-            "maploaded": "* \x0311\x02!\x02\x03 Saved game has been loaded from $message.",
-            "sentinelstarted": "/me 🚀 \x02Sentinel Started and Active!\x02\n/me ----- The game has been (re)started -----",
             "info": "* \x0311\x02!!\x03\x02 $message",
-            "warning": "* \x037\x02!!\x03\x02 $message",
-            "error": "* \x034\x02!!\x03\x02 $message",
-            "votestartedrestartnew": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to restart the game with a new map.",
-            "votestartedrestartsame": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to restart the game with the same map.",
-            "votestartedkick": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to kick \x02$tplayername\x02 (#$tplayerid/$tcompanyid ($tcompanycolor)/$tplayercountryshort).",
-            "votestartedban": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to ban \x02$tplayername\x02 (#$tplayerid/$tcompanyid ($tcompanycolor)/$tplayercountryshort).",
-            "votefinishedsuccess": "* \x039\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) was accepted.",
-            "votefinishedfail": "* \x034\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) failed.",
-            "votefinishedcancel": "* \x0312\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyid ($companycolor)/$playercountryshort) was cancelled.",
+            "warning": "* \x0307\x02!!\x03\x02 $message",
+            "error": "* \x0304\x02!!\x03\x02 $message",
+            "chat": "\x02$playername\x02 ($companycolor): $message",
+            "votestartedrestartnew": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) has started a vote to restart the game with a new map.",
+            "votestartedrestartsame": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) has started a vote to restart the game with the same map.",
+            "votestartedkick": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) has started a vote to kick \x02$tplayername\x02 (#$tplayerid/$tcompanyname ($tcompanycolor)/$tplayercountryshort).",
+            "votestartedban": "* \x0311\x02??\x03 $playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) has started a vote to ban \x02$tplayername\x02 (#$tplayerid/$tcompanyname ($tcompanycolor)/$tplayercountryshort).",
+            "votefinishedsuccess": "* \x0309\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) was accepted.",
+            "votefinishedfail": "* \x0304\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) failed.",
+            "votefinishedcancel": "* \x0312\x02??\x02\x03 Vote by \x02$playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) was cancelled.",
+            "joinedgame": "* \x0311--->\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has joined the game",
+            "joinedspectators": "* \x0311>>\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has joined spectators",
+            "joinedcompany": "* \x0311>>\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has joined $companycolor",
+            "startedcompany": "* \x0311\x02#\x02\x03 \x02$playername\x02 (#$playerid/$playerip/$playercountryshort) has started a new company! ($companycolor)",
+            "leftgame": "* \x0311<---\x03 \x02$playername\x02 (#$playerid/$playerip/$companyname ($companycolor)/$playercountryshort) has left the game ($message)",
+            "namechange": "* \x0311<x>\x03 \x02$playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) has changed his/her name to $tplayername",
+            "maploaded": "* \x0311\x02!\x02\x03 Saved game has been loaded from $message.",
+            "mapsaved": "* \x0311\x02!\x02\x03 Game has been saved to $message.",
+            "gamerestarted": "* ----- The game has been (re)started -----",
+            "companyclosed": "* \x0304\x02X\x02\x03 $companyname ($companyid/$companycolor) has been closed ($message)",
+            "companyunprotected": "* \x0311--\x03 Password of $companyname ($companyid/$companycolor) has been removed ($message)",
+            "vehiclecrashed": "* \x0307\x02!!\x03\x02 $companyname ($companyid/$companycolor) had a crash ($message).",
+            "placedsign": "* \x0311\x02!!\x03 $playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) has placed a sign: $message",
+            "removedsign": "* \x0311\x02!!\x03 $playername\x02 (#$playerid/$companyname ($companycolor)/$playercountryshort) has removed a sign: $message",
             "statusmessage": "* \x0311***\x03 Server status: $message",
-            "goalreached": "* \x0311*** GOAL REACHED!\x03 $companyname ($companyid/$companycolor) ($message) has won this game!!!",
-            "cb_destruction": "* \x037\x02!!\x03 $playername\x02 (#$playerid/$companyid ($companycolor)) caused destruction in $message, claimed by company $tcompanyid ($tcompanyname/$tcompanycolor)"
+            "companymerge": "* \x0311\x02!!\x03\x02 $tcompanyname ($tcompanyid/$tcompanycolor) was bought by $companyname ($companyid/$companycolor).",
+            "goalreached": "* \x0311***\x03\x02 GOAL REACHED!\x02 $companyname ($companyid/$companycolor) ($message) has won this game!!!",
+            "cb_destruction": "* \x0307\x02!!\x03 $playername\x02 (#$playerid/$companyname ($companycolor)) caused destruction in $message, claimed by company $tcompanyid ($tcompanyname/$tcompanycolor)",
+            "sentinelstarted": "/me 🚀 \x02Sentinel Started and Active!\x02\n/me ----- The game has been (re)started -----"
         }
 
     def _get_conf(self, key, default):
@@ -297,6 +296,14 @@ class IRCBridge(IPlugin):
         for k, v in kwargs.items():
             val = str(v) if v is not None else "?"
             template = template.replace(f"${k}", val)
+        
+        # Clean up spectator formatting to show only "Spectator" instead of "Company 256 (Spectator)"
+        template = template.replace("Company 256 (Spectator)", "Spectator")
+        template = template.replace("Company 256 (\x0313Spectator\x03)", "Spectator")
+        template = template.replace("256 (Spectator)", "Spectator")
+        template = template.replace("256 (\x0313Spectator\x03)", "Spectator")
+        template = template.replace("/256 (Spectator)/", "/Spectator/")
+        template = template.replace("/256 (\x0313Spectator\x03)/", "/Spectator/")
         return template
 
     def get_company_color_name(self, cid):
@@ -350,9 +357,11 @@ class IRCBridge(IPlugin):
         irc_code = self.IRC_COLORS.get(col_id, "14")
         return f"\x03{irc_code}{name}\x03"
 
-    def get_player_vars(self, cid):
+    def get_player_vars(self, cid, player=None):
         name = "Unknown"; ip = "0.0.0.0"; iso = "??"; co_id = 255
-        if cid in self.client_cache:
+        if player is not None:
+            name = player.name; ip = player.ip; iso = player.iso; co_id = player.company_id
+        elif cid in self.client_cache:
             c = self.client_cache[cid]
             name = c['name']; ip = c['ip']; iso = c['iso']; co_id = c['company']
         
@@ -363,6 +372,7 @@ class IRCBridge(IPlugin):
             "playerip": ip,
             "playercountryshort": iso,
             "companyid": co_id + 1 if co_id != 255 else "255",
+            "companyname": self.get_company_name(co_id),
             "companycolor": self.get_company_color_name(co_id)
         }
 
@@ -470,7 +480,7 @@ class IRCBridge(IPlugin):
             player = kwargs.get("player")
             reason = kwargs.get("reason", "leaving")
             if player:
-                vars = self.get_player_vars(cid)
+                vars = self.get_player_vars(cid, player=player)
                 msg = self.format_msg("leftgame", message=reason, **vars)
                 self.send_to_channel("/me " + msg, "gameactions")
 
@@ -488,7 +498,10 @@ class IRCBridge(IPlugin):
                 old_name, new_name = changed['name']
                 old_name_colored = self.get_colored_player_name(old_name, player.company_id)
                 new_name_colored = self.get_colored_player_name(new_name, player.company_id)
-                msg = self.format_msg("namechange", playername=old_name_colored, tplayername=new_name_colored, **vars)
+                name_vars = dict(vars)
+                name_vars['playername'] = old_name_colored
+                name_vars['tplayername'] = new_name_colored
+                msg = self.format_msg("namechange", **name_vars)
                 self.send_to_channel("/me " + msg, "gameactions")
                 
             if 'company_id' in changed:
@@ -502,7 +515,7 @@ class IRCBridge(IPlugin):
                      if company_id in self.pending_started_companies:
                          self.pending_started_companies.remove(company_id)
             
-            self.queue_topic_update()
+            self.topic_update_pending = True
 
         elif evt_type == "company_created":
             company_id = kwargs.get("company_id")
@@ -534,8 +547,18 @@ class IRCBridge(IPlugin):
         elif evt_type == "company_remove":
             cid = kwargs.get("company_id")
             reason = kwargs.get("reason", 0)
-            ccolor = self.get_company_color_name(cid)
-            companyname_colored = self.get_colored_company_name(cid)
+            co = kwargs.get("company")
+            
+            if co:
+                cname = co.name if co.name else f"Company {cid+1}"
+                col_id = co.color
+                cname_resolved, _ = self.get_data().get_color_info(col_id) if self.get_data() else ("Color", None)
+                ccolor = f"\x03{self.IRC_COLORS.get(col_id, '14')}{cname_resolved}\x03"
+                companyname_colored = f"\x03{self.IRC_COLORS.get(col_id, '14')}{cname}\x03"
+            else:
+                ccolor = self.get_company_color_name(cid)
+                companyname_colored = self.get_colored_company_name(cid)
+
             msg = self.format_msg("companyclosed", companyname=companyname_colored, companyid=cid+1, companycolor=ccolor, message="Bankrupt" if reason==1 else "Manual")
             self.send_to_channel("/me " + msg, "announcements")
             if cid in self.pending_started_companies: self.pending_started_companies.remove(cid)
@@ -552,6 +575,9 @@ class IRCBridge(IPlugin):
 
     def send_company_started(self, cid, company_id):
         vars = self.get_player_vars(cid)
+        vars["companyid"] = company_id + 1
+        vars["companyname"] = self.get_company_name(company_id)
+        vars["companycolor"] = self.get_company_color_name(company_id)
         msg = self.format_msg("startedcompany", **vars)
         self.send_to_channel("/me " + msg, "gameactions")
 
@@ -559,7 +585,8 @@ class IRCBridge(IPlugin):
         if cid == 1: return
         if action == NetworkAction.NETWORK_ACTION_CHAT:
             vars = self.get_player_vars(cid)
-            out = self.format_msg("chat", playername=vars["playername"], companycolor=vars["companycolor"], message=msg)
+            raw_name = self.client_cache[cid]['name'] if cid in self.client_cache else f"Client #{cid}"
+            out = self.format_msg("chat", playername=raw_name, companyname=vars["companyname"], companycolor=vars["companycolor"], message=msg)
             self.send_to_channel(out, "gamechat")
 
     def on_event(self, pt, pl):
@@ -626,7 +653,9 @@ class IRCBridge(IPlugin):
         cmd_name = self.cmd_map.get(cmd_id, "")
         if cmd_name == "CmdPlaceSign":
             self.placed_signs[tile] = {'owner': client_id}
+            self.last_placed_sign_tile[client_id] = tile
         elif cmd_name == "CmdRenameSign":
+            tile = self.last_placed_sign_tile.get(client_id, 0)
             if not text:
                 if tile in self.placed_signs: 
                     old = self.placed_signs[tile]
@@ -638,7 +667,14 @@ class IRCBridge(IPlugin):
             else:
                 self.placed_signs[tile] = {'owner': client_id, 'text': text}
                 vars = self.get_player_vars(client_id)
-                vars['message'] = f"\"{text}\""
+                import math
+                map_w = self.client.map_width
+                map_h = self.client.map_height
+                map_w_bits = int(math.log2(map_w)) if map_w > 0 else 9
+                tile_x = tile & (map_w - 1)
+                tile_y = (tile >> map_w_bits) & (map_h - 1)
+                tile_hex = f"0x{tile:X}"
+                vars['message'] = f"\"{text}\" - at {tile_x}x{tile_y} ({tile_hex})"
                 msg = self.format_msg("placedsign", **vars)
                 self.send_to_channel("/me " + msg, "gameactions")
 

@@ -47,6 +47,7 @@ class DiscordBridge(IPlugin):
         self.client_cache = ClientCacheDict(client)
         self.company_cache = CompanyCacheDict(client)
         self.placed_signs = {}
+        self.last_placed_sign_tile = {}
         self.pending_started_companies = set()
         self.cmd_map = {}
         
@@ -54,16 +55,16 @@ class DiscordBridge(IPlugin):
             "chat": "**$playername** ($companycolor): $message",
             "joinedgame": "➡️ **$playername** (#$playerid/$playerip/$playercountryshort) has joined the game",
             "joinedspectators": "👓 **$playername** (#$playerid/$playerip/$playercountryshort) has joined spectators",
-            "joinedcompany": "🚂 **$playername** (#$playerid/$playerip/$playercountryshort) has joined company $companyid ($companycolor)",
-            "startedcompany": "🆕 **$playername** (#$playerid/$playerip/$playercountryshort) has started company $companyid ($companycolor)",
-            "leftgame": "⬅️ **$playername** (#$playerid/$playerip/$companyid ($companycolor)/$playercountryshort) has left the game ($message)",
-            "namechange": "📝 **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) has changed his/her name to **$tplayername**",
+            "joinedcompany": "🚂 **$playername** (#$playerid/$playerip/$playercountryshort) has joined **$companycolor**",
+            "startedcompany": "🆕 **$playername** (#$playerid/$playerip/$playercountryshort) has started a new company! ($companycolor)",
+            "leftgame": "⬅️ **$playername** (#$playerid/$playerip/$companyname ($companycolor)/$playercountryshort) has left the game ($message)",
+            "namechange": "📝 **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) has changed his/her name to **$tplayername**",
             "companyrename": "📝 Company **$old_name** (#$companyid) is now known as **$companyname**",
             "gamerestarted": "🔄 **The game has been (re)started**",
             "companyclosed": "🏚️ **$companyname** ($companyid/$companycolor) has been closed ($message)",
             "companyunprotected": "🔓 Password of **$companyname** ($companyid/$companycolor) has been removed ($message)",
-            "placedsign": "🪧 **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) has placed a sign: $message",
-            "removedsign": "🪧 **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) has removed a sign: $message",
+            "placedsign": "🪧 **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) has placed a sign: $message",
+            "removedsign": "🪧 **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) has removed a sign: $message",
             "vehiclecrashed": "💥 **$companyname** ($companyid/$companycolor) had a crash ($message).",
             "companymerge": "🤝 **$tcompanyname** ($tcompanyid/$tcompanycolor) was bought by **$companyname** ($companyid/$companycolor).",
             "companytrouble": "⚠️ **$companyname** ($companyid/$companycolor) is in trouble!",
@@ -73,16 +74,16 @@ class DiscordBridge(IPlugin):
             "info": "ℹ️ $message",
             "warning": "⚠️ $message",
             "error": "❌ $message",
-            "votestartedrestartnew": "🗳️ **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to restart the game with a new map.",
-            "votestartedrestartsame": "🗳️ **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to restart the game with the same map.",
-            "votestartedkick": "🗳️ **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to kick **$tplayername** (#$tplayerid/$tcompanyid ($tcompanycolor)/$tplayercountryshort).",
-            "votestartedban": "🗳️ **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) has started a vote to ban **$tplayername** (#$tplayerid/$tcompanyid ($tcompanycolor)/$tplayercountryshort).",
-            "votefinishedsuccess": "✅ Vote by **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) was accepted.",
-            "votefinishedfail": "❌ Vote by **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) failed.",
-            "votefinishedcancel": "🚫 Vote by **$playername** (#$playerid/$companyid ($companycolor)/$playercountryshort) was cancelled.",
+            "votestartedrestartnew": "🗳️ **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) has started a vote to restart the game with a new map.",
+            "votestartedrestartsame": "🗳️ **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) has started a vote to restart the game with the same map.",
+            "votestartedkick": "🗳️ **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) has started a vote to kick **$tplayername** (#$tplayerid/$tcompanyname ($tcompanycolor)/$tplayercountryshort).",
+            "votestartedban": "🗳️ **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) has started a vote to ban **$tplayername** (#$tplayerid/$tcompanyname ($tcompanycolor)/$tplayercountryshort).",
+            "votefinishedsuccess": "✅ Vote by **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) was accepted.",
+            "votefinishedfail": "❌ Vote by **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) failed.",
+            "votefinishedcancel": "🚫 Vote by **$playername** (#$playerid/$companyname ($companycolor)/$playercountryshort) was cancelled.",
             "statusmessage": "📈 Server status: $message",
             "goalreached": "🏆 **GOAL REACHED!** **$companyname** ($companyid/$companycolor) ($message) has won this game!!!",
-            "cb_destruction": "💥 **$playername** (#$playerid/$companyid ($companycolor)) caused destruction in $message, claimed by company $tcompanyid ($tcompanyname/$tcompanycolor)"
+            "cb_destruction": "💥 **$playername** (#$playerid/$companyname ($companycolor)) caused destruction in $message, claimed by company $tcompanyid ($tcompanyname/$tcompanycolor)"
         }
         
         # Local cache is prone to de-sync if we miss events. 
@@ -480,6 +481,14 @@ class DiscordBridge(IPlugin):
         for k, v in kwargs.items():
             val = str(v) if v is not None else "?"
             template = template.replace(f"${k}", val)
+        
+        # Clean up spectator formatting to show only "Spectator" instead of "Company Spec (Spectator)"
+        template = template.replace("Company Spec (Spectator)", "Spectator")
+        template = template.replace("Company 256 (Spectator)", "Spectator")
+        template = template.replace("Spec (Spectator)", "Spectator")
+        template = template.replace("256 (Spectator)", "Spectator")
+        template = template.replace("/Spec (Spectator)/", "/Spectator/")
+        template = template.replace("/256 (Spectator)/", "/Spectator/")
         return template
 
     def get_company_color_name(self, cid):
@@ -526,9 +535,11 @@ class DiscordBridge(IPlugin):
             if co: return co.get('name', f"Company {cid+1}")
         return f"Company {cid+1}"
 
-    def get_player_vars(self, cid):
+    def get_player_vars(self, cid, player=None):
         name = "Unknown"; ip = "0.0.0.0"; iso = "??"; co_id = 255
-        if cid in self.client_cache:
+        if player is not None:
+            name = player.name; ip = player.ip; iso = player.iso; co_id = player.company_id
+        elif cid in self.client_cache:
             c = self.client_cache[cid]
             name = c['name']; ip = c.get('ip', '0.0.0.0'); iso = c['iso']; co_id = c['company']
         return {
@@ -537,6 +548,7 @@ class DiscordBridge(IPlugin):
             "playerip": ip,
             "playercountryshort": iso,
             "companyid": co_id + 1 if co_id != 255 else "Spec",
+            "companyname": self.get_company_name(co_id),
             "companycolor": self.get_company_color_name(co_id)
         }
 
@@ -664,20 +676,17 @@ class DiscordBridge(IPlugin):
         if evt_type == "player_join":
             cid = kwargs.get("client_id")
             if cid == 1: return
-            name = kwargs.get("name")
-            ip = kwargs.get("ip")
             company_id = kwargs.get("company_id")
-            iso = kwargs.get("iso", "??")
             
-            msg = self.format_msg("joinedgame", playername=name, playerid=cid, playercountryshort=iso, playerip=ip)
+            vars = self.get_player_vars(cid)
+            msg = self.format_msg("joinedgame", **vars)
             self._dispatch_discord(self._send_msg(msg))
 
             if company_id == 255:
-                msg = self.format_msg("joinedspectators", playername=name, playerid=cid, playercountryshort=iso, playerip=ip)
+                msg = self.format_msg("joinedspectators", **vars)
                 self._dispatch_discord(self._send_msg(msg))
             else:
-                ccolor = self.get_company_color_name(company_id)
-                msg = self.format_msg("joinedcompany", playername=name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor, playerip=ip)
+                msg = self.format_msg("joinedcompany", **vars)
                 self._dispatch_discord(self._send_msg(msg))
                 
                 if company_id in self.pending_started_companies:
@@ -692,8 +701,8 @@ class DiscordBridge(IPlugin):
             player = kwargs.get("player")
             reason = kwargs.get("reason", "leaving")
             if player:
-                ccolor = self.get_company_color_name(player.company_id)
-                msg = self.format_msg("leftgame", playername=player.name, playerid=cid, companyid=player.company_id+1 if player.company_id!=255 else "Spec", companycolor=ccolor, playercountryshort=player.iso, playerip=player.ip, message=reason)
+                vars = self.get_player_vars(cid, player=player)
+                msg = self.format_msg("leftgame", message=reason, **vars)
                 self._dispatch_discord(self._send_msg(msg))
             self._dispatch_discord(self.update_status())
 
@@ -703,22 +712,24 @@ class DiscordBridge(IPlugin):
             changed = kwargs.get("changed", {})
             player = self.client.state.get_player(cid)
             if not player: return
-            iso = player.iso
+            
+            vars = self.get_player_vars(cid)
             
             if 'name' in changed:
                 old_name, new_name = changed['name']
-                ccolor = self.get_company_color_name(player.company_id)
-                msg = self.format_msg("namechange", playername=old_name, playerid=cid, companyid=player.company_id+1 if player.company_id!=255 else "Spec", companycolor=ccolor, playercountryshort=iso, tplayername=new_name)
+                name_vars = dict(vars)
+                name_vars['playername'] = old_name
+                name_vars['tplayername'] = new_name
+                msg = self.format_msg("namechange", **name_vars)
                 self._dispatch_discord(self._send_msg(msg))
                 
             if 'company_id' in changed:
                 old_co, company_id = changed['company_id']
-                ccolor = self.get_company_color_name(company_id)
                 if company_id == 255:
-                     msg = self.format_msg("joinedspectators", playername=player.name, playerid=cid, playercountryshort=iso, playerip=player.ip)
+                     msg = self.format_msg("joinedspectators", **vars)
                      self._dispatch_discord(self._send_msg(msg))
                 else:
-                     msg = self.format_msg("joinedcompany", playername=player.name, playerid=cid, playercountryshort=iso, companyid=company_id+1, companycolor=ccolor, playerip=player.ip)
+                     msg = self.format_msg("joinedcompany", **vars)
                      self._dispatch_discord(self._send_msg(msg))
                      
                      if company_id in self.pending_started_companies:
@@ -743,7 +754,7 @@ class DiscordBridge(IPlugin):
             if 'passworded' in changed:
                 old_pw, new_pw = changed['passworded']
                 if old_pw and not new_pw:
-                    msg = self.format_msg("companyunprotected", companyname=c.name, companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
+                    msg = self.format_msg("companyunprotected", companyname=self.get_company_name(cid), companyid=cid+1, companycolor=self.get_company_color_name(cid), message="manual removal")
                     self._dispatch_discord(self._send_msg(msg))
             
             # Check if we were waiting to send a "Started Company" message for this ID
@@ -756,7 +767,18 @@ class DiscordBridge(IPlugin):
         elif evt_type == "company_remove":
             cid = kwargs.get("company_id")
             reason = kwargs.get("reason", 0)
-            msg = self.format_msg("companyclosed", companyname=self.get_company_name(cid), companyid=cid+1, companycolor=self.get_company_color_name(cid), message="Bankrupt" if reason==1 else "Manual")
+            co = kwargs.get("company")
+            
+            if co:
+                cname = co.name if co.name else f"Company {cid+1}"
+                col_id = co.color
+                cname_resolved, _ = self._get_data().get_color_info(col_id) if self._get_data() else ("Color", None)
+                ccolor = cname_resolved
+            else:
+                cname = self.get_company_name(cid)
+                ccolor = self.get_company_color_name(cid)
+                
+            msg = self.format_msg("companyclosed", companyname=cname, companyid=cid+1, companycolor=ccolor, message="Bankrupt" if reason==1 else "Manual")
             self._dispatch_discord(self._send_msg(msg))
             if cid in self.pending_started_companies: self.pending_started_companies.remove(cid)
             if hasattr(self, 'pending_start_events') and cid in self.pending_start_events:
@@ -771,31 +793,21 @@ class DiscordBridge(IPlugin):
             self._dispatch_discord(self.update_status())
 
     def send_company_started(self, cid, company_id):
-        c = self.client_cache[cid]
-        ccolor = self.get_company_color_name(company_id)
-        msg = self.format_msg("startedcompany", playername=c['name'], playerid=cid, playercountryshort=c['iso'], companyid=company_id+1, companycolor=ccolor, playerip=c.get('ip', '?'))
+        vars = self.get_player_vars(cid)
+        vars["companyid"] = company_id + 1
+        vars["companyname"] = self.get_company_name(company_id)
+        vars["companycolor"] = self.get_company_color_name(company_id)
+        msg = self.format_msg("startedcompany", **vars)
         self._dispatch_discord(self._send_msg(msg))
 
     def on_chat(self, cid, msg, action, dest_type):
         try:
-            # Only relay public chat messages (action == 3)
             if action != NetworkAction.NETWORK_ACTION_CHAT: return 
             if cid == 1: return
-            
-            # Filter empty messages or whitespace-only messages
             if not msg or not msg.strip(): return
             
-            # NOTE: Commands are now relayed to Discord to show player activity
-            # Previously filtered with: if msg.startswith(self.prefix_char): return
-
-            name = "Unknown"; iso = "??"
-            if cid in self.client_cache:
-                name = self.client_cache[cid]['name']
-                # iso = self.client_cache[cid]['iso'] # Not used in chat format per user req
-            
-            # Format: **$playername** ($companycolor): $message
-            # Using simple format per user request
-            formatted = f"**{name}**: {msg}" 
+            vars = self.get_player_vars(cid)
+            formatted = self.format_msg("chat", playername=vars["playername"], companyname=vars["companyname"], companycolor=vars["companycolor"], message=msg)
             self._dispatch_discord(self._send_msg(formatted))
         except: pass
 
@@ -861,7 +873,9 @@ class DiscordBridge(IPlugin):
         cmd_name = self.cmd_map.get(cmd_id, "")
         if cmd_name == "CmdPlaceSign":
             self.placed_signs[tile] = {'owner': client_id}
+            self.last_placed_sign_tile[client_id] = tile
         elif cmd_name == "CmdRenameSign":
+            tile = self.last_placed_sign_tile.get(client_id, 0)
             if not text:
                 if tile in self.placed_signs: 
                     old = self.placed_signs[tile]
@@ -873,6 +887,13 @@ class DiscordBridge(IPlugin):
             else:
                 self.placed_signs[tile] = {'owner': client_id, 'text': text}
                 vars = self.get_player_vars(client_id)
-                vars['message'] = f"\"{text}\""
+                import math
+                map_w = self.client.map_width
+                map_h = self.client.map_height
+                map_w_bits = int(math.log2(map_w)) if map_w > 0 else 9
+                tile_x = tile & (map_w - 1)
+                tile_y = (tile >> map_w_bits) & (map_h - 1)
+                tile_hex = f"0x{tile:X}"
+                vars['message'] = f"\"{text}\" - at {tile_x}x{tile_y} ({tile_hex})"
                 msg = self.format_msg("placedsign", **vars)
                 self._dispatch_discord(self._send_msg(msg))

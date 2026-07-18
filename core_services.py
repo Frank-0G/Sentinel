@@ -189,8 +189,8 @@ class StateManager:
 
     def remove_company(self, company_id: int) -> None:
         if company_id in self.companies:
-            self.companies.pop(company_id, None)
-            self.publish("data_changed", type="company_remove", company_id=company_id)
+            co = self.companies.pop(company_id, None)
+            self.publish("data_changed", type="company_remove", company_id=company_id, company=co)
 
     def update_company_economy(self, company_id: int, economy: dict) -> None:
         cs = self.companies.get(company_id)
